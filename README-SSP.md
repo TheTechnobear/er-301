@@ -53,6 +53,38 @@ export TOOLSROOT=/opt/homebrew/opt/llvm/bin
 export TRIPLE=arm-linux-gnueabihf
 ```
 
+## Git Tags and Build Versions
+
+Build version strings are derived from Git tags. If matching tags are missing in your local clone, versioned outputs can become empty (for example, `core-.pkg`).
+
+This affects both:
+
+- Firmware archive naming (for example, `er-301-v...zip`)
+- Mod package naming (for example, `core-...pkg`, `teletype-...pkg`)
+
+If you are working in a fork, add the canonical upstream and fetch tags:
+
+```bash
+git remote add upstream https://github.com/odevices/er-301
+git fetch upstream --tags
+```
+
+If `upstream` already exists:
+
+```bash
+git remote set-url upstream https://github.com/odevices/er-301
+git fetch upstream --tags
+```
+
+Verify tag visibility and version resolution:
+
+```bash
+git tag -l "v*.*.*-*"
+git describe --match "v*.*.*-*" --tags --abbrev=0
+```
+
+Note: the `upstream` remote is local Git config in your clone. Other developers must add it in their own clones if they also need upstream tags.
+
 ## Quick Start (Normal Flow)
 
 This is the default path for day-to-day use.
@@ -123,12 +155,6 @@ Notes:
 
 ## Advanced Build Options
 
-Explicit shortcut target equivalent to `make emu` when `BUILDROOT` is set:
-
-```bash
-make emu-cross
-```
-
 Build without FFTW:
 
 ```bash
@@ -145,7 +171,6 @@ Clean artifacts:
 
 ```bash
 make emu-clean
-make emu-cross-clean
 ```
 
 Alternative low-level invocation:
@@ -333,3 +358,71 @@ Then re-run:
 ```bash
 DESTDIR=$PWD/testing/linux/fftw3 ./scripts/build-fftw-cross.sh
 ```
+## 3rd party modules
+
+if you wish to compile a 3rd party module a number of changes will need to be made.
+I cannot detail exactly what changes are required, as it depends on how the developer used the er301 SDK, and what changes they made exactly.
+but below I detail changes, that are likely, esp if they followed the er301 module tutorial guide.
+
+### er301 sdk
+so they will likely have used the er301 repo, since it contains headers and makefile scripts need to build.
+either by asking you to downlaod the sdk, a point SDKPATH to it, 
+or include er301 sdk as a submodule, if so you will need to replace that , with this repo.
+in both cases, you simply need to replace the er301 repo with this one.
+
+
+### Updating tutorial.mk-style Module Makefiles
+
+3rd-party modules may use a local copy of `tutorial.mk` as their build wrapper.
+we will need to updates these to allow for cross-compilation.
+
+the actual cross-compiler is setup in linux.mk, which it likely will include
+however, they will likely use a wrapper, similar to the SDKs tutorial.mk or env.mk.
+
+this is where we setup the CROSS_COMPILE flag used by linux.mk, and some other settings.
+below, are details of the changes, based on what was done for env.mk, emu.mk and tutorial.mk.
+
+1. In the Linux block, (`ifeq ($(ARCH),linux)`),
+
+a) add `CROSS_COMPILE ?= auto` and resolve `auto` to `1` when `BUILDROOT` is set, else `0`.
+
+```makefile
+CROSS_COMPILE ?= auto
+
+ifeq ($(CROSS_COMPILE),auto)
+ifneq ($(BUILDROOT),)
+CROSS_COMPILE := 1
+else
+CROSS_COMPILE := 0
+endif
+endif
+```
+b)  set CFLAGS conditionallya and  add `EMU_CROSS_COMPILE` to symbols.
+
+```Makefile
+ifeq ($(CROSS_COMPILE),1)
+symbols += EMU_CROSS_COMPILE
+CFLAGS.linux = -Wno-deprecated-declarations -Wno-c++11-narrowing -mcpu=cortex-a17 -mfloat-abi=hard -mfpu=neon-vfpv4 -fPIC
+else
+CFLAGS.linux = -Wno-deprecated-declarations -msse4 -fPIC
+endif
+```
+
+c)  finally it will include `scripts/linux.mk` 
+
+2. after, look for the swig compiler flags,
+(this may not be required, depends on module)
+a) Make SWIG compile flags inherit full `CFLAGS` (size-optimized), so cross sysroot/include additions from `linux.mk` are preserved.
+```Makefile
+CFLAGS.swig = $(subst $(CFLAGS.speed),$(CFLAGS.size),$(CFLAGS))
+CFLAGS.swig += -I$(SDKPATH)/libs/lua54
+```
+
+Quick validation:
+
+```bash
+make clean ARCH=linux
+make ARCH=linux CROSS_COMPILE=1
+```
+
+Expected result: versioned `.pkg` output builds without missing standard C/C++ headers.

@@ -1,10 +1,10 @@
 # top-level makefile
 
 # Define all build targets
-BUILD_TARGETS = firmware app-libs app core teletype emu emu-cross
+BUILD_TARGETS = firmware app-libs app core teletype emu
 
 # Define all clean targets
-CLEAN_TARGETS = firmware-clean app-libs-clean app-clean core-clean teletype-clean emu-clean emu-cross-clean
+CLEAN_TARGETS = firmware-clean app-libs-clean app-clean core-clean teletype-clean emu-clean
 
 # Add new all and clean targets at the top
 .PHONY: all clean $(BUILD_TARGETS) $(CLEAN_TARGETS)
@@ -100,18 +100,6 @@ emu-clean:
 	+$(MAKE) -f scripts/emu.mk clean
 
 FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3/usr
-
-emu-cross:
-	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/lua.mk
-	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/miniz.mk
-	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/lodepng.mk
-	+$(MAKE) ARCH=linux CROSS_COMPILE=1 FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/emu.mk
-
-emu-cross-clean:
-	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/lua.mk clean
-	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/miniz.mk clean
-	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/lodepng.mk clean
-	+$(MAKE) ARCH=linux CROSS_COMPILE=1 FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/emu.mk clean
 
 dist-clean:
 	rm -rf testing debug release

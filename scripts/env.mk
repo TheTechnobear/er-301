@@ -107,11 +107,6 @@ pkg_install_dir = $(HOME)/.od/rear
 # - CROSS_COMPILE=0: force native linux mode.
 CROSS_COMPILE ?= auto
 
-# Backward compatibility with prior variable name.
-ifneq ($(CROSS_COMPILE_EMU),)
-CROSS_COMPILE := $(CROSS_COMPILE_EMU)
-endif
-
 ifeq ($(CROSS_COMPILE),auto)
 ifneq ($(BUILDROOT),)
 CROSS_COMPILE := 1

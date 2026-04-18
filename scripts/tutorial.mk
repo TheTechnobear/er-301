@@ -39,7 +39,27 @@ endif
 
 ifeq ($(ARCH),linux)
 INSTALLPATH.linux = $(HOME)/.od/rear
+# Generic cross-compile mode with auto-detection.
+# - CROSS_COMPILE=auto (default): enable when BUILDROOT is set.
+# - CROSS_COMPILE=1: force cross mode.
+# - CROSS_COMPILE=0: force native linux mode.
+CROSS_COMPILE ?= auto
+
+ifeq ($(CROSS_COMPILE),auto)
+ifneq ($(BUILDROOT),)
+CROSS_COMPILE := 1
+else
+CROSS_COMPILE := 0
+endif
+endif
+
+ifeq ($(CROSS_COMPILE),1)
+symbols += EMU_CROSS_COMPILE
+CFLAGS.linux = -Wno-deprecated-declarations -Wno-c++11-narrowing -mcpu=cortex-a17 -mfloat-abi=hard -mfpu=neon-vfpv4 -fPIC
+else
 CFLAGS.linux = -Wno-deprecated-declarations -msse4 -fPIC
+endif
+
 LFLAGS = -shared
 includes += $(SDKPATH)/emu
 include $(SDKPATH)/scripts/linux.mk
@@ -69,9 +89,9 @@ CFLAGS += $(addprefix -D,$(symbols))
 SWIGFLAGS = -lua -no-old-metatable-bindings -nomoduleglobal -small -fvirtual
 SWIGFLAGS += $(addprefix -I,$(includes)) 
 SWIGFLAGS += -module $(PKGNAME)_$(LIBNAME)
-CFLAGS.swig = $(CFLAGS.common) $(CFLAGS.$(ARCH)) $(CFLAGS.size)
-CFLAGS.swig += $(addprefix -I,$(includes)) -I$(SDKPATH)/libs/lua54
-CFLAGS.swig += $(addprefix -D,$(symbols))
+# Inherit full CFLAGS so linux cross-compile toolchain include paths are preserved.
+CFLAGS.swig = $(subst $(CFLAGS.speed),$(CFLAGS.size),$(CFLAGS))
+CFLAGS.swig += -I$(SDKPATH)/libs/lua54
 
 install_file = $(INSTALLPATH.$(ARCH))/$(notdir $(package_file))
 
