@@ -52,47 +52,102 @@ export TOOLSROOT=/opt/homebrew/opt/llvm/bin
 export TRIPLE=arm-linux-gnueabihf
 ```
 
-## Build Commands
+## Quick Start (Normal Flow)
 
-From repository root:
+This is the default path for day-to-day use.
+
+### 1. Set BUILDROOT
+
+```bash
+export BUILDROOT=/path/to/your/arm-rockchip-linux-gnueabihf_sdk-buildroot
+```
+
+### 2. Build emulator
+
+```bash
+make emu
+```
+
+### 3. Build core package
+
+```bash
+make core
+```
+
+### 4. Deploy and run on SSP
+
+Copy the emulator binary:
+
+```bash
+scp -O testing/linux/emu/emu.elf root@192.168.0.150:/media/BOOT/er301/er301.elf
+```
+
+Copy the Lua root:
+
+```bash
+scp -O -r xroot root@192.168.0.150:/media/BOOT/er301/
+```
+
+Copy required shared libraries:
+
+```bash
+scp -O libSDL2-2.0.so.0 libSDL2_ttf-2.0.so.0 root@192.168.0.150:/media/BOOT/er301/
+```
+
+Copy the core package to rear for auto-install on next boot:
+
+```bash
+scp -O testing/linux/mods/core-*.pkg root@192.168.0.150:/media/BOOT/er301/rear
+```
+
+Create `/media/BOOT/er301/emu.config` on target:
+
+```text
+XROOT /media/BOOT/er301/xroot
+REAR_ROOT /media/BOOT/er301/rear
+FRONT_ROOT /media/BOOT/er301/front
+SESSION /media/BOOT/er301/emu.session
+```
+
+Run:
+
+```bash
+LD_LIBRARY_PATH=/media/BOOT/er301 /media/BOOT/er301/er301.elf -c /media/BOOT/er301/emu.config
+```
+
+Notes:
+
+- With `BUILDROOT` set, `make emu` auto-selects Linux cross mode (`ARCH=linux`, `CROSS_COMPILE=1`).
+- FFTW is enabled by default (`WITH_FFTW_EMU=1`) and uses staged files from `testing/linux/fftw3/usr`.
+
+## Advanced Build Options
+
+Explicit shortcut target equivalent to `make emu` when `BUILDROOT` is set:
 
 ```bash
 make emu-cross
 ```
 
-Optional (build without FFTW):
+Build without FFTW:
 
 ```bash
-make emu-cross WITH_FFTW_EMU=0
+make emu WITH_FFTW_EMU=0
 ```
 
-The `FFTW_STAGE_ROOT` is baked into the `emu-cross` target (defaults to `testing/linux/fftw3/usr`). Override if staged elsewhere:
+Override FFTW staging path:
 
 ```bash
-make emu-cross FFTW_STAGE_ROOT=/custom/path/usr
+make emu FFTW_STAGE_ROOT=/custom/path/usr
 ```
 
-This target builds:
-
-1. `lua`
-2. `miniz`
-3. `lodepng`
-4. `emu`
-
-with:
-
-- `ARCH=linux`
-- `CROSS_COMPILE=1`
-
-### Clean Cross Build Artifacts
+Clean artifacts:
 
 ```bash
+make emu-clean
 make emu-cross-clean
 ```
 
-## Alternative Invocation
-
-If you prefer not to use the top-level shortcut target:
+Alternative low-level invocation:
 
 ```bash
 make ARCH=linux CROSS_COMPILE=1 -f scripts/lua.mk
@@ -101,16 +156,14 @@ make ARCH=linux CROSS_COMPILE=1 -f scripts/lodepng.mk
 make ARCH=linux CROSS_COMPILE=1 -f scripts/emu.mk
 ```
 
-## Output Layout
+Output layout:
 
-Cross emulator outputs are generated under:
-
-- `testing/linux/emu/emu.elf` (for default `PROFILE=testing`)
+- `testing/linux/emu/emu.elf` (default profile: `testing`)
 - `testing/linux/libs/` (cross-built static libs)
 
 For other profiles (`debug`, `release`), the first path segment changes accordingly.
 
-## Notes on Build Behavior
+## Development Notes
 
 When `CROSS_COMPILE=1`:
 
@@ -122,11 +175,11 @@ When `CROSS_COMPILE=1`:
 - `WITH_FFTW_EMU=0` switches emu to a stub FFT backend and omits `-lfftw3f`.
 - `FFTW_STAGE_ROOT=/path/to/stage/usr` adds `-I.../include` and `-L.../lib` for FFTW without touching sysroot.
 
-## Project-Local FFTW Staging
+### Project-Local FFTW Staging
 
-The SSP sysroot does not include FFTW. This is a **one-time manual step** before the first cross build.
+The SSP sysroot does not include FFTW. This is a one-time manual step before the first cross build.
 
-`scripts/build-fftw-cross.sh` downloads the FFTW 3.3.10 source tarball, cross-configures it for ARM, and installs a static library into a project-local staging directory. It does **not** modify the sysroot.
+`scripts/build-fftw-cross.sh` downloads FFTW 3.3.10 source, cross-configures it for ARM, and installs a static library into a project-local staging directory. It does not modify the sysroot.
 
 ```bash
 export BUILDROOT=/path/to/arm-rockchip-linux-gnueabihf_sdk-buildroot
@@ -146,43 +199,21 @@ Key environment variables (all optional, with defaults):
 The script is idempotent: it skips re-downloading the tarball and re-running `configure` if stamps exist. To force a clean reconfigure, delete `.build/fftw-cross/stamps/`.
 
 Expected outputs:
+
 - `$DESTDIR/usr/include/fftw3.h`
 - `$DESTDIR/usr/lib/libfftw3f.a`
 
-The `emu-cross` Makefile target automatically passes `FFTW_STAGE_ROOT=$(CURDIR)/testing/linux/fftw3/usr`, so no extra flags are needed after staging.
+The top-level make target uses `FFTW_STAGE_ROOT=$(CURDIR)/testing/linux/fftw3/usr` by default, so no extra flags are needed after staging.
 
-FFTW links **statically** — it does not need to be present on the target device at runtime.
+FFTW links statically and does not need to be present on the target device at runtime.
 
-## Deploying to SSP
+### Runtime Libraries (Reference)
 
-### 1. Copy the binary
+The binary requires `libSDL2` and `libSDL2_ttf` on target. Other dependencies (`libm`, `libdl`, `libstdc++`, `libgcc_s`, `libc`, `libpthread`, `libfreetype`, `libpng16`, `libz`, `libbz2`) are typically part of the standard SSP rootfs.
 
-```bash
-scp testing/linux/emu/emu.elf root@192.168.0.150:/media/BOOT/er301/er301.elf
-```
+Reference `ldd` output on target:
 
-### 2. Copy the Lua root
-
-```bash
-scp -r xroot root@192.168.0.150:/media/BOOT/er301/
-```
-
-### 3. Shared libraries
-
-The binary requires `libSDL2` and `libSDL2_ttf`. These are not in the standard SSP rootfs and must be provided manually. The simplest approach is to copy them into the same directory as the binary:
-
-```bash
-scp libSDL2-2.0.so.0 libSDL2_ttf-2.0.so.0 root@192.168.0.150:/media/BOOT/er301/
-```
-
-you will need to set the `LD_LIBRARY_PATH`  to /media/BOOT/er301
-
-
-All other runtime dependencies (`libm`, `libdl`, `libstdc++`, `libgcc_s`, `libc`, `libpthread`, `libfreetype`, `libpng16`, `libz`, `libbz2`) are part of the standard SSP rootfs.
-
-Full `ldd` output on the target for reference:
-
-```
+```text
 [root@rockchip:/media/BOOT/er301]# ldd er301.elf
 	linux-vdso.so.1 (0xbea87000)
 	libSDL2-2.0.so.0 => /media/BOOT/er301/libSDL2-2.0.so.0 (0xb69c4000)
@@ -200,22 +231,6 @@ Full `ldd` output on the target for reference:
 	libz.so.1 => /usr/lib/libz.so.1 (0xb64e9000)
 ```
 
-### 4. Config file
-configure to use the sdcard rather than ~/.od
-
-/media/BOOT/er301/emu.config
-```
-XROOT /media/BOOT/er301/xroot
-REAR_ROOT /media/BOOT/er301/rear
-FRONT_ROOT /media/BOOT/er301/front
-SESSION /media/BOOT/er301/emu.session
-```
-
-### 5. Running
-
-```bash
-LD_LIBRARY_PATH=/media/BOOT/er301 /media/BOOT/er301/er301.elf -c /media/BOOT/er301/emu.config
-```
 
 ## Font Configuration
 
@@ -240,14 +255,14 @@ Examples:
 
 ```bash
 export BUILDROOT=/path/to/arm-rockchip-linux-gnueabihf_sdk-buildroot
-make emu-cross
+make emu
 ```
 
 or, if you keep only `SSP_BUILDROOT` exported:
 
 ```bash
 export BUILDROOT=$SSP_BUILDROOT
-make emu-cross
+make emu
 ```
 
 ### Missing SDL2/SDL2_ttf/fftw during link
