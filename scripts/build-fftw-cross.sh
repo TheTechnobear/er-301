@@ -72,6 +72,28 @@ if [[ ! -x "$TOOLSROOT/llvm-ranlib" ]]; then
   exit 1
 fi
 
+LLD_PATH="${LLD_PATH:-}"
+if [[ -z "$LLD_PATH" ]]; then
+  for candidate in \
+    "$TOOLSROOT/ld.lld" \
+    "$TOOLSROOT/lld" \
+    "$TOOLSROOT/ld64.lld" \
+    "$(command -v ld.lld 2>/dev/null || true)" \
+    "$(command -v lld 2>/dev/null || true)" \
+    "$(command -v ld64.lld 2>/dev/null || true)"; do
+    if [[ -n "$candidate" && -x "$candidate" ]]; then
+      LLD_PATH="$candidate"
+      break
+    fi
+  done
+fi
+if [[ -z "$LLD_PATH" ]]; then
+  echo "error: unable to find an lld linker (ld.lld/lld/ld64.lld)." >&2
+  echo "hint: install it with 'brew install lld' and re-run." >&2
+  echo "hint: or set LLD_PATH=/path/to/ld.lld" >&2
+  exit 1
+fi
+
 if [[ -n "$SYSROOT" && ! -d "$SYSROOT" ]]; then
   echo "error: SYSROOT does not exist: $SYSROOT" >&2
   exit 1
@@ -103,7 +125,7 @@ if [[ -n "$SYSROOT" ]]; then
   CROSS_FLAGS+=("--sysroot=$SYSROOT")
 fi
 
-LINK_FLAGS=("-fuse-ld=lld")
+LINK_FLAGS=("-fuse-ld=$LLD_PATH")
 if [[ -n "$SYSROOT" ]]; then
   LINK_FLAGS+=("-L$SYSROOT/lib" "-B$SYSROOT/lib" "-Wl,-rpath-link,$SYSROOT/lib")
   LINK_FLAGS+=("-L$SYSROOT/usr/lib" "-B$SYSROOT/usr/lib" "-Wl,-rpath-link,$SYSROOT/usr/lib")

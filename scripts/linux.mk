@@ -41,8 +41,9 @@ GCCROOT ?= $(BUILDROOT)/lib/gcc/arm-rockchip-linux-gnueabihf/8.4.0
 GXXROOT ?= $(BUILDROOT)/arm-rockchip-linux-gnueabihf/include/c++/8.4.0
 CROSS_TOOL_FLAGS := --target=$(TRIPLE) --sysroot=$(SYSROOT)
 
-CC := $(TOOLSROOT)/clang $(CROSS_TOOL_FLAGS) -fdiagnostics-color -fmax-errors=5
-CPP := $(TOOLSROOT)/clang++ $(CROSS_TOOL_FLAGS) -fdiagnostics-color -fmax-errors=5
+# clang: warning: argument unused during compilation: '-fmax-errors=5' [-Wunused-command-line-argument]
+CC := $(TOOLSROOT)/clang $(CROSS_TOOL_FLAGS) -fdiagnostics-color 
+CPP := $(TOOLSROOT)/clang++ $(CROSS_TOOL_FLAGS) -fdiagnostics-color
 OBJCOPY := $(TOOLSROOT)/llvm-objcopy
 OBJDUMP := $(TOOLSROOT)/llvm-objdump
 ADDR2LINE := $(TOOLSROOT)/llvm-addr2line

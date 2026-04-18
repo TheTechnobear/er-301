@@ -27,6 +27,7 @@ The makefiles use the same cross values as `xcSSP.cmake`:
 1. SSP SDK/buildroot is installed and accessible.
 2. LLVM toolchain is installed on host macOS.
    - Default expected path on Apple Silicon: `/opt/homebrew/opt/llvm/bin`
+	- Install LLVM and lld with Homebrew: `brew install llvm lld`
 3. Target sysroot contains `SDL2` and `SDL2_ttf` (dynamic `.so` libs).
 4. FFTW is provided project-locally via `testing/linux/fftw3/` (see [Project-Local FFTW Staging](#project-local-fftw-staging)).
 5. A suitable font is present on the target device (e.g. `LiberationSans-Regular.ttf`; see [Font Configuration](#font-configuration)).
@@ -320,3 +321,15 @@ export TOOLSROOT=/opt/homebrew/opt/llvm/bin
 ```
 
 or your local LLVM install path.
+
+If FFTW configure fails with `invalid linker name in argument '-fuse-ld=...'`, install lld:
+
+```bash
+brew install lld
+```
+
+Then re-run:
+
+```bash
+DESTDIR=$PWD/testing/linux/fftw3 ./scripts/build-fftw-cross.sh
+```
