@@ -101,7 +101,12 @@ include scripts/linux.mk
 
 # symbols += BUILDOPT_LUA_USE_REALLOC
 includes += emu
+ifeq ($(CROSS_COMPILE_EMU),1)
+symbols += EMU_CROSS_COMPILE
+CFLAGS.linux = -Wno-deprecated-declarations -Wno-c++11-narrowing -mcpu=cortex-a17 -mfloat-abi=hard -mfpu=neon-vfpv4 -fPIC
+else
 CFLAGS.linux = -Wno-deprecated-declarations -msse4 -fPIC
+endif
 
 endif
 
