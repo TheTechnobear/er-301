@@ -5,13 +5,17 @@ PROFILE ?= testing
 # Determine ARCH if it's not provided...
 # linux | darwin | am335x
 ifndef ARCH
-  SYSTEM_NAME := $(shell uname -s)
-  ifeq ($(SYSTEM_NAME),Linux)
+  ifneq ($(BUILDROOT),)
     ARCH = linux
-  else ifeq ($(SYSTEM_NAME),Darwin)
-    ARCH = darwin
   else
-    $(error Unsupported system $(SYSTEM_NAME))
+    SYSTEM_NAME := $(shell uname -s)
+    ifeq ($(SYSTEM_NAME),Linux)
+      ARCH = linux
+    else ifeq ($(SYSTEM_NAME),Darwin)
+      ARCH = darwin
+    else
+      $(error Unsupported system $(SYSTEM_NAME))
+    endif
   endif
 endif
 
@@ -97,11 +101,30 @@ CFLAGS.debug ?= -g -DBUILDOPT_TESTING
 
 pkg_install_dir = $(HOME)/.od/rear
 
+# Generic cross-compile mode with auto-detection.
+# - CROSS_COMPILE=auto (default): enable when BUILDROOT is set.
+# - CROSS_COMPILE=1: force cross mode.
+# - CROSS_COMPILE=0: force native linux mode.
+CROSS_COMPILE ?= auto
+
+# Backward compatibility with prior variable name.
+ifneq ($(CROSS_COMPILE_EMU),)
+CROSS_COMPILE := $(CROSS_COMPILE_EMU)
+endif
+
+ifeq ($(CROSS_COMPILE),auto)
+ifneq ($(BUILDROOT),)
+CROSS_COMPILE := 1
+else
+CROSS_COMPILE := 0
+endif
+endif
+
 include scripts/linux.mk
 
 # symbols += BUILDOPT_LUA_USE_REALLOC
 includes += emu
-ifeq ($(CROSS_COMPILE_EMU),1)
+ifeq ($(CROSS_COMPILE),1)
 symbols += EMU_CROSS_COMPILE
 CFLAGS.linux = -Wno-deprecated-declarations -Wno-c++11-narrowing -mcpu=cortex-a17 -mfloat-abi=hard -mfpu=neon-vfpv4 -fPIC
 else

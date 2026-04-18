@@ -91,7 +91,7 @@ emu:
 	+$(MAKE) -f scripts/lua.mk
 	+$(MAKE) -f scripts/miniz.mk
 	+$(MAKE) -f scripts/lodepng.mk
-	+$(MAKE) -f scripts/emu.mk
+	+$(MAKE) FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/emu.mk
 
 emu-clean: 
 	+$(MAKE) -f scripts/lua.mk clean
@@ -102,16 +102,16 @@ emu-clean:
 FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3/usr
 
 emu-cross:
-	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/lua.mk
-	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/miniz.mk
-	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/lodepng.mk
-	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/emu.mk
+	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/lua.mk
+	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/miniz.mk
+	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/lodepng.mk
+	+$(MAKE) ARCH=linux CROSS_COMPILE=1 FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/emu.mk
 
 emu-cross-clean:
-	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/lua.mk clean
-	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/miniz.mk clean
-	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/lodepng.mk clean
-	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/emu.mk clean
+	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/lua.mk clean
+	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/miniz.mk clean
+	+$(MAKE) ARCH=linux CROSS_COMPILE=1 -f scripts/lodepng.mk clean
+	+$(MAKE) ARCH=linux CROSS_COMPILE=1 FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/emu.mk clean
 
 dist-clean:
 	rm -rf testing debug release

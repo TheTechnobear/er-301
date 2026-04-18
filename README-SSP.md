@@ -16,7 +16,7 @@ This document describes how to cross-compile the ER-301 emulator (`emu`) from ma
 
 The makefiles use the same cross values as `xcSSP.cmake`:
 
-- `BUILDROOT` (or `SSP_BUILDROOT`)
+- `BUILDROOT`
 - `TOOLSROOT` (defaults to Homebrew LLVM on macOS arm64)
 - `SYSROOT = $(BUILDROOT)/arm-rockchip-linux-gnueabihf/sysroot`
 - `GCCROOT = $(BUILDROOT)/lib/gcc/arm-rockchip-linux-gnueabihf/8.4.0`
@@ -33,13 +33,17 @@ The makefiles use the same cross values as `xcSSP.cmake`:
 
 ## Environment
 
-At minimum, set one of:
+For cross builds, set:
 
 ```bash
-export SSP_BUILDROOT=/path/to/your/arm-rockchip-linux-gnueabihf_sdk-buildroot
-# or
 export BUILDROOT=/path/to/your/arm-rockchip-linux-gnueabihf_sdk-buildroot
 ```
+
+Notes:
+
+- Cross auto-detection now uses `BUILDROOT` only.
+- Keeping `SSP_BUILDROOT` set does not force cross mode.
+- To cross-build using an existing `SSP_BUILDROOT`, run: `export BUILDROOT=$SSP_BUILDROOT`.
 
 Optional overrides:
 
@@ -78,7 +82,7 @@ This target builds:
 with:
 
 - `ARCH=linux`
-- `CROSS_COMPILE_EMU=1`
+- `CROSS_COMPILE=1`
 
 ### Clean Cross Build Artifacts
 
@@ -91,10 +95,10 @@ make emu-cross-clean
 If you prefer not to use the top-level shortcut target:
 
 ```bash
-make ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/lua.mk
-make ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/miniz.mk
-make ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/lodepng.mk
-make ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/emu.mk
+make ARCH=linux CROSS_COMPILE=1 -f scripts/lua.mk
+make ARCH=linux CROSS_COMPILE=1 -f scripts/miniz.mk
+make ARCH=linux CROSS_COMPILE=1 -f scripts/lodepng.mk
+make ARCH=linux CROSS_COMPILE=1 -f scripts/emu.mk
 ```
 
 ## Output Layout
@@ -108,7 +112,7 @@ For other profiles (`debug`, `release`), the first path segment changes accordin
 
 ## Notes on Build Behavior
 
-When `CROSS_COMPILE_EMU=1`:
+When `CROSS_COMPILE=1`:
 
 - Compiler switches to clang/clang++ cross invocation with `--target` and `--sysroot`.
 - Linker uses `lld` with sysroot and gcc runtime search paths.
@@ -125,7 +129,7 @@ The SSP sysroot does not include FFTW. This is a **one-time manual step** before
 `scripts/build-fftw-cross.sh` downloads the FFTW 3.3.10 source tarball, cross-configures it for ARM, and installs a static library into a project-local staging directory. It does **not** modify the sysroot.
 
 ```bash
-export SSP_BUILDROOT=/path/to/arm-rockchip-linux-gnueabihf_sdk-buildroot
+export BUILDROOT=/path/to/arm-rockchip-linux-gnueabihf_sdk-buildroot
 DESTDIR=$PWD/testing/linux/fftw3 ./scripts/build-fftw-cross.sh
 ```
 
@@ -133,7 +137,7 @@ Key environment variables (all optional, with defaults):
 
 | Variable | Default | Description |
 |---|---|---|
-| `SSP_BUILDROOT` / `BUILDROOT` | — | SDK root; used to locate `SYSROOT` and `GCCROOT` |
+| `BUILDROOT` | — | SDK root; used to locate `SYSROOT` and `GCCROOT` |
 | `TOOLSROOT` | `/opt/homebrew/opt/llvm/bin` | Directory containing `clang`, `llvm-ar`, etc. |
 | `DESTDIR` | `$REPO_ROOT/.local/fftw-stage` | Installation destination |
 | `FFTW_VERSION` | `3.3.10` | FFTW release to download |
@@ -228,9 +232,25 @@ On the SSP device (which typically lacks FreeSans), Liberation Sans is expected 
 
 ## Troubleshooting
 
-### Error: `CROSS_COMPILE_EMU=1 requires BUILDROOT`
+### Error: `CROSS_COMPILE=1 requires BUILDROOT`
 
-Set one of `SSP_BUILDROOT` or `BUILDROOT` before running `make emu-cross`.
+Set `BUILDROOT` before running cross builds.
+
+Examples:
+
+```bash
+export BUILDROOT=/path/to/arm-rockchip-linux-gnueabihf_sdk-buildroot
+make emu
+make core
+```
+
+or, if you keep only `SSP_BUILDROOT` exported:
+
+```bash
+export BUILDROOT=$SSP_BUILDROOT
+make emu
+make core
+```
 
 ### Missing SDL2/SDL2_ttf/fftw during link
 

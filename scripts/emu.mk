@@ -44,7 +44,7 @@ LFLAGS += -Wl,--export-dynamic -Wl,--gc-sections
 endif
 
 ifeq ($(shell uname -s),Darwin)
-ifneq ($(CROSS_COMPILE_EMU),1)
+ifneq ($(CROSS_COMPILE),1)
 ifeq ($(shell uname -m),arm64)
 ARCH_FLAGS=-march=armv8.2-a
 else
@@ -78,7 +78,7 @@ CFLAGS += -I$(FFTW_STAGE_ROOT)/include
 LFLAGS += -L$(FFTW_STAGE_ROOT)/lib -Wl,-rpath-link,$(FFTW_STAGE_ROOT)/lib
 endif
 
-ifeq ($(CROSS_COMPILE_EMU),1)
+ifeq ($(CROSS_COMPILE),1)
 CFLAGS += -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/SDL2
 LFLAGS += -L$(SYSROOT)/usr/lib -Wl,-rpath-link,$(SYSROOT)/usr/lib
 endif

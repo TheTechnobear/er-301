@@ -61,12 +61,12 @@ LFLAGS = -nostdlib -nodefaultlibs -r
 endif
 
 ifeq ($(ARCH),linux)
-LFLAGS = -shared
+LFLAGS += -shared
 endif
 
 ifeq ($(ARCH),darwin)
 # Do not try to resolve dynamic links when linking.
-LFLAGS = -dynamic -undefined dynamic_lookup -lSystem
+#LFLAGS += -dynamic -undefined dynamic_lookup -lSystem
 endif
 
 # Prevent swig from placing symbols exported by mods in the global namespace.

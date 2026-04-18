@@ -1,5 +1,5 @@
 # Build Tools for Linux
-ifneq ($(CROSS_COMPILE_EMU),1)
+ifneq ($(CROSS_COMPILE),1)
 
 CC := gcc -fdiagnostics-color -fmax-errors=5
 CPP := g++ -fdiagnostics-color -fmax-errors=5
@@ -19,12 +19,8 @@ ZIP := zip
 else
 
 # Cross-compile toolchain for emu on Linux/arm from a non-Linux host.
-ifneq ($(SSP_BUILDROOT),)
-BUILDROOT ?= $(SSP_BUILDROOT)
-endif
-
 ifndef BUILDROOT
-$(error CROSS_COMPILE_EMU=1 requires BUILDROOT (or SSP_BUILDROOT) to be set)
+$(error CROSS_COMPILE=1 requires BUILDROOT to be set)
 endif
 
 ifndef TOOLSROOT
@@ -68,6 +64,7 @@ LFLAGS += -L$(SYSROOT)/lib -B$(SYSROOT)/lib
 LFLAGS += -Wl,-rpath-link,$(SYSROOT)/lib
 LFLAGS += -L$(GCCROOT) -B$(GCCROOT)
 LFLAGS += -Wl,-rpath-link,$(GCCROOT)
+LFLAGS += -fuse-ld=lld
 
 # Match libstdc++ include paths used in xcSSP.cmake.
 CFLAGS += -I$(GXXROOT)
