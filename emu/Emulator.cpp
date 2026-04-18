@@ -375,6 +375,9 @@ namespace emu
     f << "## Root for the Lua interpreter\n";
     f << "# XROOT ./xroot\n";
     f << '\n';
+    f << "## Session state file\n";
+    f << "# SESSION ~/.od/emu.session\n";
+    f << '\n';
     f << "## Use this root for the rear SD card.\n";
     f << "# REAR_ROOT ~/.od/rear\n";
     f << "# REAR_PRESENT true\n";
@@ -516,6 +519,9 @@ namespace emu
 
       realpath(db.get("XROOT", xRoot).c_str(), tmp);
       xRoot = tmp;
+
+      realpath(db.get("SESSION", sessionFilename).c_str(), tmp);
+      sessionFilename = tmp;
 
       realpath(db.get("REAR_ROOT", rearRoot).c_str(), tmp);
       rearRoot = tmp;

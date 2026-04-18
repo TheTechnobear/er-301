@@ -9,6 +9,13 @@ src_dirs := $(program_dir) $(hal_dir) $(arch_dir)/$(ARCH) $(od_dir) $(ti_dir)
 includes += $(program_dir) $(lua_dir) $(lodepng_dir) $(miniz_dir) $(libs_dir)/SDL_FontCache
 includes += emu/od/glue
 
+# Set WITH_FFTW_EMU=0 to build emu without FFTW (uses stub FFT backend).
+WITH_FFTW_EMU ?= 1
+
+# Optional external FFTW staging root with include/ and lib/ subdirs.
+# Example: FFTW_STAGE_ROOT=$(PWD)/testing/linux/fftw3/usr
+FFTW_STAGE_ROOT ?=
+
 libraries :=
 libraries += $(libs_build_dir)/lib$(lua_name).a
 libraries += $(libs_build_dir)/liblodepng.a
@@ -17,6 +24,14 @@ libraries += $(libs_build_dir)/libminiz.a
 # Recursive search for source files
 cpp_sources := $(foreach D,$(src_dirs),$(call rwildcard,$D,*.cpp)) 
 c_sources := $(foreach D,$(src_dirs),$(call rwildcard,$D,*.c)) 
+
+ifeq ($(WITH_FFTW_EMU),0)
+symbols += EMU_NO_FFTW
+c_sources := $(filter-out emu/hal/fft.c,$(c_sources))
+c_sources += emu/hal/fft_stub.c
+else
+c_sources := $(filter-out emu/hal/fft_stub.c,$(c_sources))
+endif
 
 objects := $(addprefix $(out_dir)/,$(c_sources:%.c=%.o) $(cpp_sources:%.cpp=%.o)) 
 
@@ -39,13 +54,28 @@ endif
 # Locate our deps using brew
 sdl2 := $(shell brew --prefix sdl2)
 sdl2_ttf := $(shell brew --prefix sdl2_ttf)
+ifeq ($(WITH_FFTW_EMU),1)
 fftw := $(shell brew --prefix fftw)
+endif
 
 CFLAGS += -rdynamic
+ifeq ($(WITH_FFTW_EMU),1)
 CFLAGS += -I$(sdl2)/include -I$(sdl2)/include/SDL2 -I$(sdl2_ttf)/include -I$(fftw)/include
-CFLAGS += $(ARCH_FLAGS)
-LFLAGS += -L$(sdl2)/lib -L$(sdl2_ttf)/lib -L$(fftw)/lib
+else
+CFLAGS += -I$(sdl2)/include -I$(sdl2)/include/SDL2 -I$(sdl2_ttf)/include
 endif
+CFLAGS += $(ARCH_FLAGS)
+ifeq ($(WITH_FFTW_EMU),1)
+LFLAGS += -L$(sdl2)/lib -L$(sdl2_ttf)/lib -L$(fftw)/lib
+else
+LFLAGS += -L$(sdl2)/lib -L$(sdl2_ttf)/lib
+endif
+endif
+endif
+
+ifneq ($(FFTW_STAGE_ROOT),)
+CFLAGS += -I$(FFTW_STAGE_ROOT)/include
+LFLAGS += -L$(FFTW_STAGE_ROOT)/lib -Wl,-rpath-link,$(FFTW_STAGE_ROOT)/lib
 endif
 
 ifeq ($(CROSS_COMPILE_EMU),1)
@@ -55,7 +85,11 @@ endif
 
 CFLAGS += -DFIRMWARE_VERSION=\"$(FIRMWARE_VERSION)\"
 CFLAGS += -DBUILD_PROFILE=\"$(PROFILE)\"
-LFLAGS += -lSDL2 -lSDL2_ttf -lfftw3f -lm -ldl -lstdc++ 
+LFLAGS += -lSDL2 -lSDL2_ttf
+ifeq ($(WITH_FFTW_EMU),1)
+LFLAGS += -lfftw3f
+endif
+LFLAGS += -lm -ldl -lstdc++ 
 
 all: $(out_dir)/$(program_name).elf
 

@@ -99,17 +99,19 @@ emu-clean:
 	+$(MAKE) -f scripts/lodepng.mk clean
 	+$(MAKE) -f scripts/emu.mk clean
 
+FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3/usr
+
 emu-cross:
 	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/lua.mk
 	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/miniz.mk
 	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/lodepng.mk
-	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/emu.mk
+	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/emu.mk
 
 emu-cross-clean:
 	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/lua.mk clean
 	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/miniz.mk clean
 	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/lodepng.mk clean
-	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 -f scripts/emu.mk clean
+	+$(MAKE) ARCH=linux CROSS_COMPILE_EMU=1 FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/emu.mk clean
 
 dist-clean:
 	rm -rf testing debug release

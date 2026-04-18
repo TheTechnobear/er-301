@@ -62,6 +62,8 @@ namespace emu
     static const char *fontFiles[] = {
         "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
         "libs/SDL_FontCache/test/fonts/FreeSans.ttf",
+        "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
         NULL};
     auto i = fontMap.find(size);
     if (i == fontMap.end())
