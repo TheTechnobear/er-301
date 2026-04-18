@@ -240,16 +240,14 @@ Examples:
 
 ```bash
 export BUILDROOT=/path/to/arm-rockchip-linux-gnueabihf_sdk-buildroot
-make emu
-make core
+make emu-cross
 ```
 
 or, if you keep only `SSP_BUILDROOT` exported:
 
 ```bash
 export BUILDROOT=$SSP_BUILDROOT
-make emu
-make core
+make emu-cross
 ```
 
 ### Missing SDL2/SDL2_ttf/fftw during link
@@ -259,7 +257,11 @@ Confirm the target sysroot includes:
 - `usr/include/SDL2`
 - `usr/lib/libSDL2*`
 - `usr/lib/libSDL2_ttf*`
-- `usr/lib/libfftw3f*`
+
+Also confirm FFTW is staged locally and visible via `FFTW_STAGE_ROOT`:
+
+- `testing/linux/fftw3/usr/include/fftw3.h`
+- `testing/linux/fftw3/usr/lib/libfftw3f.a`
 
 ### Missing fftw3.h during compile
 

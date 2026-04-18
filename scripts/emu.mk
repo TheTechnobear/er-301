@@ -75,7 +75,10 @@ endif
 
 ifneq ($(FFTW_STAGE_ROOT),)
 CFLAGS += -I$(FFTW_STAGE_ROOT)/include
-LFLAGS += -L$(FFTW_STAGE_ROOT)/lib -Wl,-rpath-link,$(FFTW_STAGE_ROOT)/lib
+LFLAGS += -L$(FFTW_STAGE_ROOT)/lib
+ifeq ($(CROSS_COMPILE),1)
+LFLAGS += -Wl,-rpath-link,$(FFTW_STAGE_ROOT)/lib
+endif
 endif
 
 ifeq ($(CROSS_COMPILE),1)
