@@ -35,3 +35,21 @@ Synthor and ER301 are two complex beasts already, combining is possibly a bit of
 
 
 
+# Observations
+
+we can change the screen display size, but not the size of the windows, in hal/display.h we have 
+```c++
+#define MAIN_HORIZONTAL_PIXELS 256
+#define MAIN_VERTICAL_PIXELS 64
+```
+
+changing these e.g. double dosn't work, you just get the display twice.
+I suspect this is due to graphics/MainFrameBuffer.cpp encoding a particular size framebuffer...
+which is then rendered on to the surface.
+
+
+Fonts are made available via Windows.cpp:54, these are only used for labels, they are not used in the main display.
+(these labels are obviously on the hardware panel, so the only 'fonts' used in the hardware are for the windows)
+
+The Windows are drawn via the framebuffer as bitmaps from selection of fonts and sizes. od/graphics/fonts,
+limited sizes as not truetype, and not something we could easily override

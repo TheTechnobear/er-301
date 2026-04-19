@@ -10,36 +10,28 @@ namespace ssp
   {
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");
 
-    window = SDL_CreateWindow("ER-301 on SSP",
-                              SDL_WINDOWPOS_UNDEFINED,
-                              SDL_WINDOWPOS_UNDEFINED,
-                              SCREEN_WIDTH, SCREEN_HEIGHT,
-                              SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow(
+      "ER-301 on SSP", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (window == NULL)
     {
       logFatal("Window could not be created! SDL_Error: %s\n", SDL_GetError());
     }
 
-    renderer = SDL_CreateRenderer(window, -1,
-                                  SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (renderer == NULL)
     {
       logFatal("Renderer could not be created! SDL Error: %s", SDL_GetError());
     }
 
-    mainTexture = SDL_CreateTexture(renderer,
-                                    SDL_PIXELFORMAT_RGBA8888,
-                                    SDL_TEXTUREACCESS_STREAMING,
-                                    MAIN_HORIZONTAL_PIXELS, MAIN_VERTICAL_PIXELS);
+    mainTexture = SDL_CreateTexture(
+      renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, MAIN_HORIZONTAL_PIXELS, MAIN_VERTICAL_PIXELS);
     if (mainTexture == NULL)
     {
       logFatal("Failed to create main texture: %s", SDL_GetError());
     }
 
-    subTexture = SDL_CreateTexture(renderer,
-                                   SDL_PIXELFORMAT_RGBA8888,
-                                   SDL_TEXTUREACCESS_STREAMING,
-                                   SUB_HORIZONTAL_PIXELS, SUB_VERTICAL_PIXELS);
+    subTexture = SDL_CreateTexture(
+      renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SUB_HORIZONTAL_PIXELS, SUB_VERTICAL_PIXELS);
     if (subTexture == NULL)
     {
       logFatal("Failed to create sub texture: %s", SDL_GetError());
@@ -59,12 +51,11 @@ namespace ssp
 
   FC_Font *Window::getFont(int size)
   {
-    static const char *fontFiles[] = {
-        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        "libs/SDL_FontCache/test/fonts/FreeSans.ttf",
-        "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        NULL};
+    static const char *fontFiles[] = { "libs/SDL_FontCache/test/fonts/FreeSans.ttf",
+                                       "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+                                       "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
+                                       "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+                                       NULL };
     auto i = fontMap.find(size);
     if (i == fontMap.end())
     {
@@ -110,7 +101,7 @@ namespace ssp
 #else
   void Window::drawText(int x, int y, int size, const char *fmt, ...)
   {
-    FC_Scale scale{.x = 1.0f / OVERSAMPLE, .y = 1.0f / OVERSAMPLE};
+    FC_Scale scale{ .x = 1.0f / OVERSAMPLE, .y = 1.0f / OVERSAMPLE };
     FC_Font *font = getFont(size * OVERSAMPLE);
     if (font == NULL)
     {
@@ -219,17 +210,17 @@ namespace ssp
     }
     pauseDisplayTime = 0;
 
-    knob.draw(this);
+    // knob.draw(this);
 
-    for (Button &o : buttons)
-    {
-      o.draw(this);
-    }
+    // for (Button &o : buttons)
+    // {
+    //   o.draw(this);
+    // }
 
-    for (Jack &o : jacks)
-    {
-      o.draw(this);
-    }
+    // for (Jack &o : jacks)
+    // {
+    //   o.draw(this);
+    // }
 
     for (Toggle &o : toggles)
     {
@@ -246,12 +237,12 @@ namespace ssp
     renderSubFrame(subFrame);
     SDL_RenderCopy(renderer, subTexture, NULL, &subRect);
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderDrawRect(renderer, &mainOutlineRect);
-    SDL_RenderDrawRect(renderer, &subOutlineRect);
-    SDL_RenderDrawRect(renderer, &panelOutlineRect);
-    SDL_RenderDrawRect(renderer, &storageOutlineRect);
-    SDL_RenderDrawRect(renderer, &abcdOutlineRect);
+    // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    // SDL_RenderDrawRect(renderer, &mainOutlineRect);
+    // SDL_RenderDrawRect(renderer, &subOutlineRect);
+    // SDL_RenderDrawRect(renderer, &panelOutlineRect);
+    // SDL_RenderDrawRect(renderer, &storageOutlineRect);
+    // SDL_RenderDrawRect(renderer, &abcdOutlineRect);
 
 #ifdef DISPLAY_FRAMERATE
     static int frameCount = 0;

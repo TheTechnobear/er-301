@@ -21,10 +21,11 @@ CompileFlags:
     - "-I./emu"
     # Project includes (absolute fallback for VS Code)
     - "-I/Users/kodiak/projects/er-301"
-    # - "-I/Users/kodiak/projects/er-301/ssp"
-    # - "-I/Users/kodiak/projects/er-301/od"
-    # - "-I/Users/kodiak/projects/er-301/hal"
-    # - "-I/Users/kodiak/projects/er-301/arch/darwin"
+    - "-I/Users/kodiak/projects/er-301/libs/darwin"
+    - "-I/Users/kodiak/projects/er-301/libs/lua54"
+    - "-I/Users/kodiak/projects/er-301/libs/lodepng"
+    - "-I/Users/kodiak/projects/er-301/libs/miniz"
+    - "-I/Users/kodiak/projects/er-301/libs/SDL_FontCache"
     # Brew dependencies (macOS)
     - "-I/opt/homebrew/opt/sdl2/include"
     - "-I/opt/homebrew/opt/sdl2/include/SDL2"

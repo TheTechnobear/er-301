@@ -11,6 +11,17 @@
       "stopAtEntry": false,
       "MIMode": "lldb",
       "preLaunchTask": "Make: build ssp"
+    },
+    {
+      "name": "Debug EMU (build)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/testing/darwin/emu/emu.elf",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "Make: build emu"
     }
   ]
 }

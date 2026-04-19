@@ -6,8 +6,16 @@ namespace ssp
 {
   const int OVERSAMPLE = 4;
 
-  const int SCREEN_WIDTH = 505;
-  const int SCREEN_HEIGHT = 370;
+#if __APPLE__
+  const int SCREEN_WIDTH = 1600;
+  const int SCREEN_HEIGHT = 480;
+#elif defined(TARGET_SSP)
+  const int SCREEN_WIDTH = 1600;
+  const int SCREEN_HEIGHT = 480;
+#else
+  const int SCREEN_WIDTH = 1600;
+  const int SCREEN_HEIGHT = 480;
+#endif
   const int SCREEN_BRIGHTNESS = 15; // 1-16
   const float SCREEN_TINT = 0.85f;
 

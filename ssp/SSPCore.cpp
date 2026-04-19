@@ -4,8 +4,8 @@
 #include <ssp/KeyValueStore.h>
 #include <od/glue/AppInterpreter.h>
 #include <od/extras/Random.h>
-//#define BUILDOPT_VERBOSE
-//#define BUILDOPT_DEBUG_LEVEL 5
+// #define BUILDOPT_VERBOSE
+// #define BUILDOPT_DEBUG_LEVEL 5
 #include <hal/log.h>
 #include <hal/timing.h>
 #include <hal/heap.h>
@@ -221,7 +221,7 @@ namespace ssp
 
     if (e.state == SDL_RELEASED)
     {
-      SDL_Rect storage{.x = T_STORAGE_X, .y = T_STORAGE_Y, .w = TOGGLE_W, .h = TOGGLE_H};
+      SDL_Rect storage{ .x = T_STORAGE_X, .y = T_STORAGE_Y, .w = TOGGLE_W, .h = TOGGLE_H };
       if (hit(e.x, e.y, storage))
       {
         float p = (e.y - T_STORAGE_Y) / (float)TOGGLE_H;
@@ -229,7 +229,7 @@ namespace ssp
         return;
       }
 
-      SDL_Rect mode{.x = T_MODE_X, .y = T_MODE_Y, .w = TOGGLE_W, .h = TOGGLE_H};
+      SDL_Rect mode{ .x = T_MODE_X, .y = T_MODE_Y, .w = TOGGLE_W, .h = TOGGLE_H };
       if (hit(e.x, e.y, mode))
       {
         float p = (e.y - T_MODE_Y) / (float)TOGGLE_H;
@@ -248,7 +248,7 @@ namespace ssp
       tick_t start = wallclock();
       SDL_Event e;
       Pump_resetThrottle();
-      //SDL_WaitEventTimeout(0, delay);
+      // SDL_WaitEventTimeout(0, delay);
       if (delay > 0)
       {
         SDL_Delay(delay);
@@ -363,6 +363,14 @@ namespace ssp
 
   bool SSPCore::writeDefaultConfiguration(const std::string &filename)
   {
+#if defined(TARGET_SSP)
+    const std::string prefix = "/media/BOOT/er301";
+    const std::string xroot = prefix + "/xroot";
+#else
+    const std::string prefix = "~/.ssp";
+    const std::string xroot = "./xroot";
+#endif
+
     std::ofstream f;
     f.open(filename);
     if (!f.is_open())
@@ -373,17 +381,17 @@ namespace ssp
     f << "## Uncomment lines below to set your own values.\n";
     f << '\n';
     f << "## Root for the Lua interpreter\n";
-    f << "# XROOT ./xroot\n";
+    f << "# XROOT " + xroot + "\n";
     f << '\n';
     f << "## Session state file\n";
-    f << "# SESSION ~/.ssp/ssp.session\n";
+    f << "# SESSION " + prefix + "/ssp.session\n";
     f << '\n';
     f << "## Use this root for the rear SD card.\n";
-    f << "# REAR_ROOT ~/.ssp/rear\n";
+    f << "# REAR_ROOT  " + prefix + "/rear\n";
     f << "# REAR_PRESENT true\n";
     f << '\n';
     f << "## Use this root for the front SD card.\n";
-    f << "# FRONT_ROOT ~/.ssp/front\n";
+    f << "# FRONT_ROOT " + prefix + "/front\n";
     f << "# FRONT_PRESENT true\n";
     f << '\n';
     f << "## Key mapping\n";
@@ -432,9 +440,16 @@ namespace ssp
   void SSPCore::loadDefaultConfiguration()
   {
     char tmp[PATH_MAX];
+#if defined(TARGET_SSP)
+    const std::string prefix = "/media/BOOT/er301";
+    const std::string xroot = prefix + "/xroot";
+#else
+    const std::string prefix = "~/.ssp";
+    const std::string xroot = "./xroot";
+#endif
 
     // Set default paths
-    realpathEx("~/.ssp", tmp);
+    realpathEx(prefix.c_str(), tmp);
     configRoot = tmp;
     createDirectory(tmp);
     rearRoot = configRoot + "/rear";
@@ -443,7 +458,7 @@ namespace ssp
     frontCardPresent = true;
     sessionFilename = configRoot + "/ssp.session";
     configFilename = configRoot + "/ssp.config";
-    realpathEx("./xroot", tmp);
+    realpathEx(xroot.c_str(), tmp);
     xRoot = tmp;
 
     // Set default key map
@@ -665,8 +680,8 @@ namespace ssp
     interp.init();
     interp.execute("package.path = '%s/?.lua;%s/?/init.lua'", globalConfig.xRoot, globalConfig.xRoot);
     interp.execute("app.EMULATION = true");
-    interp.execute("app.roots = {x='%s',rear='%s',front='%s'}",
-                   globalConfig.xRoot, globalConfig.rearRoot, globalConfig.frontRoot);
+    interp.execute(
+      "app.roots = {x='%s',rear='%s',front='%s'}", globalConfig.xRoot, globalConfig.rearRoot, globalConfig.frontRoot);
     interp.execute("dofile('%s/boot/logging.lua')", globalConfig.xRoot);
     interp.execute("dofile('%s/boot/start.lua')", globalConfig.xRoot);
     return 0;
@@ -752,25 +767,25 @@ namespace ssp
     readyQ.push(&pong);
     Events_push(EVENT_DISPLAY_READY);
 
-    buttonHitMap[BUTTON_MAIN1] = {.x = MB1_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_MAIN2] = {.x = MB2_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_MAIN3] = {.x = MB3_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_MAIN4] = {.x = MB4_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_MAIN5] = {.x = MB5_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_MAIN6] = {.x = MB6_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_DIAL1] = {.x = MB1_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_DIAL2] = {.x = MB2_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_DIAL3] = {.x = MB3_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_SUB1] = {.x = MB4_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_SUB2] = {.x = MB5_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_SUB3] = {.x = MB6_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_ENTER] = {.x = MB4_X, .y = HB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_UP] = {.x = MB5_X, .y = HB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_SHIFT] = {.x = MB6_X, .y = HB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_SELECT1] = {.x = JB1_X, .y = JB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_SELECT2] = {.x = JB1_X, .y = JB2_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_SELECT3] = {.x = JB1_X, .y = JB3_Y, .w = BUTTON_W, .h = BUTTON_H};
-    buttonHitMap[BUTTON_SELECT4] = {.x = JB1_X, .y = JB4_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_MAIN1] = {.x = MB1_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_MAIN2] = {.x = MB2_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_MAIN3] = {.x = MB3_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_MAIN4] = {.x = MB4_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_MAIN5] = {.x = MB5_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_MAIN6] = {.x = MB6_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_DIAL1] = {.x = MB1_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_DIAL2] = {.x = MB2_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_DIAL3] = {.x = MB3_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_SUB1] = {.x = MB4_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_SUB2] = {.x = MB5_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_SUB3] = {.x = MB6_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_ENTER] = {.x = MB4_X, .y = HB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_UP] = {.x = MB5_X, .y = HB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_SHIFT] = {.x = MB6_X, .y = HB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_SELECT1] = {.x = JB1_X, .y = JB1_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_SELECT2] = {.x = JB1_X, .y = JB2_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_SELECT3] = {.x = JB1_X, .y = JB3_Y, .w = BUTTON_W, .h = BUTTON_H};
+    // buttonHitMap[BUTTON_SELECT4] = {.x = JB1_X, .y = JB4_Y, .w = BUTTON_W, .h = BUTTON_H};
 
     restoreState();
 

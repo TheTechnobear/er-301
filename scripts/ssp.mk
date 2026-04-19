@@ -65,6 +65,7 @@ endif
 endif
 
 ifeq ($(CROSS_COMPILE),1)
+symbols += TARGET_SSP
 CFLAGS += -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/SDL2
 LFLAGS += -L$(SYSROOT)/usr/lib -Wl,-rpath-link,$(SYSROOT)/usr/lib
 endif
