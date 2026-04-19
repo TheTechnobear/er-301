@@ -1,0 +1,21 @@
+{
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/testing/darwin/compile_commands.json",
+  "clangd.enabled": true,
+  "clangd.arguments": [
+    "--compile-commands-dir=testing/darwin",
+    "--header-insertion=iwyu",
+    "--clang-tidy"
+  ],
+  "[c]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+    "editor.formatOnSave": true
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+    "editor.formatOnSave": true
+  },
+  "files.exclude": {
+    ".cache/**": true,
+    "testing*/**": true
+  }
+}

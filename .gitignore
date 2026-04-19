@@ -1,7 +1,5 @@
 ## ignored folders
 
-# vscode
-.vscode/
 
 # build folders
 testing/
@@ -48,3 +46,5 @@ tmp/
 .DS_Store
 
 .build/
+.cache/
+.local/

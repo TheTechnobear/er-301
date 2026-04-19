@@ -1,0 +1,39 @@
+# Clangd configuration for Darwin/macOS development only
+# Used for SSP emulator development and general C/C++ code editing
+# Not needed for cross-compile targets (firmware, etc.)
+
+CompileFlags:
+  Add:
+    - "-march=armv8.2-a"
+    - "-rdynamic"
+    - "-DFIRMWARE_VERSION=dev"
+    - "-DBUILD_PROFILE=debug"
+    # Project includes (relative)
+    - "-I."
+    - "-I./ssp"
+    - "-I./od"
+    - "-I./hal"
+    - "-I./arch/darwin"
+    - "-I./libs/lua54"
+    - "-I./libs/lodepng"
+    - "-I./libs/miniz"
+    - "-I./libs/SDL_FontCache"
+    - "-I./emu"
+    # Project includes (absolute fallback for VS Code)
+    - "-I/Users/kodiak/projects/er-301"
+    # - "-I/Users/kodiak/projects/er-301/ssp"
+    # - "-I/Users/kodiak/projects/er-301/od"
+    # - "-I/Users/kodiak/projects/er-301/hal"
+    # - "-I/Users/kodiak/projects/er-301/arch/darwin"
+    # Brew dependencies (macOS)
+    - "-I/opt/homebrew/opt/sdl2/include"
+    - "-I/opt/homebrew/opt/sdl2/include/SDL2"
+    - "-I/opt/homebrew/opt/sdl2_ttf/include"
+    - "-I/opt/homebrew/opt/fftw/include"
+  Compiler: clang++
+
+InlayHints:
+  Enabled: true
+
+Hover:
+  ShowAKA: true
