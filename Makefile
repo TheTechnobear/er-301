@@ -99,6 +99,18 @@ emu-clean:
 	+$(MAKE) -f scripts/lodepng.mk clean
 	+$(MAKE) -f scripts/emu.mk clean
 
+ssp: 
+	+$(MAKE) -f scripts/lua.mk
+	+$(MAKE) -f scripts/miniz.mk
+	+$(MAKE) -f scripts/lodepng.mk
+	+$(MAKE) FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/ssp.mk
+
+ssp-clean: 
+	+$(MAKE) -f scripts/lua.mk clean
+	+$(MAKE) -f scripts/miniz.mk clean
+	+$(MAKE) -f scripts/lodepng.mk clean
+	+$(MAKE) -f scripts/ssp.mk clean
+
 FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3/usr
 
 dist-clean:
@@ -107,4 +119,4 @@ dist-clean:
 	+$(MAKE) -C tutorial/step2 dist-clean
 	+$(MAKE) -C tutorial/step3 dist-clean
 
-.PHONY: app sbl pbl emu
+.PHONY: app sbl pbl emu ssp ssp-clean

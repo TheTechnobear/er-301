@@ -1,13 +1,13 @@
 include scripts/env.mk
 include scripts/utils.mk
 
-program_name := emu
+program_name := ssp
 program_dir := $(program_name)
 out_dir := $(build_dir)/$(program_name)
 
 src_dirs := $(program_dir) $(hal_dir) $(arch_dir)/$(ARCH) $(od_dir) $(ti_dir)
 includes += $(program_dir) $(lua_dir) $(lodepng_dir) $(miniz_dir) $(libs_dir)/SDL_FontCache
-includes += emu/od/glue
+includes += $(program_name)/od/glue
 
 
 # Optional external FFTW staging root with include/ and lib/ subdirs.
@@ -23,7 +23,7 @@ libraries += $(libs_build_dir)/libminiz.a
 cpp_sources := $(foreach D,$(src_dirs),$(call rwildcard,$D,*.cpp)) 
 c_sources := $(foreach D,$(src_dirs),$(call rwildcard,$D,*.c)) 
 
-c_sources := $(filter-out emu/hal/fft_stub.c,$(c_sources))
+c_sources := $(filter-out $(program_name)/hal/fft_stub.c,$(c_sources))
 
 objects := $(addprefix $(out_dir)/,$(c_sources:%.c=%.o) $(cpp_sources:%.cpp=%.o)) 
 
@@ -50,6 +50,7 @@ fftw := $(shell brew --prefix fftw)
 
 CFLAGS += -rdynamic
 CFLAGS += -I$(sdl2)/include -I$(sdl2)/include/SDL2 -I$(sdl2_ttf)/include -I$(fftw)/include
+
 CFLAGS += $(ARCH_FLAGS)
 LFLAGS += -L$(sdl2)/lib -L$(sdl2_ttf)/lib -L$(fftw)/lib
 endif
@@ -76,7 +77,7 @@ LFLAGS += -lm -ldl -lstdc++
 
 all: $(out_dir)/$(program_name).elf
 
-$(objects): scripts/env.mk scripts/emu.mk
+$(objects): scripts/env.mk scripts/ssp.mk
 
 $(out_dir)/$(program_name).elf: $(objects) $(libraries)
 	@mkdir -p $(@D)	

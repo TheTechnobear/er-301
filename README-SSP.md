@@ -2,10 +2,48 @@
 
 This document describes how to cross-compile the ER-301 emulator (`emu`) from macOS (Apple Silicon) to Linux/ARM using the SSP SDK/buildroot toolchain.
 
+Important Note: 
+it appears, for now at least, the ER-301 is no longer in production and being developed.
+so its unlikey, I would push this back to the upstream repo, as it doesnt make much sense.
+frankly, its quite likely this is not something the original dev would wish for.
+if the **original** dev requested, I would be happy to push it upstream, but otherwise I will not.
+
+overtime, its likley this will turn increasingly into a 'derivitivte' projected, allowed under the original project's MIT License.
+
+Thanks and Kudos to OD's devs for making this possible and generously making the project open source.
+
+
+## Table of Contents
+
+- [Scope](#scope)
+- [Host and Target](#host-and-target)
+- [Toolchain Values](#toolchain-values)
+- [Prerequisites](#prerequisites)
+- [Environment](#environment)
+- [Git Tags and Build Versions](#git-tags-and-build-versions)
+- [Quick Start (Normal Flow)](#quick-start-normal-flow)
+- [Advanced Build Options](#advanced-build-options)
+- [Development Notes](#development-notes)
+  - [Project-Local FFTW Staging](#project-local-fftw-staging)
+  - [Runtime Libraries (Reference)](#runtime-libraries-reference)
+- [Font Configuration](#font-configuration)
+- [Troubleshooting](#troubleshooting)
+  - [Error: `CROSS_COMPILE=1 requires BUILDROOT`](#error-cross_compile1-requires-buildroot)
+  - [Missing SDL2/SDL2_ttf/fftw during link](#missing-sdl2sdl2_ttffftw-during-link)
+  - [Missing fftw3.h during compile](#missing-fftw3h-during-compile)
+  - [Status (2026-04-18): Cross-Build Working](#status-2026-04-18-cross-build-working)
+  - [LLVM tools not found](#llvm-tools-not-found)
+- [3rd Party Modules](#3rd-party-modules)
+  - [er301 sdk](#er301-sdk)
+  - [Updating tutorial.mk-style Module Makefiles](#updating-tutorialmk-style-module-makefiles)
+
 ## Scope
 
-- Target covered here: emulator (`emu`) only.
+- Target covered here: emulator (`emu`) and modules (`core`) for SSP only
 - Hardware firmware targets (`am335x`, `firmware`, etc.) are not covered.
+
+see `./README.md` for more general details
+see `./ssp/SSP.md` for the SSP specific UI and integration implmentation
 
 ## Host and Target
 
@@ -45,6 +83,7 @@ Notes:
 - Cross auto-detection now uses `BUILDROOT` only.
 - Keeping `SSP_BUILDROOT` set does not force cross mode.
 - To cross-build using an existing `SSP_BUILDROOT`, run: `export BUILDROOT=$SSP_BUILDROOT`.
+-  the xcSSP.cmake-ref-only was used as a reference that I use with cmake on other projects, it servers no purpose here
 
 Optional overrides:
 
@@ -152,7 +191,7 @@ LD_LIBRARY_PATH=/media/BOOT/er301 /media/BOOT/er301/er301.elf -c /media/BOOT/er3
 Notes:
 
 - With `BUILDROOT` set, `make emu` auto-selects Linux cross mode (`ARCH=linux`, `CROSS_COMPILE=1`).
-- FFTW is enabled by default (`WITH_FFTW_EMU=1`) and uses staged files from `testing/linux/fftw3/usr`.
+- FFTW uses staged files from `testing/linux/fftw3/usr`.
 
 ## Advanced Build Options
 
@@ -199,7 +238,6 @@ When `CROSS_COMPILE=1`:
 - `PKG_CONFIG_*` environment variables are set for sysroot-aware dependency resolution.
 - Linux emulator CFLAGS switch from x86 (`-msse4`) to ARM (`-mcpu=cortex-a17 -mfloat-abi=hard -mfpu=neon-vfpv4`).
 - Emulator include/library paths add `$(SYSROOT)/usr/include`, `$(SYSROOT)/usr/include/SDL2`, and `$(SYSROOT)/usr/lib`.
-- `WITH_FFTW_EMU=0` switches emu to a stub FFT backend and omits `-lfftw3f`.
 - `FFTW_STAGE_ROOT=/path/to/stage/usr` adds `-I.../include` and `-L.../lib` for FFTW without touching sysroot.
 
 ### Project-Local FFTW Staging
@@ -359,7 +397,7 @@ Then re-run:
 ```bash
 DESTDIR=$PWD/testing/linux/fftw3 ./scripts/build-fftw-cross.sh
 ```
-## 3rd party modules
+## 3rd Party Modules
 
 if you wish to compile a 3rd party module a number of changes will need to be made.
 I cannot detail exactly what changes are required, as it depends on how the developer used the er301 SDK, and what changes they made exactly.
