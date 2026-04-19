@@ -89,10 +89,11 @@ Note: the `upstream` remote is local Git config in your clone. Other developers 
 
 This is the default path for day-to-day use.
 
-### 1. Set BUILDROOT
+### 1. Set BUILDROOT and build fftw3
 
 ```bash
 export BUILDROOT=/path/to/your/arm-rockchip-linux-gnueabihf_sdk-buildroot
+DESTDIR=$PWD/testing/linux/fftw3 ./scripts/build-fftw-cross.sh
 ```
 
 ### 2. Build emulator
@@ -382,7 +383,28 @@ however, they will likely use a wrapper, similar to the SDKs tutorial.mk or env.
 this is where we setup the CROSS_COMPILE flag used by linux.mk, and some other settings.
 below, are details of the changes, based on what was done for env.mk, emu.mk and tutorial.mk.
 
-1. In the Linux block, (`ifeq ($(ARCH),linux)`),
+1. auto switching to cross compile and linux
+change architure detection, see how we force to linux if BUILDROOT env is set
+
+```Makefile
+ifndef ARCH
+	# If a Buildroot SDK path is provided explicitly, assume linux emu cross-compile.
+	ifneq ($(strip $(BUILDROOT)),)
+		ARCH = linux
+	else
+  SYSTEM_NAME := $(shell uname -s)
+  ifeq ($(SYSTEM_NAME),Linux)
+    ARCH = linux
+  else ifeq ($(SYSTEM_NAME),Darwin)
+    ARCH = darwin
+  else
+    $(error Unsupported system $(SYSTEM_NAME))
+  endif
+	endif
+endif
+```
+
+2. In the Linux block, (`ifeq ($(ARCH),linux)`),
 
 a) add `CROSS_COMPILE ?= auto` and resolve `auto` to `1` when `BUILDROOT` is set, else `0`.
 
@@ -410,7 +432,7 @@ endif
 
 c)  finally it will include `scripts/linux.mk` 
 
-2. after, look for the swig compiler flags,
+3. after, look for the swig compiler flags,
 (this may not be required, depends on module)
 a) Make SWIG compile flags inherit full `CFLAGS` (size-optimized), so cross sysroot/include additions from `linux.mk` are preserved.
 ```Makefile

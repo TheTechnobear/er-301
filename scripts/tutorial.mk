@@ -3,6 +3,10 @@
 # Determine ARCH if it's not provided...
 # linux | darwin | am335x
 ifndef ARCH
+	# If a Buildroot SDK path is provided explicitly, assume linux emu cross-compile.
+	ifneq ($(strip $(BUILDROOT)),)
+		ARCH = linux
+	else
   SYSTEM_NAME := $(shell uname -s)
   ifeq ($(SYSTEM_NAME),Linux)
     ARCH = linux
@@ -11,6 +15,7 @@ ifndef ARCH
   else
     $(error Unsupported system $(SYSTEM_NAME))
   endif
+	endif
 endif
 
 out_dir = $(PROFILE)/$(ARCH)
@@ -68,7 +73,7 @@ endif
 ifeq ($(ARCH),darwin)
 INSTALLPATH.darwin = $(HOME)/.od/rear
 CFLAGS.darwin = -Wno-deprecated-declarations -march=native -fPIC
-LFLAGS = -dynamic -undefined dynamic_lookup -lSystem
+LFLAGS = -shared -dynamic -undefined dynamic_lookup
 includes += $(SDKPATH)/emu
 include $(SDKPATH)/scripts/darwin.mk
 endif
