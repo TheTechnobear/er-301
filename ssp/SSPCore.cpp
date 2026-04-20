@@ -527,6 +527,13 @@ namespace ssp
         b.key = key;
       }
     }
+    for (Encoder &e : window->encoders)
+    {
+      if (id == e.id)
+      {
+        e.key = key;
+      }
+    }
   }
 
   static int interpreterThreadStart(void *ptr)

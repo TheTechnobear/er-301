@@ -27,9 +27,12 @@ the workflow etc, will initally be retained, buttons and encoders wil however be
 alternatives? 
 Juce - too heavy, many dependancies
 rt_audio  - like traxhost, rtaudio for audio + SDL for display (only use SDL on mac, also for keyinput)
-rt_audio + nanoSVG, to ditch SDL
+rt_audio + somthing else, to ditch SDL
 
-think rt_audio + SDL for initial tests, then move to nanoSVG
+think rt_audio + SDL for initial test
+
+using 
+https://github.com/tsoding/olive.c
 
 
 

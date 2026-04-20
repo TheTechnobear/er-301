@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ssp/constants.h>
-#include <SDL2/SDL.h>
 #include <stdint.h>
 #include <string>
 #include <hal/gpio.h>

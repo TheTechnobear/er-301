@@ -1,10 +1,31 @@
+#include "constants.h"
 #include <ssp/Window.h>
-#include <ssp/draw.h>
+#include <ssp/olive_bridge.h>
 #include <hal/log.h>
 #include <hal/timing.h>
 
 namespace ssp
 {
+  static inline uint32_t grayColor(int value)
+  {
+    return SSP_RGBA(value, (int)(value * SCREEN_TINT), 0, 255);
+  }
+
+  static inline void renderPanelOverlay(Window &window, Olivec_Canvas canvas)
+  {
+    // SSP panel.
+    // olivec_rect(canvas, 0, 0, SCREEN_WIDTH - 150, SCREEN_HEIGHT - 180 , SSP_RGBA(5, 5, 5, 255));
+
+    for (const Encoder &encoder : window.encoders)
+    {
+      encoder.render(canvas);
+    }
+
+    for (const Button &button : window.buttons)
+    {
+      button.render(canvas);
+    }
+  }
 
   Window::Window()
   {
@@ -23,112 +44,32 @@ namespace ssp
       logFatal("Renderer could not be created! SDL Error: %s", SDL_GetError());
     }
 
-    mainTexture = SDL_CreateTexture(
-      renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, MAIN_HORIZONTAL_PIXELS, MAIN_VERTICAL_PIXELS);
-    if (mainTexture == NULL)
+    windowTexture = SDL_CreateTexture(
+      renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+    if (windowTexture == NULL)
     {
-      logFatal("Failed to create main texture: %s", SDL_GetError());
+      logFatal("Failed to create window texture: %s", SDL_GetError());
     }
 
-    subTexture = SDL_CreateTexture(
-      renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SUB_HORIZONTAL_PIXELS, SUB_VERTICAL_PIXELS);
-    if (subTexture == NULL)
-    {
-      logFatal("Failed to create sub texture: %s", SDL_GetError());
-    }
+    windowBuffer.resize(SCREEN_WIDTH * SCREEN_HEIGHT, SSP_RGBA(P_BACKGROUND, P_BACKGROUND, P_BACKGROUND, 255));
 
-    pixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+    Button::applyDefaultRectLayout(buttons);
+    Encoder::applyDefaultLayout(encoders);
   }
 
   Window::~Window()
   {
-    SDL_FreeFormat(pixelFormat);
-    SDL_DestroyTexture(mainTexture);
-    SDL_DestroyTexture(subTexture);
+    SDL_DestroyTexture(windowTexture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-  }
-
-  FC_Font *Window::getFont(int size)
-  {
-    static const char *fontFiles[] = { "libs/SDL_FontCache/test/fonts/FreeSans.ttf",
-                                       "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-                                       "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
-                                       "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-                                       NULL };
-    auto i = fontMap.find(size);
-    if (i == fontMap.end())
-    {
-      FC_Font *font = FC_CreateFont();
-      for (const char **filename = fontFiles; *filename; filename++)
-      {
-        logDebug(10, "Trying %s, size=%d", *filename, size);
-        if (FC_LoadFont(font, renderer, *filename, size, FC_MakeColor(0, 0, 0, 255), TTF_STYLE_NORMAL))
-        {
-          logDebug(10, "Loaded %s, size=%d", *filename, size);
-          fontMap[size] = font;
-          return font;
-        }
-      }
-      // Prevent further attempts;
-      logError("Could not load a font for size=%d.", size);
-      fontMap[size] = NULL;
-      return NULL;
-    }
-    else
-    {
-      return (*i).second;
-    }
-  }
-
-  void Window::drawText(int x, int y, int size, const char *fmt, ...)
-  {
-    FC_Font *font = getFont(size);
-    if (font == NULL)
-    {
-      return;
-    }
-
-    char text[512];
-    va_list lst;
-    va_start(lst, fmt);
-    vsnprintf(text, sizeof(text), fmt, lst);
-    va_end(lst);
-
-    FC_Draw(font, renderer, x, y, text);
-  }
-
-  void Window::drawTextAligned(FC_AlignEnum align, int x, int y, int size, const char *fmt, ...)
-  {
-    FC_Font *font = getFont(size);
-    if (font == NULL)
-    {
-      return;
-    }
-
-    char text[512];
-    va_list lst;
-    va_start(lst, fmt);
-    vsnprintf(text, sizeof(text), fmt, lst);
-    va_end(lst);
-
-    FC_DrawAlign(font, renderer, x, y, align, text);
-  }
-
-  void Window::drawCircle(int x, int y, int r)
-  {
-    ssp::drawCircle(renderer, x, y, r);
   }
 
   void Window::renderMainFrame(uint8_t *frame)
   {
     uint16_t *src = (uint16_t *)frame;
-    uint8_t *dst;
-    int pitch;
-    SDL_LockTexture(mainTexture, NULL, (void **)&dst, &pitch);
     for (int y = 0; y < MAIN_VERTICAL_PIXELS; y++)
     {
-      uint *row = (uint *)(dst + pitch * y);
+      uint32_t *row = &windowBuffer[(MAIN_Y + y) * SCREEN_WIDTH + MAIN_X];
       int yy = MAIN_VERTICAL_PIXELS - y - 1;
       for (int x = 0; x < MAIN_HORIZONTAL_PIXELS; x++)
       {
@@ -137,21 +78,17 @@ namespace ssp
         int shift = (((~xx) & 0b1) << 2);
         int value = (cell >> shift) & 0xF;
         value *= SCREEN_BRIGHTNESS;
-        row[x] = SDL_MapRGBA(pixelFormat, value, value * SCREEN_TINT, 0, 255);
+        row[x] = grayColor(value);
       }
     }
-    SDL_UnlockTexture(mainTexture);
   }
 
   void Window::renderSubFrame(uint8_t *frame)
   {
     uint16_t *src = (uint16_t *)frame;
-    uint8_t *dst;
-    int pitch;
-    SDL_LockTexture(subTexture, NULL, (void **)&dst, &pitch);
     for (int y = 0; y < SUB_VERTICAL_PIXELS; y++)
     {
-      uint *row = (uint *)(dst + pitch * y);
+      uint32_t *row = &windowBuffer[(SUB_Y + y) * SCREEN_WIDTH + SUB_X];
       int yy = SUB_VERTICAL_PIXELS - y - 1;
       int shift = yy & 0b111;
       for (int x = 0; x < SUB_HORIZONTAL_PIXELS; x++)
@@ -160,10 +97,9 @@ namespace ssp
         uint16_t cell = *(src + ((yy >> 3) << 7) + xx);
         int value = (cell >> shift) & 0b1;
         value *= 0xF * SCREEN_BRIGHTNESS;
-        row[x] = SDL_MapRGBA(pixelFormat, value, value * SCREEN_TINT, 0, 255);
+        row[x] = grayColor(value);
       }
     }
-    SDL_UnlockTexture(subTexture);
   }
 
   void Window::onResized(int w, int h)
@@ -177,9 +113,6 @@ namespace ssp
   {
     static tick_t timestamp = ticks();
 
-    SDL_SetRenderDrawColor(renderer, P_BACKGROUND, P_BACKGROUND, P_BACKGROUND, 255);
-    SDL_RenderClear(renderer);
-
     tick_t now = ticks();
     double t = ticks2secsD(now - timestamp);
 
@@ -190,10 +123,16 @@ namespace ssp
     }
     pauseDisplayTime = 0;
 
+    Olivec_Canvas canvas = olivec_canvas(windowBuffer.data(), SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH);
+    olivec_fill(canvas, SSP_RGBA(P_BACKGROUND, P_BACKGROUND, P_BACKGROUND, 255));
+
+    renderPanelOverlay(*this, canvas);
+
     renderMainFrame(mainFrame);
-    SDL_RenderCopy(renderer, mainTexture, NULL, &mainRect);
     renderSubFrame(subFrame);
-    SDL_RenderCopy(renderer, subTexture, NULL, &subRect);
+
+    SDL_UpdateTexture(windowTexture, NULL, windowBuffer.data(), SCREEN_WIDTH * (int)sizeof(uint32_t));
+    SDL_RenderCopy(renderer, windowTexture, NULL, NULL);
     SDL_RenderPresent(renderer);
   }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ssp/Button.h>
+#include <ssp/Encoder.h>
 #include <ssp/Toggle.h>
 #include <ssp/Led.h>
 #include <ssp/constants.h>
@@ -9,11 +10,10 @@
 #include <hal/events.h>
 
 #include <SDL2/SDL.h>
-#include <SDL_FontCache.h>
 
 #include <stdint.h>
-#include <map>
 #include <array>
+#include <vector>
 
 namespace ssp
 {
@@ -24,13 +24,8 @@ namespace ssp
 
     void onResized(int w, int h);
 
-    FC_Font *getFont(int size);
-    void drawCircle(int x, int y, int r);
-    void drawText(int x, int y, int size, const char *fmt, ...);
-    void drawTextAligned(FC_AlignEnum align, int x, int y, int size, const char *fmt, ...);
     void renderMainFrame(uint8_t *frame);
     void renderSubFrame(uint8_t *frame);
-    void setScale(float scale);
     void setPosition(int x, int y, int correction = 0);
     void getPosition(int &x, int &y);
     int getTitleBarHeight();
@@ -38,11 +33,9 @@ namespace ssp
 
     SDL_Window *window = 0;
     SDL_Renderer *renderer = 0;
-    SDL_Texture *mainTexture = 0;
-    SDL_Texture *subTexture = 0;
-    SDL_PixelFormat *pixelFormat = 0;
+    SDL_Texture *windowTexture = 0;
+    std::vector<uint32_t> windowBuffer;
 
-    std::map<int, FC_Font *> fontMap;
     SDL_Rect mainRect{ .x = MAIN_X, .y = MAIN_Y, .w = MAIN_W, .h = MAIN_H };
     SDL_Rect subRect{ .x = SUB_X, .y = SUB_Y, .w = SUB_W, .h = SUB_H };
 
@@ -56,6 +49,13 @@ namespace ssp
       Button{ "", BUTTON_SELECT4 }
     };
 
+    std::array<Encoder, 4> encoders{
+      Encoder{ "DATA", BUTTON_DIAL1 },
+      Encoder{ "OUT", 0 },
+      Encoder{ "STORE", 0 },
+      Encoder{ "MODE", 0 }
+    };
+
 
     std::array<Toggle, 2> toggles{ Toggle{
                                      "STORAGE", TOGGLE_STORAGE_A, TOGGLE_STORAGE_B, "Z", "user", "admin", "eject" },
@@ -63,13 +63,6 @@ namespace ssp
     static constexpr int TGL_STORE = 0;
     static constexpr int TGL_MODE = 1;
 
-
-    std::array<Led, 11> leds{ RedLed{ "fine", LED_DIAL1 },    RedLed{ "coarse", LED_DIAL2 },
-                              RedLed{ "I/O", LED_IO },        RedLed{ "safe", LED_SAFE },
-                              OrangeLed{ LED_OUT1 },          OrangeLed{ LED_OUT2 },
-                              OrangeLed{ LED_OUT3 },          OrangeLed{ LED_OUT4 },
-                              RedLed{ "linked", LED_LINK12 }, RedLed{ "linked", LED_LINK23 },
-                              RedLed{ "linked", LED_LINK34 } };
 
     int width = SCREEN_WIDTH;
     int height = SCREEN_HEIGHT;

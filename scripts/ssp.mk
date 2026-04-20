@@ -24,6 +24,7 @@ cpp_sources := $(foreach D,$(src_dirs),$(call rwildcard,$D,*.cpp))
 c_sources := $(foreach D,$(src_dirs),$(call rwildcard,$D,*.c)) 
 
 c_sources := $(filter-out $(program_name)/hal/fft_stub.c,$(c_sources))
+c_sources := $(filter-out $(program_name)/olive.c,$(c_sources))
 
 objects := $(addprefix $(out_dir)/,$(c_sources:%.c=%.o) $(cpp_sources:%.cpp=%.o)) 
 
