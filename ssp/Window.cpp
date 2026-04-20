@@ -81,7 +81,6 @@ namespace ssp
     }
   }
 
-#if 1
   void Window::drawText(int x, int y, int size, const char *fmt, ...)
   {
     FC_Font *font = getFont(size);
@@ -98,25 +97,6 @@ namespace ssp
 
     FC_Draw(font, renderer, x, y, text);
   }
-#else
-  void Window::drawText(int x, int y, int size, const char *fmt, ...)
-  {
-    FC_Scale scale{ .x = 1.0f / OVERSAMPLE, .y = 1.0f / OVERSAMPLE };
-    FC_Font *font = getFont(size * OVERSAMPLE);
-    if (font == NULL)
-    {
-      return;
-    }
-
-    char text[512];
-    va_list lst;
-    va_start(lst, fmt);
-    vsnprintf(text, sizeof(text), fmt, lst);
-    va_end(lst);
-
-    FC_DrawScale(font, renderer, x, y, scale, text);
-  }
-#endif
 
   void Window::drawTextAligned(FC_AlignEnum align, int x, int y, int size, const char *fmt, ...)
   {
@@ -197,7 +177,7 @@ namespace ssp
   {
     static tick_t timestamp = ticks();
 
-    SDL_SetRenderDrawColor(renderer, P_GRAY, P_GRAY, P_GRAY, 255);
+    SDL_SetRenderDrawColor(renderer, P_BACKGROUND, P_BACKGROUND, P_BACKGROUND, 255);
     SDL_RenderClear(renderer);
 
     tick_t now = ticks();
@@ -210,70 +190,11 @@ namespace ssp
     }
     pauseDisplayTime = 0;
 
-    // knob.draw(this);
-
-    // for (Button &o : buttons)
-    // {
-    //   o.draw(this);
-    // }
-
-    // for (Jack &o : jacks)
-    // {
-    //   o.draw(this);
-    // }
-
-    for (Toggle &o : toggles)
-    {
-      o.draw(this);
-    }
-
-    for (Led &o : leds)
-    {
-      o.draw(this);
-    }
-
     renderMainFrame(mainFrame);
     SDL_RenderCopy(renderer, mainTexture, NULL, &mainRect);
     renderSubFrame(subFrame);
     SDL_RenderCopy(renderer, subTexture, NULL, &subRect);
-
-    // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    // SDL_RenderDrawRect(renderer, &mainOutlineRect);
-    // SDL_RenderDrawRect(renderer, &subOutlineRect);
-    // SDL_RenderDrawRect(renderer, &panelOutlineRect);
-    // SDL_RenderDrawRect(renderer, &storageOutlineRect);
-    // SDL_RenderDrawRect(renderer, &abcdOutlineRect);
-
-#ifdef DISPLAY_FRAMERATE
-    static int frameCount = 0;
-    static double frameRate = 0;
-    if (t > 0.5)
-    {
-      frameRate = frameCount / t;
-      frameCount = 0;
-      timestamp = now;
-    }
-    else
-    {
-      frameCount++;
-    }
-    int statusX = scale * MARGIN;
-    int statusY = scale * (height - STATUS_H);
-    drawText(statusX, statusY, 12, "Frame Rate: %.1fHz  Scale Factor: %.1f", frameRate, scale);
-#endif
-
     SDL_RenderPresent(renderer);
-  }
-
-  void Window::setScale(float _scale)
-  {
-    scale = _scale;
-    if (scale < 0.1f)
-    {
-      scale = 0.1f;
-    }
-    SDL_RenderSetScale(renderer, scale, scale);
-    SDL_SetWindowSize(window, scale * SCREEN_WIDTH, scale * SCREEN_HEIGHT);
   }
 
   void Window::setPosition(int x, int y, int correction)

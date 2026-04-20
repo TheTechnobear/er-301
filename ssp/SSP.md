@@ -37,6 +37,7 @@ Synthor and ER301 are two complex beasts already, combining is possibly a bit of
 
 # Observations
 
+## display
 we can change the screen display size, but not the size of the windows, in hal/display.h we have 
 ```c++
 #define MAIN_HORIZONTAL_PIXELS 256
@@ -53,3 +54,46 @@ Fonts are made available via Windows.cpp:54, these are only used for labels, the
 
 The Windows are drawn via the framebuffer as bitmaps from selection of fonts and sizes. od/graphics/fonts,
 limited sizes as not truetype, and not something we could easily override
+
+## IO handling
+
+hardware is quite different to how emu works, so lets dig in...
+
+arch/am335x/hal 
+the hardware had 3 inputs sources and 1 output.
+IN
+MOD0/1  - spi/mod*.c/h - Mod0/1 come from an TWO external (via SPI) adc : ADS8688 , each 8 channels,  16 bit 60khz
+this gives ABCD 1-3, 12 channels + IN 1-4 
+ADC adc.c - interal ADC gives 4 x 12 bit 'gate inputs , we get IN G1-G4, 96kHz
+
+
+OUT 
+audio.c - Audio output is 4 channels - and is 4 channels 32bit ot 24 depending on SR
+
+all the callbacks are hal/pump.cpp
+
+these run at different rates/clocks! 
+
+so its stores frame from the callbacks, and then the audio_callback(), it combines then.
+(resampling due to different timings and format)
+then it calls  Pump_callback(self.in_frame, self.out_frame), with these combined input frames.
+
+i.e. the callback sees all the sources as 'one' set of channels.
+which is where we see things get combined in channels.h
+
+we find in AudioThread.cpp
+```
+extern "C"
+{
+  void Pump_callback(float *inputs, float *outputs)
+  {
+    od::local->audioTimer.start();
+    od::local->tasks.process(inputs, outputs);
+    od::local->audioTimer.stop();
+  }
+}
+
+ok, so back to the SSP/EMU
+
+audio.C calls, Audio_callback() thats implmented in hal/pump/pump.cpp, and this is how it ties into the er301 infra,
+basicallu calling Pump_callback().

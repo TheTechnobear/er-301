@@ -38,36 +38,6 @@ namespace ssp
   {
   }
 
-  static int switchState(uint32_t idA, uint32_t idB)
-  {
-    if (Gpio_read(idA))
-      return 1;
-    else if (Gpio_read(idB))
-      return 3;
-    else
-      return 2;
-  }
-
-  static void switchDown(uint32_t idA, uint32_t idB)
-  {
-    if (Gpio_read(idA))
-      Gpio_write(idA, false);
-    else if (Gpio_read(idB))
-      return;
-    else
-      Gpio_write(idB, true);
-  }
-
-  static void switchUp(uint32_t idA, uint32_t idB)
-  {
-    if (Gpio_read(idA))
-      return;
-    else if (Gpio_read(idB))
-      Gpio_write(idB, false);
-    else
-      Gpio_write(idA, true);
-  }
-
   void SSPCore::handleKeyUp(SDL_Keysym keysym)
   {
     std::string name = SDL_GetKeyName(keysym.sym);
@@ -78,14 +48,6 @@ namespace ssp
     else if (name == modeToggleFocusKey)
     {
       modeToggleFocused = false;
-    }
-    else if (name == zoomInKey)
-    {
-      window->setScale(window->scale + 0.05f);
-    }
-    else if (name == zoomOutKey)
-    {
-      window->setScale(window->scale - 0.05f);
     }
     else
     {
@@ -115,39 +77,39 @@ namespace ssp
     }
     else if (keysym.scancode == SDL_SCANCODE_UP && storageToggleFocused)
     {
-      switchUp(TOGGLE_STORAGE_A, TOGGLE_STORAGE_B);
+      if (window)
+        window->toggles[Window::TGL_STORE].switchUp();
     }
     else if (keysym.scancode == SDL_SCANCODE_UP && modeToggleFocused)
     {
-      switchUp(TOGGLE_MODE_A, TOGGLE_MODE_B);
+      if (window)
+        window->toggles[Window::TGL_MODE].switchUp();
     }
     else if (keysym.scancode == SDL_SCANCODE_DOWN && storageToggleFocused)
     {
-      switchDown(TOGGLE_STORAGE_A, TOGGLE_STORAGE_B);
+      if (window)
+        window->toggles[Window::TGL_STORE].switchDown();
     }
     else if (keysym.scancode == SDL_SCANCODE_DOWN && modeToggleFocused)
     {
-      switchDown(TOGGLE_MODE_A, TOGGLE_MODE_B);
+      if (window)
+        window->toggles[Window::TGL_MODE].switchDown();
     }
     else if (keysym.scancode == SDL_SCANCODE_LEFT)
     {
       encoderValue -= leftRightToKnobFactor * ENCODER_SPEED;
-      window->knob.rotate(-KNOB_SPEED);
     }
     else if (keysym.scancode == SDL_SCANCODE_RIGHT)
     {
       encoderValue += leftRightToKnobFactor * ENCODER_SPEED;
-      window->knob.rotate(KNOB_SPEED);
     }
     else if (keysym.scancode == SDL_SCANCODE_UP)
     {
       encoderValue += upDownToKnobFactor * ENCODER_SPEED;
-      window->knob.rotate(-KNOB_SPEED);
     }
     else if (keysym.scancode == SDL_SCANCODE_DOWN)
     {
       encoderValue -= upDownToKnobFactor * ENCODER_SPEED;
-      window->knob.rotate(KNOB_SPEED);
     }
     else
     {
@@ -156,85 +118,6 @@ namespace ssp
       {
         uint id = (*i).second;
         Gpio_write(id, false);
-      }
-    }
-  }
-
-  static bool hit(int x, int y, SDL_Rect &rect)
-  {
-    return x > rect.x && x < rect.x + rect.w && y > rect.y && y < rect.y + rect.h;
-  }
-
-  static void handleSwitchHit(uint32_t idA, uint32_t idB, float p)
-  {
-    int state = switchState(idA, idB);
-    if (p < 0.333f)
-    {
-      if (state == 2)
-      {
-        switchUp(idA, idB);
-      }
-      else if (state == 3)
-      {
-        switchUp(idA, idB);
-        switchUp(idA, idB);
-      }
-    }
-    else if (p < 0.667f)
-    {
-      if (state == 1)
-      {
-        switchDown(idA, idB);
-      }
-      else if (state == 3)
-      {
-        switchUp(idA, idB);
-      }
-    }
-    else
-    {
-      if (state == 2)
-      {
-        switchDown(idA, idB);
-      }
-      else if (state == 1)
-      {
-        switchDown(idA, idB);
-        switchDown(idA, idB);
-      }
-    }
-  }
-
-  void SSPCore::handleMouseButton(SDL_MouseButtonEvent &e)
-  {
-    for (auto &kv : buttonHitMap)
-    {
-      uint32_t id = kv.first;
-      SDL_Rect &rect = kv.second;
-      if (hit(e.x, e.y, rect))
-      {
-        // hit!
-        Gpio_write(id, e.state == SDL_RELEASED);
-        return;
-      }
-    }
-
-    if (e.state == SDL_RELEASED)
-    {
-      SDL_Rect storage{ .x = T_STORAGE_X, .y = T_STORAGE_Y, .w = TOGGLE_W, .h = TOGGLE_H };
-      if (hit(e.x, e.y, storage))
-      {
-        float p = (e.y - T_STORAGE_Y) / (float)TOGGLE_H;
-        handleSwitchHit(TOGGLE_STORAGE_A, TOGGLE_STORAGE_B, p);
-        return;
-      }
-
-      SDL_Rect mode{ .x = T_MODE_X, .y = T_MODE_Y, .w = TOGGLE_W, .h = TOGGLE_H };
-      if (hit(e.x, e.y, mode))
-      {
-        float p = (e.y - T_MODE_Y) / (float)TOGGLE_H;
-        handleSwitchHit(TOGGLE_MODE_A, TOGGLE_MODE_B, p);
-        return;
       }
     }
   }
@@ -275,20 +158,9 @@ namespace ssp
             break;
           case SDL_MOUSEBUTTONDOWN:
           case SDL_MOUSEBUTTONUP:
-            e.button.x /= window->scale;
-            e.button.y /= window->scale;
-            handleMouseButton(e.button);
             break;
           case SDL_MOUSEWHEEL:
             encoderValue += mouseWheelToKnobFactor * e.wheel.y * KNOB_SPEED;
-            window->knob.rotate(e.wheel.y * KNOB_SPEED);
-            break;
-          case SDL_WINDOWEVENT:
-            if (e.window.event == SDL_WINDOWEVENT_RESIZED)
-            {
-              window->onResized(e.window.data1, e.window.data2);
-              logDebug(2, "Resize: %d x %d", e.window.data1, e.window.data2);
-            }
             break;
           default:
             break;
@@ -483,8 +355,6 @@ namespace ssp
     mapButtonToKey(BUTTON_SELECT4, "4");
     storageToggleFocusKey = "Z";
     modeToggleFocusKey = "X";
-    zoomInKey = "=";
-    zoomOutKey = "-";
     quitKey = "Q";
 
     // Set default knob mapping
@@ -520,8 +390,6 @@ namespace ssp
       mapButtonToKey(BUTTON_SELECT4, db.get("BUTTON_SELECT4_KEY", gpioKeyMap[BUTTON_SELECT4]));
       storageToggleFocusKey = db.get("STORAGE_FOCUS_KEY", storageToggleFocusKey);
       modeToggleFocusKey = db.get("MODE_FOCUS_KEY", modeToggleFocusKey);
-      zoomInKey = db.get("ZOOM_IN_KEY", zoomInKey);
-      zoomOutKey = db.get("ZOOM_OUT_KEY", zoomOutKey);
       quitKey = db.get("QUIT_KEY", quitKey);
 
       // Override knob settings
@@ -582,16 +450,6 @@ namespace ssp
           int correction = db.getInteger("WINDOW_CORRECTION");
           window->setPosition(x, y, correction);
         }
-
-        if (db.has("WINDOW_SCALE"))
-        {
-          float scale = db.getFloat("WINDOW_SCALE");
-          if (scale > 0.0f)
-          {
-            window->setScale(scale);
-          }
-        }
-
         logInfo("Restored ssp state from %s.", sessionFilename.c_str());
       }
       else
@@ -641,8 +499,6 @@ namespace ssp
     {
       db["TOGGLE_MODE_B"] = "0";
     }
-
-    db.setFloat("WINDOW_SCALE", window->scale);
 
     int x, y;
     window->getPosition(x, y);
@@ -766,26 +622,6 @@ namespace ssp
     readyQ.push(&ping);
     readyQ.push(&pong);
     Events_push(EVENT_DISPLAY_READY);
-
-    // buttonHitMap[BUTTON_MAIN1] = {.x = MB1_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_MAIN2] = {.x = MB2_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_MAIN3] = {.x = MB3_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_MAIN4] = {.x = MB4_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_MAIN5] = {.x = MB5_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_MAIN6] = {.x = MB6_X, .y = MB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_DIAL1] = {.x = MB1_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_DIAL2] = {.x = MB2_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_DIAL3] = {.x = MB3_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_SUB1] = {.x = MB4_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_SUB2] = {.x = MB5_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_SUB3] = {.x = MB6_X, .y = SB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_ENTER] = {.x = MB4_X, .y = HB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_UP] = {.x = MB5_X, .y = HB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_SHIFT] = {.x = MB6_X, .y = HB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_SELECT1] = {.x = JB1_X, .y = JB1_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_SELECT2] = {.x = JB1_X, .y = JB2_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_SELECT3] = {.x = JB1_X, .y = JB3_Y, .w = BUTTON_W, .h = BUTTON_H};
-    // buttonHitMap[BUTTON_SELECT4] = {.x = JB1_X, .y = JB4_Y, .w = BUTTON_W, .h = BUTTON_H};
 
     restoreState();
 

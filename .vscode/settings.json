@@ -8,11 +8,11 @@
   ],
   "[c]": {
     "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": false
   },
   "[cpp]": {
     "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": false
   },
   "files.exclude": {
     ".cache/**": true,

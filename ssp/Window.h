@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ssp/Knob.h>
 #include <ssp/Button.h>
 #include <ssp/Toggle.h>
 #include <ssp/Led.h>
@@ -46,64 +45,34 @@ namespace ssp
     std::map<int, FC_Font *> fontMap;
     SDL_Rect mainRect{ .x = MAIN_X, .y = MAIN_Y, .w = MAIN_W, .h = MAIN_H };
     SDL_Rect subRect{ .x = SUB_X, .y = SUB_Y, .w = SUB_W, .h = SUB_H };
-    SDL_Rect mainOutlineRect{ .x = MAIN_X - 1, .y = MAIN_Y - 1, .w = MAIN_W + 2, .h = MAIN_H + 2 };
-    SDL_Rect subOutlineRect{ .x = SUB_X - 1, .y = SUB_Y - 1, .w = SUB_W + 2, .h = SUB_H + 2 };
-    SDL_Rect panelOutlineRect{
-      .x = MARGIN / 2, .y = MARGIN / 2, .w = SCREEN_WIDTH - MARGIN, .h = SCREEN_HEIGHT - MARGIN
-    };
-    SDL_Rect storageOutlineRect{ .x = MARGIN / 2,
-                                 .y = T_STORAGE_Y - 20,
-                                 .w = (MB2_X + MB3_X) / 2 - MARGIN / 2 + 12,
-                                 .h = MARGIN / 2 + SCREEN_HEIGHT - MARGIN - T_STORAGE_Y + 20 };
-    SDL_Rect abcdOutlineRect{ .x = LED_OUT1_X,
-                              .y = (J4_Y + J5_Y) / 2,
-                              .w = MARGIN / 2 + SCREEN_WIDTH - MARGIN - LED_OUT1_X,
-                              .h = MARGIN / 2 + SCREEN_HEIGHT - MARGIN - (J4_Y + J5_Y) / 2 };
 
     std::array<Button, 19> buttons{
-      Button{ "M1(QS)", BUTTON_MAIN1, MB1_X, MB1_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "M2", BUTTON_MAIN2, MB2_X, MB1_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "M3", BUTTON_MAIN3, MB3_X, MB1_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "M4", BUTTON_MAIN4, MB4_X, MB1_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "M5", BUTTON_MAIN5, MB5_X, MB1_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "M6", BUTTON_MAIN6, MB6_X, MB1_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "", BUTTON_DIAL1, MB1_X, SB1_Y, B_RED, B_GREEN, B_BLUE },
-      Button{ "CANCEL", BUTTON_DIAL2, MB2_X, SB1_Y, B_RED, B_GREEN, B_BLUE },
-      Button{ "HOME", BUTTON_DIAL3, MB3_X, SB1_Y, B_RED, B_GREEN, B_BLUE },
-      Button{ "S1", BUTTON_SUB1, MB4_X, SB1_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "S2", BUTTON_SUB2, MB5_X, SB1_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "S3", BUTTON_SUB3, MB6_X, SB1_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "ENTER", BUTTON_ENTER, MB4_X, HB1_Y, B_RED, B_GREEN, B_BLUE },
-      Button{ "UP", BUTTON_UP, MB5_X, HB1_Y, B_RED, B_GREEN, B_BLUE },
-      Button{ "(SHIFT)", BUTTON_SHIFT, MB6_X, HB1_Y, B_RED, B_GREEN, B_BLUE },
-      Button{ "", BUTTON_SELECT1, JB1_X, JB1_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "", BUTTON_SELECT2, JB1_X, JB2_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "", BUTTON_SELECT3, JB1_X, JB3_Y, B_GRAY, B_GRAY, B_GRAY },
-      Button{ "", BUTTON_SELECT4, JB1_X, JB4_Y, B_GRAY, B_GRAY, B_GRAY },
+      Button{ "M1(QS)", BUTTON_MAIN1 }, Button{ "M2", BUTTON_MAIN2 },     Button{ "M3", BUTTON_MAIN3 },
+      Button{ "M4", BUTTON_MAIN4 },     Button{ "M5", BUTTON_MAIN5 },     Button{ "M6", BUTTON_MAIN6 },
+      Button{ "", BUTTON_DIAL1 },       Button{ "CANCEL", BUTTON_DIAL2 }, Button{ "HOME", BUTTON_DIAL3 },
+      Button{ "S1", BUTTON_SUB1 },      Button{ "S2", BUTTON_SUB2 },      Button{ "S3", BUTTON_SUB3 },
+      Button{ "ENTER", BUTTON_ENTER },  Button{ "UP", BUTTON_UP },        Button{ "(SHIFT)", BUTTON_SHIFT },
+      Button{ "", BUTTON_SELECT1 },     Button{ "", BUTTON_SELECT2 },     Button{ "", BUTTON_SELECT3 },
+      Button{ "", BUTTON_SELECT4 }
     };
 
-    std::array<Toggle, 2> toggles{
-      Toggle{ "STORAGE", TOGGLE_STORAGE_A, TOGGLE_STORAGE_B, T_STORAGE_X, T_STORAGE_Y, "Z", "user", "admin", "eject" },
-      Toggle{ "MODE", TOGGLE_MODE_A, TOGGLE_MODE_B, T_MODE_X, T_MODE_Y, "X", "hold", "edit", "scope" }
-    };
 
-    std::array<Led, 11> leds{ RedLed{ "fine", LED_DIAL1, LED_DIAL1_X, LED_DIAL1_Y, false },
-                              RedLed{ "coarse", LED_DIAL2, LED_DIAL2_X, LED_DIAL2_Y, false },
-                              RedLed{ "I/O", LED_IO, LED_IO_X, LED_IO_Y },
-                              RedLed{ "safe", LED_SAFE, LED_IO_X, LED_SAFE_Y },
-                              OrangeLed{ LED_OUT1, LED_OUT1_X, LED_OUT1_Y },
-                              OrangeLed{ LED_OUT2, LED_OUT1_X, LED_OUT2_Y },
-                              OrangeLed{ LED_OUT3, LED_OUT1_X, LED_OUT3_Y },
-                              OrangeLed{ LED_OUT4, LED_OUT1_X, LED_OUT4_Y },
-                              RedLed{ "linked", LED_LINK12, LED_OUT1_X, LED_LINK12_Y },
-                              RedLed{ "linked", LED_LINK23, LED_OUT1_X, LED_LINK23_Y },
-                              RedLed{ "linked", LED_LINK34, LED_OUT1_X, LED_LINK34_Y } };
+    std::array<Toggle, 2> toggles{ Toggle{
+                                     "STORAGE", TOGGLE_STORAGE_A, TOGGLE_STORAGE_B, "Z", "user", "admin", "eject" },
+                                   Toggle{ "MODE", TOGGLE_MODE_A, TOGGLE_MODE_B, "X", "hold", "edit", "scope" } };
+    static constexpr int TGL_STORE = 0;
+    static constexpr int TGL_MODE = 1;
 
-    Knob knob;
+
+    std::array<Led, 11> leds{ RedLed{ "fine", LED_DIAL1 },    RedLed{ "coarse", LED_DIAL2 },
+                              RedLed{ "I/O", LED_IO },        RedLed{ "safe", LED_SAFE },
+                              OrangeLed{ LED_OUT1 },          OrangeLed{ LED_OUT2 },
+                              OrangeLed{ LED_OUT3 },          OrangeLed{ LED_OUT4 },
+                              RedLed{ "linked", LED_LINK12 }, RedLed{ "linked", LED_LINK23 },
+                              RedLed{ "linked", LED_LINK34 } };
 
     int width = SCREEN_WIDTH;
     int height = SCREEN_HEIGHT;
     double pauseDisplayTime = 0;
-    float scale = 1.0f;
   };
 }; // namespace ssp
