@@ -1,66 +1,175 @@
 #include <SDL2/SDL.h>
 #include <hal/audio.h>
 #include <hal/log.h>
+#include <hal/constants.h>
+#include <hal/pump.h>
 #include <od/config.h>
+#include <string.h>
 
-// eqiv of ../../arch/am335x/hal/audio.c
+#define MAX_CAPTURE_CHANNELS 32
+#define MAX_PLAYBACK_CHANNELS 32
 
-// Called on each frame in the ADC thread.
-//  extern void Adc_callback(int *samples);
-
-// ./hal/adc.h:  extern void Adc_callback(int *samples);
-// ./hal/pump/pump.cpp:void Adc_callback(int *samples)
-// ./testing/darwin/ssp/od/glue/app_swig.cpp:static int _wrap_Adc_callback(lua_State* L) { { int SWIG_arg = 0; int *arg1 = 0 ; SWIG_check_num_args("Adc_callback",1,1)
-// ./testing/darwin/ssp/od/glue/app_swig.cpp:    if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Adc_callback",1,"int *");
-// ./testing/darwin/ssp/od/glue/app_swig.cpp:    if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_int,0))){ SWIG_fail_ptr("Adc_callback",1,SWIGTYPE_p_int); } 
-// ./testing/darwin/ssp/od/glue/app_swig.cpp:    Adc_callback(arg1); return SWIG_arg; fail: SWIGUNUSED; }  lua_error(L); return 0; }
-// ./testing/darwin/ssp/od/glue/app_swig.cpp:    { "Adc_callback", _wrap_Adc_callback},
-// ./arch/am335x/hal/adc.c:        Adc_callback(self.ping);
-// ./arch/am335x/hal/adc.c:        Adc_callback(self.pong);
-
-
-#define MAX_AUDIO_BUFFER_BYTES (AUDIO_NUM_CHANNELS * MAX_AUDIO_FRAME_LENGTH * sizeof(int))
+void SspModulation_ingestInterleavedS32(const int *samples, uint32_t frames, uint32_t channels);
+void SspModulation_copyFrame(float *dst, uint32_t frames);
 
 static struct AudioLocals {
-  int buffer[CACHE_ALIGNED_SIZE(MAX_AUDIO_BUFFER_BYTES) / sizeof(int)] __attribute__((aligned(CACHELINE_SIZE_MAX)));
+  int captureBuffer[MAX_AUDIO_FRAME_LENGTH * MAX_CAPTURE_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
+  int captureMapped[MAX_AUDIO_FRAME_LENGTH * NUM_INPUT_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
+  float inFrame[MAX_AUDIO_FRAME_LENGTH * NUM_INPUT_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
+  float outFrame[MAX_AUDIO_FRAME_LENGTH * NUM_OUTPUT_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
+
   SDL_AudioSpec playSpec;
+  SDL_AudioSpec capSpec;
   SDL_AudioDeviceID playDev;
-  char devName[32];
+  SDL_AudioDeviceID capDev;
+  char playDevName[64];
+  char capDevName[64];
+  uint32_t debugFrameCounter;
 } local;
 
-void playCallback(void *userdata, Uint8 *stream, int len) {
-  // Generate audio.
-  Audio_callback(local.buffer);
+// Logical ER-301 input index -> host capture device channel index.
+static int inputChannelMap[NUM_INPUT_CHANNELS] = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
 
-  // Convert 24-bit to 32-bit
-  int *out = (int *)stream;
-  if (local.playSpec.channels < 4) {
-    // mix down to stereo.
-    for (int i = 0; i < FRAMELENGTH; i++) {
-      // left channel = OUT1 + OUT3
-      out[2 * i] = (local.buffer[4 * i] + local.buffer[4 * i + 2]) << 7;
-      // right channel = OUT2 + OUT4
-      out[2 * i + 1] = (local.buffer[4 * i + 1] + local.buffer[4 * i + 3]) << 7;
+// Logical ER-301 outputs OUT1..OUT4 -> host playback device channel index.
+static int outputChannelMap[NUM_OUTPUT_CHANNELS] = {0, 1, 2, 3};
+
+static SDL_AudioDeviceID openCaptureDevice(const char *deviceName,
+                                           int sampleRate,
+                                           int frameLength,
+                                           int requestedChannels,
+                                           SDL_AudioSpec *obtained)
+{
+  SDL_AudioSpec want;
+  SDL_zero(want);
+  want.freq = sampleRate;
+  want.format = AUDIO_S32;
+  want.channels = requestedChannels;
+  want.samples = frameLength;
+  want.callback = NULL;
+
+  return SDL_OpenAudioDevice(deviceName,
+                             true,
+                             &want,
+                             obtained,
+                             SDL_AUDIO_ALLOW_CHANNELS_CHANGE |
+                                 SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+}
+
+static void playCallback(void *userdata, Uint8 *stream, int len)
+{
+  (void)userdata;
+
+  uint32_t frameLength = globalConfig.frameLength;
+  uint32_t outChannels = local.playSpec.channels ? local.playSpec.channels : 1;
+  uint32_t outFramesAvailable = (uint32_t)len / (sizeof(int) * outChannels);
+  uint32_t captureBytes = 0;
+  int got = 0;
+  if (frameLength > outFramesAvailable)
+  {
+    frameLength = outFramesAvailable;
+  }
+
+  if (local.capDev)
+  {
+    uint32_t captureChannels = local.capSpec.channels;
+    if (captureChannels > MAX_CAPTURE_CHANNELS)
+    {
+      captureChannels = MAX_CAPTURE_CHANNELS;
     }
-  } else {
-    for (int i = 0; i < FRAMELENGTH; i++) {
-      for (int c = 0; c < 4; c++) {
-        out[2 * i + c] = local.buffer[4 * i + c] << 7;
+
+    captureBytes = frameLength * captureChannels * sizeof(int);
+    // int queuedBefore = SDL_GetQueuedAudioSize(local.capDev);
+    got = SDL_DequeueAudio(local.capDev, local.captureBuffer, captureBytes);
+    if (got < 0)
+    {
+      got = 0;
+    }
+    if ((uint32_t)got < captureBytes)
+    {
+      memset((uint8_t *)local.captureBuffer + got, 0, captureBytes - (uint32_t)got);
+    }
+
+    for (uint32_t i = 0; i < frameLength; i++)
+    {
+      uint32_t srcBase = i * captureChannels;
+      uint32_t dstBase = i * NUM_INPUT_CHANNELS;
+      for (uint32_t ch = 0; ch < NUM_INPUT_CHANNELS; ch++)
+      {
+        int srcCh = inputChannelMap[ch];
+        int sample = 0;
+        if (srcCh >= 0 && (uint32_t)srcCh < captureChannels)
+        {
+          sample = local.captureBuffer[srcBase + (uint32_t)srcCh];
+        }
+        local.captureMapped[dstBase + ch] = sample;
+      }
+    }
+
+    SspModulation_ingestInterleavedS32(local.captureMapped, frameLength,
+                                       NUM_INPUT_CHANNELS);
+    // int queuedAfter = SDL_GetQueuedAudioSize(local.capDev);
+  }
+  else
+  {
+    SspModulation_ingestInterleavedS32(NULL, frameLength, 0);
+  }
+
+  SspModulation_copyFrame(local.inFrame, frameLength);
+
+  memset(local.outFrame, 0, sizeof(float) * frameLength * NUM_OUTPUT_CHANNELS);
+  Pump_callback(local.inFrame, local.outFrame);
+
+
+  memset(stream, 0, len);
+  int *out = (int *)stream;
+  if (local.playSpec.channels < 4)
+  {
+    for (uint32_t i = 0; i < frameLength; i++)
+    {
+      float x0 = local.outFrame[4*i + 0]; if (x0 > 1.0f) x0 = 1.0f; else if (x0 < -1.0f) x0 = -1.0f;
+      float x1 = local.outFrame[4*i + 1]; if (x1 > 1.0f) x1 = 1.0f; else if (x1 < -1.0f) x1 = -1.0f;
+      float x2 = local.outFrame[4*i + 2]; if (x2 > 1.0f) x2 = 1.0f; else if (x2 < -1.0f) x2 = -1.0f;
+      float x3 = local.outFrame[4*i + 3]; if (x3 > 1.0f) x3 = 1.0f; else if (x3 < -1.0f) x3 = -1.0f;
+      out[2*i]     = (int)((x0 + x2) * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 7;
+      out[2*i + 1] = (int)((x1 + x3) * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 7;
+    }
+  }
+  else
+  {
+    uint32_t outChannels = local.playSpec.channels;
+    if (outChannels > MAX_PLAYBACK_CHANNELS)
+      outChannels = MAX_PLAYBACK_CHANNELS;
+    for (uint32_t i = 0; i < frameLength; i++)
+    {
+      for (uint32_t c = 0; c < NUM_OUTPUT_CHANNELS; c++)
+      {
+        int dstCh = outputChannelMap[c];
+        if (dstCh >= 0 && (uint32_t)dstCh < outChannels)
+        {
+          float x = local.outFrame[4*i + c];
+          if (x > 1.0f) x = 1.0f; else if (x < -1.0f) x = -1.0f;
+          out[i * outChannels + (uint32_t)dstCh] = (int)(x * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 8;
+        }
       }
     }
   }
 }
 
-void Audio_init() {
+void Audio_init()
+{
   SDL_InitSubSystem(SDL_INIT_AUDIO);
   SDL_zero(local);
 
-  for (int i = 0; i < SDL_GetNumAudioDrivers(); ++i) {
+  for (int i = 0; i < SDL_GetNumAudioDrivers(); ++i)
+  {
     logInfo("Audio driver %d: %s", i, SDL_GetAudioDriver(i));
   }
 
 #if BUILDOPT_FORCE_ALSA
-  if (SDL_AudioInit("alsa")) {
+  if (SDL_AudioInit("alsa"))
+  {
     logError("Failed to initialize alsa driver: %s", SDL_GetError());
     logInfo("Opening default driver...");
   }
@@ -68,83 +177,173 @@ void Audio_init() {
 
   const char *driver_name = SDL_GetCurrentAudioDriver();
 
-  if (driver_name) {
+  if (driver_name)
+  {
     logInfo("Audio subsystem initialized, driver = %s.", driver_name);
-  } else {
+  }
+  else
+  {
     logError("Audio subsystem not initialized.");
   }
 }
 
-void Audio_restart(void) {
+void Audio_restart(void)
+{
   Audio_stop();
   SDL_Delay(200);
   Audio_start();
 }
 
-void Audio_start(void) {
-  bool isCapture = false;
-  int numChannels = 2;
+void Audio_start(void)
+{
+  int outputChannels = 2;
+  int captureChannels = NUM_INPUT_CHANNELS;
 
-#if __APPLE__
-  // testing only
   {
-    for (int i = 0; i < SDL_GetNumAudioDevices(isCapture); ++i) {
+    bool isCapture = false;
+    for (int i = 0; i < SDL_GetNumAudioDevices(isCapture); ++i)
+    {
       SDL_AudioSpec spec;
-      const char *name = NULL;
-      name = SDL_GetAudioDeviceName(i, isCapture);
-      if (name && !SDL_GetAudioDeviceSpec(i, isCapture, &spec)) {
-        logInfo("Audio Device %s : %d ", name, spec.channels);
-        if (strlen(local.devName) == 0 && spec.channels == 4) {
-          numChannels = 4;
-          strncpy(local.devName, name, 32);
+      const char *name = SDL_GetAudioDeviceName(i, isCapture);
+      if (name && !SDL_GetAudioDeviceSpec(i, isCapture, &spec))
+      {
+        logInfo("Audio Device %s : %d", name, spec.channels);
+        if (strlen(local.playDevName) == 0 && spec.channels == 4)
+        {
+          outputChannels = 4;
+          strncpy(local.playDevName, name, sizeof(local.playDevName));
+          local.playDevName[sizeof(local.playDevName) - 1] = 0;
         }
       }
-      // if(strcmp(name,"VirtualIn")==0) {
+    }
 
-      // }
+    isCapture = true;
+    for (int i = 0; i < SDL_GetNumAudioDevices(isCapture); ++i)
+    {
+      SDL_AudioSpec spec;
+      const char *name = SDL_GetAudioDeviceName(i, isCapture);
+      if (name && !SDL_GetAudioDeviceSpec(i, isCapture, &spec))
+      {
+        logInfo("Capture Device %s : %d", name, spec.channels);
+        if (strlen(local.capDevName) == 0 && spec.channels >= captureChannels)
+        {
+          captureChannels = spec.channels;
+          strncpy(local.capDevName, name, sizeof(local.capDevName));
+          local.capDevName[sizeof(local.capDevName) - 1] = 0;
+        }
+      }
     }
   }
 
-  if (strlen(local.devName) == 0) {
-    // default
+  if (strlen(local.playDevName) == 0)
+  {
     SDL_AudioSpec spec;
     char *name = NULL;
-    if (!SDL_GetDefaultAudioInfo(&name, &spec, isCapture)) {
-      strncpy(local.devName, name, 32);
-      logInfo("Default Audio Device %s : %d ", local.devName, spec.channels);
+    if (!SDL_GetDefaultAudioInfo(&name, &spec, false))
+    {
+      strncpy(local.playDevName, name, sizeof(local.playDevName));
+      local.playDevName[sizeof(local.playDevName) - 1] = 0;
+      outputChannels = spec.channels;
+      logInfo("Default Audio Device %s : %d", local.playDevName, spec.channels);
     }
   }
-  logInfo("Using Audio Device %s", local.devName);
 
-#endif // testing apple
+  if (strlen(local.capDevName) == 0)
+  {
+    SDL_AudioSpec spec;
+    char *name = NULL;
+    if (!SDL_GetDefaultAudioInfo(&name, &spec, true))
+    {
+      strncpy(local.capDevName, name, sizeof(local.capDevName));
+      local.capDevName[sizeof(local.capDevName) - 1] = 0;
+      captureChannels = spec.channels;
+      logInfo("Default Capture Device %s : %d", local.capDevName, spec.channels);
+    }
+  }
+
+  if (strlen(local.playDevName))
+  {
+    logInfo("Using Audio Device %s", local.playDevName);
+  }
+  if (strlen(local.capDevName))
+  {
+    logInfo("Using Capture Device %s", local.capDevName);
+  }
+
+  #ifdef __APPLE__
+  captureChannels = 8;
+#endif 
+
+
+  SDL_AudioSpec wantCap;
+  SDL_zero(wantCap);
+  wantCap.freq = globalConfig.sampleRate;
+  wantCap.format = AUDIO_S32;
+  wantCap.channels = captureChannels;
+  wantCap.samples = globalConfig.frameLength;
+  wantCap.callback = NULL;
+
+  local.capDev = openCaptureDevice(strlen(local.capDevName) == 0 ? NULL : local.capDevName,
+                                   globalConfig.sampleRate,
+                                   globalConfig.frameLength,
+                                   captureChannels,
+                                   &local.capSpec);
+  if (local.capDev == 0)
+  {
+    logError("Failed to open capture: %s", SDL_GetError());
+  }
+  else
+  {
+    logInfo("Capture Specs %dHz %dch", local.capSpec.freq, local.capSpec.channels);
+    SDL_PauseAudioDevice(local.capDev, 0);
+  }
 
   SDL_AudioSpec want;
   SDL_zero(want);
   want.freq = globalConfig.sampleRate;
   want.format = AUDIO_S32;
-  want.channels = numChannels;
+  want.channels = outputChannels;
   want.samples = globalConfig.frameLength;
   want.callback = playCallback;
 
-  local.playDev =
-    SDL_OpenAudioDevice(strlen(local.devName) == 0 ? NULL : local.devName, isCapture, &want, &local.playSpec, 0);
-  if (local.playDev == 0) {
+  local.playDev = SDL_OpenAudioDevice(strlen(local.playDevName) == 0 ? NULL : local.playDevName,
+                                      false,
+                                      &want,
+                                      &local.playSpec,
+                                      0);
+  if (local.playDev == 0)
+  {
     logError("Failed to open audio: %s", SDL_GetError());
-  } else {
-    // note: device Id return is NOT the same as index, 0 = fail, 1 = legacy, after than?
+  }
+  else
+  {
     logInfo("Audio Specs %dHz %dch", local.playSpec.freq, local.playSpec.channels);
-    SDL_PauseAudioDevice(local.playDev, 0); /* start audio playing. */
+    SDL_PauseAudioDevice(local.playDev, 0);
   }
 }
 
-void Audio_stop(void) { SDL_CloseAudioDevice(local.playDev); }
+void Audio_stop(void)
+{
+  if (local.playDev)
+  {
+    SDL_CloseAudioDevice(local.playDev);
+    local.playDev = 0;
+  }
+  if (local.capDev)
+  {
+    SDL_CloseAudioDevice(local.capDev);
+    local.capDev = 0;
+  }
+}
 
 uint32_t Audio_errorCount(void) { return 0; }
 
 int Audio_getRate(void) { return globalConfig.sampleRate; }
 
-void Audio_printErrorStatus(void) {
-  switch (SDL_GetAudioDeviceStatus(local.playDev)) {
+void Audio_printErrorStatus(void)
+{
+  switch (SDL_GetAudioDeviceStatus(local.playDev))
+  {
   case SDL_AUDIO_STOPPED:
     logInfo("audio stopped");
     break;

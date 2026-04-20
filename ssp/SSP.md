@@ -9,6 +9,31 @@ the basic premise is, the visualised buttons, jacks, encoder etc are a skeumorph
 the workflow etc, will initally be retained, buttons and encoders wil however be switched to using the SSP hardware instead (or additionally).
 
 
+# Status
+- stripped unnecessary UI
+- added inputs (have map but not used yet)
+
+
+
+# To do
+- UI for SSP , labels
+- encoder mapping, see design ideas
+- button mapping see design ideas
+
+
+# Limitatons
+- SDL2 is limited to max 8 channels in and out! , need to consider alternative.
+
+alternatives? 
+Juce - too heavy, many dependancies
+rt_audio  - like traxhost, rtaudio for audio + SDL for display (only use SDL on mac, also for keyinput)
+rt_audio + nanoSVG, to ditch SDL
+
+think rt_audio + SDL for initial tests, then move to nanoSVG
+
+
+
+
 # Out of scope (phase 1.)
 things out of scope, see below for more details.
 - XMX (vs SSP)
