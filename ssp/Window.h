@@ -51,9 +51,9 @@ namespace ssp
 
     std::array<Encoder, 4> encoders{
       Encoder{ "DATA", BUTTON_DIAL1 },
-      Encoder{ "OUT", 0 },
-      Encoder{ "STORE", 0 },
-      Encoder{ "MODE", 0 }
+      Encoder{ "OUT", BUTTON_DIAL2 },
+      Encoder{ "STORE", BUTTON_DIAL3 },
+      Encoder{ "MODE", BUTTON_ENTER }
     };
 
 

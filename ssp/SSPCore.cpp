@@ -34,6 +34,53 @@ using namespace od;
 namespace ssp
 {
 
+  static uint32_t mapLogicalSspButtonToGpio(SSPButtonId id)
+  {
+    switch (id)
+    {
+    case SSPButtonId::Soft1:
+      return BUTTON_MAIN1;
+    case SSPButtonId::Soft2:
+      return BUTTON_MAIN2;
+    case SSPButtonId::Soft3:
+      return BUTTON_MAIN3;
+    case SSPButtonId::Soft4:
+      return BUTTON_DIAL3;
+    case SSPButtonId::Soft5:
+      return BUTTON_MAIN4;
+    case SSPButtonId::Soft6:
+      return BUTTON_MAIN5;
+    case SSPButtonId::Soft7:
+      return BUTTON_MAIN6;
+    case SSPButtonId::Soft8:
+      return BUTTON_DIAL2;
+    case SSPButtonId::LShift:
+      return BUTTON_ENTER;
+    case SSPButtonId::Up:
+      return BUTTON_UP;
+    case SSPButtonId::RShift:
+      return BUTTON_SHIFT;
+    case SSPButtonId::Left:
+      return BUTTON_SUB1;
+    case SSPButtonId::Down:
+      return BUTTON_SUB2;
+    case SSPButtonId::Right:
+      return BUTTON_SUB3;
+    case SSPButtonId::P1:
+      return BUTTON_SELECT1;
+    case SSPButtonId::P2:
+      return BUTTON_SELECT2;
+    case SSPButtonId::P3:
+      return BUTTON_SELECT3;
+    case SSPButtonId::P4:
+      return BUTTON_SELECT4;
+    case SSPButtonId::Invalid:
+    default:
+      return NUM_GPIO_IDS;
+    }
+  }
+
+
   SSPCore::SSPCore()
   {
   }
@@ -166,6 +213,95 @@ namespace ssp
             break;
           }
         }
+      }
+
+      if (hardwareInputEnabled)
+      {
+        hardwareInput.poll(
+          [this](SSPButtonId button, bool pressed)
+          {
+            uint32_t gpioId = mapLogicalSspButtonToGpio(button);
+            if (gpioId < NUM_GPIO_IDS)
+            {
+              Gpio_write(gpioId, !pressed);
+            }
+          },
+          [this](SSPEncoderId encoder, int delta)
+          {
+            switch ((int)encoder)
+            {
+            case 0:
+              // encoder 0 = data wheel aka encoder on er301
+              encoderValue += delta * ENCODER_SPEED;
+              break;
+            case 1:
+            {
+              // encoder 1 = output select, goes from 1 to 4 aka SELECT 1-4, press = link
+              bool found = false;
+              // NOT working... are gpio supposed to toggle?
+              // is it just a UI issues?
+              // TODO - incomplete, this wont handle linked case
+              // i.e. select 1 & 2 are active
+              for (int x = BUTTON_SELECT1; !found && x <= BUTTON_SELECT4; x++)
+              {
+                if (Gpio_read(x))
+                {
+                  if (delta > 0)
+                  {
+                    if (x < BUTTON_SELECT4)
+                    {
+                      Gpio_write(x + 1, true);
+                    }
+                  }
+                  else
+                  {
+                    if (x > BUTTON_SELECT1)
+                    {
+                      Gpio_write(x - 1, true);
+                    }
+                  }
+                  found = true;
+                }
+              }
+              break;
+            }
+            case 2:
+              // encoder 2  = storage up/ down
+              if (delta > 0)
+              {
+                window->toggles[Window::TGL_STORE].switchUp();
+              }
+              else
+              {
+                window->toggles[Window::TGL_STORE].switchDown();
+              }
+              break;
+            case 3:
+              // encoder 3  = mode up/ down
+              if (delta > 0)
+              {
+                window->toggles[Window::TGL_MODE].switchUp();
+              }
+              else
+              {
+                window->toggles[Window::TGL_MODE].switchDown();
+              }
+              break;
+            default:;
+            }
+          },
+          [this](SSPEncoderId encoder, bool pressed)
+          {
+            switch ((int)encoder)
+            {
+            case 0:
+              Gpio_write(BUTTON_DIAL1, !pressed);
+              break;
+            case 1:
+              // TODO : here we will link this channel with previous (assuming active>0)
+              break;
+            }
+          });
       }
 
       DisplayBuffer *buffer;
@@ -619,6 +755,15 @@ namespace ssp
     Modulation_init();
     Audio_init();
     Display_init();
+    hardwareInputEnabled = hardwareInput.init();
+    if (hardwareInputEnabled)
+    {
+      logInfo("SSP hardware button/encoder input enabled.");
+    }
+    else
+    {
+      logInfo("SSP hardware button/encoder input unavailable.");
+    }
     od::Random::init();
 
     memset(ping.main, 0, sizeof(ping.main));

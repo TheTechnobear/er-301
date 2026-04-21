@@ -2,6 +2,7 @@
 
 #include <od/extras/LockFreeQueue.h>
 #include <ssp/Window.h>
+#include <ssp/hw/SSPButEnc.h>
 #include <hal/display.h>
 #include <SDL2/SDL.h>
 #include <map>
@@ -52,6 +53,8 @@ namespace ssp
     bool quit = false;
     bool storageToggleFocused = false;
     bool modeToggleFocused = false;
+    SSPButEnc hardwareInput;
+    bool hardwareInputEnabled = false;
 
     // Keyboard Mapping
     std::map<std::string, uint32_t> keyGpioMap;
@@ -62,8 +65,5 @@ namespace ssp
     std::string zoomOutKey;
     std::string quitKey; // Must be modified with CTRL.
 
-    // Mouse Mapping
-    std::map<uint32_t, SDL_Rect> buttonHitMap;
-    std::map<uint32_t, SDL_Rect> toggleHitMap;
   };
 }
