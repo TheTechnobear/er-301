@@ -20,6 +20,7 @@ CompileFlags:
     - "-I./libs/lodepng"
     - "-I./libs/miniz"
     - "-I./libs/SDL_FontCache"
+    - "-I./libs/rtaudio"
     - "-I./emu"
     # Additional project includes (absolute)
     - "-I/Users/kodiak/projects/er-301/libs/darwin"
@@ -27,6 +28,7 @@ CompileFlags:
     - "-I/Users/kodiak/projects/er-301/libs/lodepng"
     - "-I/Users/kodiak/projects/er-301/libs/miniz"
     - "-I/Users/kodiak/projects/er-301/libs/SDL_FontCache"
+    - "-I/Users/kodiak/projects/er-301/libs/rtaudio"
     # Brew dependencies (macOS)
     - "-I/opt/homebrew/opt/sdl2/include"
     - "-I/opt/homebrew/opt/sdl2/include/SDL2"

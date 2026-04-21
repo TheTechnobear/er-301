@@ -1,5 +1,5 @@
 #include <hal/channels.h>
-#include <SDL2/SDL.h>
+#include <rtaudio_c.h>
 #include <hal/audio.h>
 #include <hal/log.h>
 #include <hal/constants.h>
@@ -14,113 +14,159 @@ void SspModulation_ingestInterleavedS32(const int *samples, uint32_t frames, uin
 void SspModulation_copyFrame(float *dst, uint32_t frames);
 
 static struct AudioLocals {
-  int captureBuffer[MAX_AUDIO_FRAME_LENGTH * MAX_CAPTURE_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
   int captureMapped[MAX_AUDIO_FRAME_LENGTH * NUM_INPUT_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
   float inFrame[MAX_AUDIO_FRAME_LENGTH * NUM_INPUT_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
   float outFrame[MAX_AUDIO_FRAME_LENGTH * NUM_OUTPUT_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
+  int inputRoutingMap[MAX_CAPTURE_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
 
-  SDL_AudioSpec playSpec;
-  SDL_AudioSpec capSpec;
-  SDL_AudioDeviceID playDev;
-  SDL_AudioDeviceID capDev;
-  char playDevName[64];
-  char capDevName[64];
+  rtaudio_t audio;
+  unsigned int outputDevId;
+  unsigned int inputDevId;
+  unsigned int outputChannels;
+  unsigned int inputChannels;
   uint32_t debugFrameCounter;
 } local;
 
 
-#ifdef TARGET_SSP
+#if TARGET_SSP
+// Logical (user-visible) jack index -> logical ER-301 input index.
+#define kAudioInCh  16
+// #define kAudioOutCh  8
+static int kInChMap[kAudioInCh] = { 11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4 };
+// static int kOutChMap[kAudioOutCh] = { 3, 2, 1, 0, 7, 6, 5, 4 };
+// static float inGain = 0.2f / 0.18795f;
+// static float outGain = 5.0f / 5.248f;
+// static float inOffset = 0.02300f;
+// static float outOffset = 0.f;
+
 static int inputChannelMap[NUM_INPUT_CHANNELS] = {
     INPUT_IN1, INPUT_IN2, INPUT_IN3, INPUT_IN4, INPUT_G1, INPUT_G2, INPUT_G3, INPUT_G4, INPUT_A1, INPUT_B1, INPUT_C1, INPUT_D1,
-    INPUT_A2, INPUT_B2,INPUT_C2,INPUT_D2,INPUT_A3,INPUT_B3,INPUT_C3,INPUT_D3};
+    INPUT_A2, INPUT_B2, INPUT_C2, INPUT_D2, INPUT_A3, INPUT_B3, INPUT_C3, INPUT_D3};
 
 // Logical ER-301 outputs OUT1..OUT4 -> host playback device channel index.
-static int outputChannelMap[NUM_OUTPUT_CHANNELS] = {0, 1, 2, 3};
+static int outputChannelMap[NUM_OUTPUT_CHANNELS] = {3, 2, 1, 0};
 
-#else 
+#else
 // Host capture device channel index -> logical ER-301 input index.
 static int inputChannelMap[NUM_INPUT_CHANNELS] = {
     INPUT_IN1, INPUT_IN2, INPUT_IN3, INPUT_IN4, INPUT_G1, INPUT_G2, INPUT_G3, INPUT_G4, INPUT_A1, INPUT_B1, INPUT_C1, INPUT_D1,
-    INPUT_A2, INPUT_B2,INPUT_C2,INPUT_D2,INPUT_A3,INPUT_B3,INPUT_C3,INPUT_D3};
+    INPUT_A2, INPUT_B2, INPUT_C2, INPUT_D2, INPUT_A3, INPUT_B3, INPUT_C3, INPUT_D3};
 
 // Logical ER-301 outputs OUT1..OUT4 -> host playback device channel index.
 static int outputChannelMap[NUM_OUTPUT_CHANNELS] = {0, 1, 2, 3};
 #endif 
 
-static SDL_AudioDeviceID openCaptureDevice(const char *deviceName,
-                                           int sampleRate,
-                                           int frameLength,
-                                           int requestedChannels,
-                                           SDL_AudioSpec *obtained)
+static void Audio_buildInputRoutingMap(void)
 {
-  SDL_AudioSpec want;
-  SDL_zero(want);
-  want.freq = sampleRate;
-  want.format = AUDIO_S32;
-  want.channels = requestedChannels;
-  want.samples = frameLength;
-  want.callback = NULL;
-
-  return SDL_OpenAudioDevice(deviceName,
-                             true,
-                             &want,
-                             obtained,
-                             SDL_AUDIO_ALLOW_CHANNELS_CHANGE |
-                                 SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
-}
-
-static void playCallback(void *userdata, Uint8 *stream, int len)
-{
-  (void)userdata;
-
-  uint32_t frameLength = globalConfig.frameLength;
-  uint32_t outChannels = local.playSpec.channels ? local.playSpec.channels : 1;
-  uint32_t outFramesAvailable = (uint32_t)len / (sizeof(int) * outChannels);
-  uint32_t captureBytes = 0;
-  int got = 0;
-  if (frameLength > outFramesAvailable)
+  for (uint32_t i = 0; i < MAX_CAPTURE_CHANNELS; i++)
   {
-    frameLength = outFramesAvailable;
+    local.inputRoutingMap[i] = -1;
   }
 
-  if (local.capDev)
+#if TARGET_SSP
+  // Precompute: hw input channel -> ER-301 logical input index.
+  // kInChMap stores logical jack -> hw channel.
+  uint32_t logicalCount = kAudioInCh;
+  if (logicalCount > (uint32_t)NUM_INPUT_CHANNELS)
+    logicalCount = (uint32_t)NUM_INPUT_CHANNELS;
+
+  for (uint32_t logicalJack = 0; logicalJack < logicalCount; logicalJack++)
   {
-    uint32_t captureChannels = local.capSpec.channels;
+    int hwCh = kInChMap[logicalJack];
+    int destCh = inputChannelMap[logicalJack];
+    if (hwCh >= 0 && (uint32_t)hwCh < MAX_CAPTURE_CHANNELS &&
+        destCh >= 0 && (uint32_t)destCh < NUM_INPUT_CHANNELS)
+    {
+      local.inputRoutingMap[(uint32_t)hwCh] = destCh;
+    }
+  }
+#else
+  uint32_t hwCount = (uint32_t)NUM_INPUT_CHANNELS;
+  if (hwCount > MAX_CAPTURE_CHANNELS)
+    hwCount = MAX_CAPTURE_CHANNELS;
+
+  for (uint32_t hwCh = 0; hwCh < hwCount; hwCh++)
+  {
+    int destCh = inputChannelMap[hwCh];
+    if (destCh >= 0 && (uint32_t)destCh < NUM_INPUT_CHANNELS)
+    {
+      local.inputRoutingMap[hwCh] = destCh;
+    }
+  }
+#endif
+}
+
+static bool hasSubstring(const char *text, const char *needle)
+{
+  if (!text || !needle)
+    return false;
+  return strstr(text, needle) != NULL;
+}
+
+static unsigned int findDeviceByNameMatch(rtaudio_t audio,
+                                          const char *needle,
+                                          bool requireInput,
+                                          bool requireOutput)
+{
+  int n = rtaudio_device_count(audio);
+  if (n <= 0)
+  {
+    logError("Audio: no devices available for match '%s' (api=%s).",
+             needle ? needle : "<null>",
+             rtaudio_api_display_name(rtaudio_current_api(audio)));
+    return 0;
+  }
+  for (int i = 0; i < n; i++)
+  {
+    unsigned int id = rtaudio_get_device_id(audio, i);
+    rtaudio_device_info_t info = rtaudio_get_device_info(audio, id);
+    if (!hasSubstring(info.name, needle))
+      continue;
+    if (requireInput && info.input_channels == 0)
+      continue;
+    if (requireOutput && info.output_channels == 0)
+      continue;
+    return id;
+  }
+
+  return 0;
+}
+
+static int audioCallback(void *outputBuffer, void *inputBuffer,
+                         unsigned int nFrames, double streamTime,
+                         rtaudio_stream_status_t status, void *userdata)
+{
+  (void)streamTime;
+  (void)status;
+  (void)userdata;
+
+  uint32_t frameLength = nFrames;
+  if (frameLength > MAX_AUDIO_FRAME_LENGTH)
+    frameLength = MAX_AUDIO_FRAME_LENGTH;
+
+  if (inputBuffer)
+  {
+    const int *src = (const int *)inputBuffer;
+    uint32_t captureChannels = local.inputChannels;
     if (captureChannels > MAX_CAPTURE_CHANNELS)
-    {
       captureChannels = MAX_CAPTURE_CHANNELS;
-    }
 
-    captureBytes = frameLength * captureChannels * sizeof(int);
-    // int queuedBefore = SDL_GetQueuedAudioSize(local.capDev);
-    got = SDL_DequeueAudio(local.capDev, local.captureBuffer, captureBytes);
-    if (got < 0)
-    {
-      got = 0;
-    }
-    if ((uint32_t)got < captureBytes)
-    {
-      memset((uint8_t *)local.captureBuffer + got, 0, captureBytes - (uint32_t)got);
-    }
-
-    uint32_t mappedChannels = captureChannels < (uint32_t)NUM_INPUT_CHANNELS ? captureChannels : (uint32_t)NUM_INPUT_CHANNELS;
+    uint32_t mappedChannels = captureChannels;
+    memset(local.captureMapped, 0, sizeof(int) * frameLength * NUM_INPUT_CHANNELS);
     for (uint32_t i = 0; i < frameLength; i++)
     {
       uint32_t srcBase = i * captureChannels;
       uint32_t dstBase = i * NUM_INPUT_CHANNELS;
       for (uint32_t ch = 0; ch < mappedChannels; ch++)
       {
-        int destCh = inputChannelMap[ch];
+        int destCh = local.inputRoutingMap[ch];
         if (destCh >= 0 && (uint32_t)destCh < NUM_INPUT_CHANNELS)
         {
-          local.captureMapped[dstBase + (uint32_t)destCh] = local.captureBuffer[srcBase + ch];
+          local.captureMapped[dstBase + (uint32_t)destCh] = src[srcBase + ch];
         }
       }
     }
-
-    SspModulation_ingestInterleavedS32(local.captureMapped, frameLength,
-                                       NUM_INPUT_CHANNELS);
-    // int queuedAfter = SDL_GetQueuedAudioSize(local.capDev);
+    SspModulation_ingestInterleavedS32(local.captureMapped, frameLength, NUM_INPUT_CHANNELS);
   }
   else
   {
@@ -132,219 +178,202 @@ static void playCallback(void *userdata, Uint8 *stream, int len)
   memset(local.outFrame, 0, sizeof(float) * frameLength * NUM_OUTPUT_CHANNELS);
   Pump_callback(local.inFrame, local.outFrame);
 
-
-  memset(stream, 0, len);
-  int *out = (int *)stream;
-  if (local.playSpec.channels < 4)
+  if (outputBuffer)
   {
-    for (uint32_t i = 0; i < frameLength; i++)
-    {
-      float x0 = local.outFrame[4*i + 0]; if (x0 > 1.0f) x0 = 1.0f; else if (x0 < -1.0f) x0 = -1.0f;
-      float x1 = local.outFrame[4*i + 1]; if (x1 > 1.0f) x1 = 1.0f; else if (x1 < -1.0f) x1 = -1.0f;
-      float x2 = local.outFrame[4*i + 2]; if (x2 > 1.0f) x2 = 1.0f; else if (x2 < -1.0f) x2 = -1.0f;
-      float x3 = local.outFrame[4*i + 3]; if (x3 > 1.0f) x3 = 1.0f; else if (x3 < -1.0f) x3 = -1.0f;
-      out[2*i]     = (int)((x0 + x2) * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 7;
-      out[2*i + 1] = (int)((x1 + x3) * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 7;
-    }
-  }
-  else
-  {
-    uint32_t outChannels = local.playSpec.channels;
+    int *out = (int *)outputBuffer;
+    uint32_t outChannels = local.outputChannels;
     if (outChannels > MAX_PLAYBACK_CHANNELS)
       outChannels = MAX_PLAYBACK_CHANNELS;
-    for (uint32_t i = 0; i < frameLength; i++)
+
+    memset(out, 0, frameLength * outChannels * sizeof(int));
+    if (outChannels < 4)
     {
-      for (uint32_t c = 0; c < NUM_OUTPUT_CHANNELS; c++)
+      for (uint32_t i = 0; i < frameLength; i++)
       {
-        int dstCh = outputChannelMap[c];
-        if (dstCh >= 0 && (uint32_t)dstCh < outChannels)
+        float x0 = local.outFrame[4*i + 0]; if (x0 > 1.0f) x0 = 1.0f; else if (x0 < -1.0f) x0 = -1.0f;
+        float x1 = local.outFrame[4*i + 1]; if (x1 > 1.0f) x1 = 1.0f; else if (x1 < -1.0f) x1 = -1.0f;
+        float x2 = local.outFrame[4*i + 2]; if (x2 > 1.0f) x2 = 1.0f; else if (x2 < -1.0f) x2 = -1.0f;
+        float x3 = local.outFrame[4*i + 3]; if (x3 > 1.0f) x3 = 1.0f; else if (x3 < -1.0f) x3 = -1.0f;
+        out[2*i]     = (int)((x0 + x2) * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 7;
+        out[2*i + 1] = (int)((x1 + x3) * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 7;
+      }
+    }
+    else
+    {
+      for (uint32_t i = 0; i < frameLength; i++)
+      {
+        for (uint32_t c = 0; c < NUM_OUTPUT_CHANNELS; c++)
         {
-          float x = local.outFrame[4*i + c];
-          if (x > 1.0f) x = 1.0f; else if (x < -1.0f) x = -1.0f;
-          out[i * outChannels + (uint32_t)dstCh] = (int)(x * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 8;
+          int dstCh = outputChannelMap[c];
+          if (dstCh >= 0 && (uint32_t)dstCh < outChannels)
+          {
+            float x = local.outFrame[4*i + c];
+            if (x > 1.0f) x = 1.0f; else if (x < -1.0f) x = -1.0f;
+            out[i * outChannels + (uint32_t)dstCh] = (int)(x * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 8;
+          }
         }
       }
     }
   }
+
+  return 0;
 }
 
 void Audio_init()
 {
-  SDL_InitSubSystem(SDL_INIT_AUDIO);
-  SDL_zero(local);
-
-  for (int i = 0; i < SDL_GetNumAudioDrivers(); ++i)
+  memset(&local, 0, sizeof(local));
+  local.audio = rtaudio_create(RTAUDIO_API_UNSPECIFIED);
+  if (!local.audio)
   {
-    logInfo("Audio driver %d: %s", i, SDL_GetAudioDriver(i));
+    logError("Audio: failed to create RtAudio instance.");
+    return;
   }
 
-#if BUILDOPT_FORCE_ALSA
-  if (SDL_AudioInit("alsa"))
+  if (rtaudio_current_api(local.audio) == RTAUDIO_API_DUMMY)
   {
-    logError("Failed to initialize alsa driver: %s", SDL_GetError());
-    logInfo("Opening default driver...");
+    logError("Audio: RtAudio selected Dummy API; no real audio backend available.");
+    rtaudio_destroy(local.audio);
+    local.audio = NULL;
+    return;
   }
-#endif
 
-  const char *driver_name = SDL_GetCurrentAudioDriver();
-
-  if (driver_name)
+  int n = rtaudio_device_count(local.audio);
+  logInfo("Audio: %d device(s) found via %s.", n,
+          rtaudio_api_display_name(rtaudio_current_api(local.audio)));
+  for (int i = 0; i < n; i++)
   {
-    logInfo("Audio subsystem initialized, driver = %s.", driver_name);
-  }
-  else
-  {
-    logError("Audio subsystem not initialized.");
+    unsigned int id = rtaudio_get_device_id(local.audio, i);
+    rtaudio_device_info_t info = rtaudio_get_device_info(local.audio, id);
+    logInfo("  [%d] %s  out=%d in=%d", i, info.name,
+            info.output_channels, info.input_channels);
   }
 }
 
 void Audio_restart(void)
 {
   Audio_stop();
-  SDL_Delay(200);
   Audio_start();
 }
 
 void Audio_start(void)
 {
-  int outputChannels = 2;
-  int captureChannels = NUM_INPUT_CHANNELS;
+  if (!local.audio)
+    return;
 
+  unsigned int outputDevId = rtaudio_get_default_output_device(local.audio);
+  unsigned int inputDevId  = rtaudio_get_default_input_device(local.audio);
+
+  const char *outputPrefix = NULL;
+  const char *inputPrefix = NULL;
+
+#if defined(__APPLE__)
+  outputPrefix = "Virtual-SSP-Out";
+  inputPrefix = "Virtual-SSP-In";
+#elif defined(TARGET_SSP)
+  outputPrefix = "ak4458";
+  inputPrefix = "ak4458";
+#elif defined(TARGET_XMX)
+  outputPrefix = "rockchip";
+  inputPrefix = "rockchip";
+#endif
+
+  if (outputPrefix)
   {
-    bool isCapture = false;
-    for (int i = 0; i < SDL_GetNumAudioDevices(isCapture); ++i)
+    unsigned int selected = findDeviceByNameMatch(local.audio, outputPrefix, false, true);
+    if (selected)
     {
-      SDL_AudioSpec spec;
-      const char *name = SDL_GetAudioDeviceName(i, isCapture);
-      if (name && !SDL_GetAudioDeviceSpec(i, isCapture, &spec))
-      {
-        logInfo("Audio Device %s : %d", name, spec.channels);
-        if (strlen(local.playDevName) == 0 && spec.channels == 4)
-        {
-          outputChannels = 4;
-          strncpy(local.playDevName, name, sizeof(local.playDevName));
-          local.playDevName[sizeof(local.playDevName) - 1] = 0;
-        }
-      }
+      outputDevId = selected;
     }
-
-    isCapture = true;
-    for (int i = 0; i < SDL_GetNumAudioDevices(isCapture); ++i)
+    else
     {
-      SDL_AudioSpec spec;
-      const char *name = SDL_GetAudioDeviceName(i, isCapture);
-      if (name && !SDL_GetAudioDeviceSpec(i, isCapture, &spec))
-      {
-        logInfo("Capture Device %s : %d", name, spec.channels);
-        if (strlen(local.capDevName) == 0 && spec.channels >= captureChannels)
-        {
-          captureChannels = spec.channels;
-          strncpy(local.capDevName, name, sizeof(local.capDevName));
-          local.capDevName[sizeof(local.capDevName) - 1] = 0;
-        }
-      }
+      logInfo("Audio: output match '%s' not found, using default device.", outputPrefix);
     }
   }
 
-  if (strlen(local.playDevName) == 0)
+  if (inputPrefix)
   {
-    SDL_AudioSpec spec;
-    char *name = NULL;
-    if (!SDL_GetDefaultAudioInfo(&name, &spec, false))
+    unsigned int selected = findDeviceByNameMatch(local.audio, inputPrefix, true, false);
+    if (selected)
     {
-      strncpy(local.playDevName, name, sizeof(local.playDevName));
-      local.playDevName[sizeof(local.playDevName) - 1] = 0;
-      outputChannels = spec.channels;
-      logInfo("Default Audio Device %s : %d", local.playDevName, spec.channels);
+      inputDevId = selected;
+    }
+    else
+    {
+      logInfo("Audio: input match '%s' not found, using default device.", inputPrefix);
     }
   }
 
-  if (strlen(local.capDevName) == 0)
+  local.outputDevId = outputDevId;
+  local.inputDevId  = inputDevId;
+
+  rtaudio_device_info_t outInfo = rtaudio_get_device_info(local.audio, outputDevId);
+  rtaudio_device_info_t inInfo  = rtaudio_get_device_info(local.audio, inputDevId);
+
+  local.outputChannels = outInfo.output_channels;
+  if (local.outputChannels > MAX_PLAYBACK_CHANNELS)
+    local.outputChannels = MAX_PLAYBACK_CHANNELS;
+  local.inputChannels = inInfo.input_channels;
+  if (local.inputChannels > MAX_CAPTURE_CHANNELS)
+    local.inputChannels = MAX_CAPTURE_CHANNELS;
+
+  Audio_buildInputRoutingMap();
+
+  logInfo("Audio: output device '%s' (%d ch)", outInfo.name, local.outputChannels);
+  logInfo("Audio: input  device '%s' (%d ch)", inInfo.name, local.inputChannels);
+
+  rtaudio_stream_parameters_t outParams;
+  memset(&outParams, 0, sizeof(outParams));
+  outParams.device_id    = local.outputDevId;
+  outParams.num_channels = local.outputChannels;
+  outParams.first_channel = 0;
+
+  rtaudio_stream_parameters_t inParams;
+  memset(&inParams, 0, sizeof(inParams));
+  inParams.device_id    = local.inputDevId;
+  inParams.num_channels = local.inputChannels;
+  inParams.first_channel = 0;
+
+  unsigned int bufferFrames = (unsigned int)globalConfig.frameLength;
+
+  rtaudio_error_t err = rtaudio_open_stream(
+      local.audio,
+      &outParams,
+      local.inputChannels > 0 ? &inParams : NULL,
+      RTAUDIO_FORMAT_SINT32,
+      (unsigned int)globalConfig.sampleRate,
+      &bufferFrames,
+      audioCallback,
+      NULL,
+      NULL,
+      NULL);
+
+  if (err != RTAUDIO_ERROR_NONE)
   {
-    SDL_AudioSpec spec;
-    char *name = NULL;
-    if (!SDL_GetDefaultAudioInfo(&name, &spec, true))
-    {
-      strncpy(local.capDevName, name, sizeof(local.capDevName));
-      local.capDevName[sizeof(local.capDevName) - 1] = 0;
-      captureChannels = spec.channels;
-      logInfo("Default Capture Device %s : %d", local.capDevName, spec.channels);
-    }
+    logError("Audio: failed to open stream: %s", rtaudio_error(local.audio));
+    return;
   }
 
-  if (strlen(local.playDevName))
+  err = rtaudio_start_stream(local.audio);
+  if (err != RTAUDIO_ERROR_NONE)
   {
-    logInfo("Using Audio Device %s", local.playDevName);
-  }
-  if (strlen(local.capDevName))
-  {
-    logInfo("Using Capture Device %s", local.capDevName);
-  }
-
-  #ifdef __APPLE__
-  captureChannels = 8;
-#endif 
-
-
-  SDL_AudioSpec wantCap;
-  SDL_zero(wantCap);
-  wantCap.freq = globalConfig.sampleRate;
-  wantCap.format = AUDIO_S32;
-  wantCap.channels = captureChannels;
-  wantCap.samples = globalConfig.frameLength;
-  wantCap.callback = NULL;
-
-  local.capDev = openCaptureDevice(strlen(local.capDevName) == 0 ? NULL : local.capDevName,
-                                   globalConfig.sampleRate,
-                                   globalConfig.frameLength,
-                                   captureChannels,
-                                   &local.capSpec);
-  if (local.capDev == 0)
-  {
-    logError("Failed to open capture: %s", SDL_GetError());
+    logError("Audio: failed to start stream: %s", rtaudio_error(local.audio));
   }
   else
   {
-    logInfo("Capture Specs %dHz %dch", local.capSpec.freq, local.capSpec.channels);
-    SDL_PauseAudioDevice(local.capDev, 0);
-  }
-
-  SDL_AudioSpec want;
-  SDL_zero(want);
-  want.freq = globalConfig.sampleRate;
-  want.format = AUDIO_S32;
-  want.channels = outputChannels;
-  want.samples = globalConfig.frameLength;
-  want.callback = playCallback;
-
-  local.playDev = SDL_OpenAudioDevice(strlen(local.playDevName) == 0 ? NULL : local.playDevName,
-                                      false,
-                                      &want,
-                                      &local.playSpec,
-                                      0);
-  if (local.playDev == 0)
-  {
-    logError("Failed to open audio: %s", SDL_GetError());
-  }
-  else
-  {
-    logInfo("Audio Specs %dHz %dch", local.playSpec.freq, local.playSpec.channels);
-    SDL_PauseAudioDevice(local.playDev, 0);
+    logInfo("Audio: stream started %dHz %d-frame %d-out %d-in",
+            globalConfig.sampleRate, bufferFrames,
+            local.outputChannels, local.inputChannels);
   }
 }
 
 void Audio_stop(void)
 {
-  if (local.playDev)
-  {
-    SDL_CloseAudioDevice(local.playDev);
-    local.playDev = 0;
-  }
-  if (local.capDev)
-  {
-    SDL_CloseAudioDevice(local.capDev);
-    local.capDev = 0;
-  }
+  if (!local.audio)
+    return;
+  if (rtaudio_is_stream_running(local.audio))
+    rtaudio_stop_stream(local.audio);
+  if (rtaudio_is_stream_open(local.audio))
+    rtaudio_close_stream(local.audio);
 }
 
 uint32_t Audio_errorCount(void) { return 0; }
@@ -353,23 +382,20 @@ int Audio_getRate(void) { return globalConfig.sampleRate; }
 
 void Audio_printErrorStatus(void)
 {
-  switch (SDL_GetAudioDeviceStatus(local.playDev))
+  if (!local.audio)
   {
-  case SDL_AUDIO_STOPPED:
-    logInfo("audio stopped");
-    break;
-  case SDL_AUDIO_PLAYING:
-    logInfo("audio playing");
-    break;
-  case SDL_AUDIO_PAUSED:
-    logInfo("audio paused");
-    break;
-  default:
-    logInfo("audio ???");
-    break;
+    logInfo("audio: no instance");
+    return;
   }
+  if (rtaudio_is_stream_running(local.audio))
+    logInfo("audio playing");
+  else if (rtaudio_is_stream_open(local.audio))
+    logInfo("audio stopped");
+  else
+    logInfo("audio closed");
 }
 
 int Audio_getLoad() { return 0; }
 
-bool Audio_running() { return SDL_GetAudioDeviceStatus(local.playDev) == SDL_AUDIO_PLAYING; }
+bool Audio_running() { return local.audio && rtaudio_is_stream_running(local.audio); }
+
