@@ -1,0 +1,6 @@
+[submodule "lib/rtaudio"]
+	path = lib/rtaudio
+	url = https://github.com/thestk/rtaudio.git
+[submodule "libs/olive_c"]
+	path = libs/olive_c
+	url = https://github.com/tsoding/olive.c

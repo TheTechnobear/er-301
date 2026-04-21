@@ -45,7 +45,7 @@ namespace ssp
     }
 
     windowTexture = SDL_CreateTexture(
-      renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+      renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
     if (windowTexture == NULL)
     {
       logFatal("Failed to create window texture: %s", SDL_GetError());

@@ -1,7 +1,5 @@
 #include <ssp/Button.h>
 
-#include <string.h>
-
 namespace ssp
 {
   constexpr int kButtonWidth = 80;
@@ -24,8 +22,8 @@ namespace ssp
   constexpr int kRightColumnTopY = kRightColumnTopYBase + kRightColumnYOffset;
   constexpr int kRightColumnStepY = kButtonHeight + kButtonGapY;
 
-  constexpr int kLabelSizeNormal = 2;
-  constexpr int kLabelSizeLarge = 3;
+  constexpr int kLabelFontSmall = 12;
+  constexpr int kLabelFontLarge = 12;
   constexpr int kLargeLabelThreshold = 90;
 
   constexpr int kShadowOffsetX = 4;
@@ -101,14 +99,14 @@ namespace ssp
       return;
     }
 
-    Olivec_Font font = ssp_olive_default_font();
-    size_t fontSize = button.h >= kLargeLabelThreshold ? kLabelSizeLarge : kLabelSizeNormal;
-    int textW = (int)(strlen(text) * font.width * fontSize);
-    int textH = (int)(font.height * fontSize);
+    int fontSize = button.h >= kLargeLabelThreshold ? kLabelFontLarge : kLabelFontSmall;
+    int textW = 0;
+    int textH = 0;
+    ssp_olive_od_text_metrics(text, fontSize, &textW, &textH);
     int tx = button.x + (button.w - textW) / 2;
     int ty = button.y + (button.h - textH) / 2;
 
-    olivec_text(canvas, text, tx, ty, font, fontSize, kColorLabel);
+    ssp_olive_od_text(canvas, text, tx, ty, fontSize, kColorLabel);
   }
 
   struct RectButtonLayout
