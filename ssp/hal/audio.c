@@ -1,3 +1,4 @@
+#include <hal/channels.h>
 #include <SDL2/SDL.h>
 #include <hal/audio.h>
 #include <hal/log.h>
@@ -27,13 +28,24 @@ static struct AudioLocals {
   uint32_t debugFrameCounter;
 } local;
 
-// Logical ER-301 input index -> host capture device channel index.
+
+#ifdef TARGET_SSP
 static int inputChannelMap[NUM_INPUT_CHANNELS] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-    10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+    INPUT_IN1, INPUT_IN2, INPUT_IN3, INPUT_IN4, INPUT_G1, INPUT_G2, INPUT_G3, INPUT_G4, INPUT_A1, INPUT_B1, INPUT_C1, INPUT_D1,
+    INPUT_A2, INPUT_B2,INPUT_C2,INPUT_D2,INPUT_A3,INPUT_B3,INPUT_C3,INPUT_D3};
 
 // Logical ER-301 outputs OUT1..OUT4 -> host playback device channel index.
 static int outputChannelMap[NUM_OUTPUT_CHANNELS] = {0, 1, 2, 3};
+
+#else 
+// Host capture device channel index -> logical ER-301 input index.
+static int inputChannelMap[NUM_INPUT_CHANNELS] = {
+    INPUT_IN1, INPUT_IN2, INPUT_IN3, INPUT_IN4, INPUT_G1, INPUT_G2, INPUT_G3, INPUT_G4, INPUT_A1, INPUT_B1, INPUT_C1, INPUT_D1,
+    INPUT_A2, INPUT_B2,INPUT_C2,INPUT_D2,INPUT_A3,INPUT_B3,INPUT_C3,INPUT_D3};
+
+// Logical ER-301 outputs OUT1..OUT4 -> host playback device channel index.
+static int outputChannelMap[NUM_OUTPUT_CHANNELS] = {0, 1, 2, 3};
+#endif 
 
 static SDL_AudioDeviceID openCaptureDevice(const char *deviceName,
                                            int sampleRate,
@@ -91,19 +103,18 @@ static void playCallback(void *userdata, Uint8 *stream, int len)
       memset((uint8_t *)local.captureBuffer + got, 0, captureBytes - (uint32_t)got);
     }
 
+    uint32_t mappedChannels = captureChannels < (uint32_t)NUM_INPUT_CHANNELS ? captureChannels : (uint32_t)NUM_INPUT_CHANNELS;
     for (uint32_t i = 0; i < frameLength; i++)
     {
       uint32_t srcBase = i * captureChannels;
       uint32_t dstBase = i * NUM_INPUT_CHANNELS;
-      for (uint32_t ch = 0; ch < NUM_INPUT_CHANNELS; ch++)
+      for (uint32_t ch = 0; ch < mappedChannels; ch++)
       {
-        int srcCh = inputChannelMap[ch];
-        int sample = 0;
-        if (srcCh >= 0 && (uint32_t)srcCh < captureChannels)
+        int destCh = inputChannelMap[ch];
+        if (destCh >= 0 && (uint32_t)destCh < NUM_INPUT_CHANNELS)
         {
-          sample = local.captureBuffer[srcBase + (uint32_t)srcCh];
+          local.captureMapped[dstBase + (uint32_t)destCh] = local.captureBuffer[srcBase + ch];
         }
-        local.captureMapped[dstBase + ch] = sample;
       }
     }
 
