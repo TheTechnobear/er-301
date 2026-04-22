@@ -1,4 +1,5 @@
 #include <ssp/Led.h>
+#include "constants.h"
 
 #include <algorithm>
 
@@ -31,7 +32,7 @@ namespace ssp
 
   constexpr uint32_t kLedOffShell = SSP_RGBA(48, 36, 30, 255);
   constexpr uint32_t kLedOffCore = SSP_RGBA(18, 16, 14, 255);
-  constexpr uint32_t kLedLabelColor = SSP_RGBA(214, 216, 222, 255);
+  constexpr uint32_t kLedLabelColor = SSP_RGBA(MAIN_DISPLAY_AMBER_R, MAIN_DISPLAY_AMBER_G, 0, 255);
 
   struct LedLayout
   {

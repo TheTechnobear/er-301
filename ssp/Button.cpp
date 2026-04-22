@@ -1,4 +1,5 @@
 #include <ssp/Button.h>
+#include "constants.h"
 
 namespace ssp
 {
@@ -39,7 +40,7 @@ namespace ssp
   constexpr uint32_t kColorFacePressed = SSP_RGBA(255, 52, 44, 255);
   constexpr uint32_t kColorEdge = SSP_RGBA(8, 8, 10, 255);
   constexpr uint32_t kColorHighlight = SSP_RGBA(130, 136, 148, 100);
-  constexpr uint32_t kColorLabel = SSP_RGBA(245, 52, 44, 255);
+  constexpr uint32_t kColorLabel = SSP_RGBA(MAIN_DISPLAY_AMBER_R, MAIN_DISPLAY_AMBER_G, 0, 255);
 
   constexpr int colX(int index)
   {

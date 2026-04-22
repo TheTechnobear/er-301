@@ -1,4 +1,5 @@
 #include <ssp/Toggle.h>
+#include "constants.h"
 
 #include <algorithm>
 
@@ -19,7 +20,7 @@ namespace ssp
   constexpr int kTogglePaddingY = 6;
   constexpr int kToggleTextLineGap = 4;
 
-  constexpr uint32_t kToggleTitleColor = SSP_RGBA(214, 216, 222, 255);
+  constexpr uint32_t kToggleTitleColor = SSP_RGBA(MAIN_DISPLAY_AMBER_R, MAIN_DISPLAY_AMBER_G, 0, 255);
   constexpr uint32_t kToggleLineColor = SSP_RGBA(110, 114, 126, 255);
   constexpr uint32_t kToggleActiveColor = SSP_RGBA(255, 52, 44, 255);
   constexpr uint32_t kToggleInactiveShell = SSP_RGBA(48, 36, 30, 255);
