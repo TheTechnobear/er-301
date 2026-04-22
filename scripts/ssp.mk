@@ -12,6 +12,22 @@ includes += $(program_dir) $(lua_dir) $(lodepng_dir) $(miniz_dir) $(libs_dir)/SD
 includes += $(program_name)/od/glue
 includes += $(libs_dir)/rtaudio
 
+# Display/input backend selection for SSP:
+# - Darwin always uses SDL.
+# - TARGET_SSP cross-build defaults to framebuffer mode.
+# Override on command line, e.g. make ssp SSP_USE_SDL=1
+ifeq ($(ARCH),darwin)
+SSP_USE_SDL ?= 1
+else
+ifeq ($(CROSS_COMPILE),1)
+SSP_USE_SDL ?= 0
+else
+SSP_USE_SDL ?= 1
+endif
+endif
+
+symbols += SSP_USE_SDL=$(SSP_USE_SDL)
+
 
 # Optional external FFTW staging root with include/ and lib/ subdirs.
 # Example: FFTW_STAGE_ROOT=$(PWD)/testing/linux/fftw3/usr
@@ -33,7 +49,9 @@ objects := $(addprefix $(out_dir)/,$(c_sources:%.c=%.o) $(cpp_sources:%.cpp=%.o)
 
 # Manually add objects 
 objects += $(out_dir)/od/glue/app_swig.o
+ifeq ($(SSP_USE_SDL),1)
 objects += $(out_dir)/libs/SDL_FontCache/SDL_FontCache.o
+endif
 objects += $(out_dir)/libs/rtaudio/RtAudio.o
 objects += $(out_dir)/libs/rtaudio/rtaudio_c.o
 
@@ -81,10 +99,18 @@ sdl2_ttf := $(shell brew --prefix sdl2_ttf)
 fftw := $(shell brew --prefix fftw)
 
 CFLAGS += -rdynamic
+ifeq ($(SSP_USE_SDL),1)
 CFLAGS += -I$(sdl2)/include -I$(sdl2)/include/SDL2 -I$(sdl2_ttf)/include -I$(fftw)/include
+else
+CFLAGS += -I$(fftw)/include
+endif
 CFLAGS += -D__MACOSX_CORE__
 CFLAGS += $(ARCH_FLAGS)
+ifeq ($(SSP_USE_SDL),1)
 LFLAGS += -L$(sdl2)/lib -L$(sdl2_ttf)/lib -L$(fftw)/lib
+else
+LFLAGS += -L$(fftw)/lib
+endif
 LFLAGS += -framework CoreAudio -framework CoreFoundation
 endif
 endif
@@ -99,7 +125,11 @@ endif
 
 ifeq ($(CROSS_COMPILE),1)
 symbols += TARGET_SSP
-CFLAGS += -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/SDL2
+CFLAGS += -D_GNU_SOURCE
+CFLAGS += -I$(SYSROOT)/usr/include
+ifeq ($(SSP_USE_SDL),1)
+CFLAGS += -I$(SYSROOT)/usr/include/SDL2
+endif
 CFLAGS += -D__LINUX_ALSA__
 LFLAGS += -L$(SYSROOT)/usr/lib -Wl,-rpath-link,$(SYSROOT)/usr/lib
 LFLAGS += -lasound
@@ -107,7 +137,9 @@ endif
 
 CFLAGS += -DFIRMWARE_VERSION=\"$(FIRMWARE_VERSION)\"
 CFLAGS += -DBUILD_PROFILE=\"$(PROFILE)\"
+ifeq ($(SSP_USE_SDL),1)
 LFLAGS += -lSDL2 -lSDL2_ttf
+endif
 LFLAGS += -lfftw3f
 ifeq ($(ARCH),darwin)
 ifneq ($(CROSS_COMPILE),1)

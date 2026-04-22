@@ -28,11 +28,43 @@
 #include <limits.h>
 #include <iostream>
 #include <fstream>
+#include <thread>
+
+#if defined(TARGET_SSP) && !defined(__APPLE__)
+#include <pthread.h>
+#include <sched.h>
+#endif
+
+#ifndef SSP_USE_SDL
+#if defined(__APPLE__)
+#define SSP_USE_SDL 1
+#else
+#define SSP_USE_SDL 0
+#endif
+#endif
 
 using namespace od;
 
 namespace ssp
 {
+
+#if defined(TARGET_SSP) && !defined(__APPLE__)
+  static void pinCurrentThreadToCore(int core, const char *label)
+  {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core, &cpuset);
+    int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (rc != 0)
+    {
+      logError("Failed to pin %s thread to core %d: %d", label, core, rc);
+    }
+    else
+    {
+      logInfo("Pinned %s thread to core %d.", label, core);
+    }
+  }
+#endif
 
   static uint32_t mapLogicalSspButtonToGpio(SSPButtonId id)
   {
@@ -84,6 +116,8 @@ namespace ssp
   SSPCore::SSPCore()
   {
   }
+
+  #if SSP_USE_SDL
 
   void SSPCore::handleKeyUp(SDL_Keysym keysym)
   {
@@ -169,6 +203,8 @@ namespace ssp
     }
   }
 
+  #endif
+
   void SSPCore::loop()
   {
     int delay = 0;
@@ -176,9 +212,10 @@ namespace ssp
     while (!quit)
     {
       tick_t start = wallclock();
-      SDL_Event e;
       Pump_resetThrottle();
-      // SDL_WaitEventTimeout(0, delay);
+
+#if SSP_USE_SDL
+      SDL_Event e;
       if (delay > 0)
       {
         SDL_Delay(delay);
@@ -214,6 +251,12 @@ namespace ssp
           }
         }
       }
+#else
+      if (delay > 0)
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+      }
+#endif
 
       if (hardwareInputEnabled)
       {
@@ -333,10 +376,12 @@ namespace ssp
   void SSPCore::putDisplayBuffer(DisplayBuffer *buffer)
   {
     renderQ.push(buffer);
+#if SSP_USE_SDL
     SDL_Event e;
     SDL_zero(e);
     e.type = customEventType;
     SDL_PushEvent(&e);
+#endif
   }
 
   int SSPCore::getEncoderValue()
@@ -672,7 +717,7 @@ namespace ssp
     }
   }
 
-  static int interpreterThreadStart(void *ptr)
+  static void interpreterThreadStart()
   {
     TLS_setName("lua");
     AppInterpreter interp;
@@ -683,7 +728,6 @@ namespace ssp
       "app.roots = {x='%s',rear='%s',front='%s'}", globalConfig.xRoot, globalConfig.rearRoot, globalConfig.frontRoot);
     interp.execute("dofile('%s/boot/logging.lua')", globalConfig.xRoot);
     interp.execute("dofile('%s/boot/start.lua')", globalConfig.xRoot);
-    return 0;
   }
 
   int SSPCore::run(int argc, char **argv)
@@ -704,12 +748,17 @@ namespace ssp
     }
 
     TLS_setName("main");
+  #if defined(TARGET_SSP) && !defined(__APPLE__)
+    pinCurrentThreadToCore(0, "UI");
+  #endif
+#if SSP_USE_SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER) < 0)
     {
       logFatal("SDL could not initialize! SDL_Error: %s", SDL_GetError());
     }
 
     customEventType = SDL_RegisterEvents(1);
+#endif
     window = new Window();
 
     loadDefaultConfiguration();
@@ -777,12 +826,7 @@ namespace ssp
 
     restoreState();
 
-    SDL_Thread *interpreterThread = SDL_CreateThread(interpreterThreadStart, "interp", 0);
-    if (interpreterThread == 0)
-    {
-      logError("Failed to create Interpreter Thread.");
-      goto error;
-    }
+    std::thread interpreterThread(interpreterThreadStart);
 
     logInfo("Entering ssp loop.");
     loop();
@@ -790,14 +834,15 @@ namespace ssp
 
     Events_push(EVENT_QUIT);
     logInfo("Waiting for interpreter to finish...");
-    SDL_WaitThread(interpreterThread, 0);
+    interpreterThread.join();
 
     saveState();
 
-  error:
     logInfo("Exiting...");
     delete window;
+#if SSP_USE_SDL
     SDL_Quit();
+#endif
     return 0;
   }
 

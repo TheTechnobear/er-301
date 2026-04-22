@@ -7,6 +7,11 @@
 #include <od/config.h>
 #include <string.h>
 
+#if defined(TARGET_SSP) && !defined(__APPLE__)
+#include <pthread.h>
+#include <sched.h>
+#endif
+
 #define MAX_CAPTURE_CHANNELS 32
 #define MAX_PLAYBACK_CHANNELS 32
 
@@ -26,6 +31,24 @@ static struct AudioLocals {
   unsigned int inputChannels;
   uint32_t debugFrameCounter;
 } local;
+
+#if defined(TARGET_SSP) && !defined(__APPLE__)
+static void Audio_pinCurrentThreadToCore(int core, const char *label)
+{
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(core, &cpuset);
+  int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (rc != 0)
+  {
+    logError("Failed to pin %s thread to core %d: %d", label, core, rc);
+  }
+  else
+  {
+    logInfo("Pinned %s thread to core %d.", label, core);
+  }
+}
+#endif
 
 
 #if TARGET_SSP
@@ -139,6 +162,14 @@ static int audioCallback(void *outputBuffer, void *inputBuffer,
   (void)streamTime;
   (void)status;
   (void)userdata;
+
+#if defined(TARGET_SSP) && !defined(__APPLE__)
+  if (local.debugFrameCounter == 0)
+  {
+    Audio_pinCurrentThreadToCore(1, "audio");
+  }
+#endif
+  local.debugFrameCounter++;
 
   uint32_t frameLength = nFrames;
   if (frameLength > MAX_AUDIO_FRAME_LENGTH)

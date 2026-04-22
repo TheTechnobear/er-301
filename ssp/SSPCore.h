@@ -4,8 +4,19 @@
 #include <ssp/Window.h>
 #include <ssp/hw/SSPButEnc.h>
 #include <hal/display.h>
-#include <SDL2/SDL.h>
 #include <map>
+
+#ifndef SSP_USE_SDL
+#if defined(__APPLE__)
+#define SSP_USE_SDL 1
+#else
+#define SSP_USE_SDL 0
+#endif
+#endif
+
+#if SSP_USE_SDL
+#include <SDL2/SDL.h>
+#endif
 
 namespace ssp
 {
@@ -21,9 +32,11 @@ namespace ssp
 
   private:
     void loop();
+#if SSP_USE_SDL
     void handleKeyUp(SDL_Keysym sym);
     void handleKeyDown(SDL_Keysym sym);
     void handleMouseButton(SDL_MouseButtonEvent &e);
+#endif
     void mapButtonToKey(uint32_t id, const std::string &key);
 
     bool writeDefaultConfiguration(const std::string &filename);
@@ -48,7 +61,9 @@ namespace ssp
     Window *window = 0;
     DisplayBuffer ping, pong;
     od::LockFreeQueue<DisplayBuffer *, 4> readyQ, renderQ;
+  #if SSP_USE_SDL
     uint customEventType = SDL_USEREVENT;
+  #endif
     double encoderValue = 0;
     bool quit = false;
     bool storageToggleFocused = false;

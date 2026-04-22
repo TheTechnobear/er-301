@@ -4,6 +4,14 @@
 #include <hal/log.h>
 #include <hal/timing.h>
 
+#ifndef SSP_USE_SDL
+#if defined(__APPLE__)
+#define SSP_USE_SDL 1
+#else
+#define SSP_USE_SDL 0
+#endif
+#endif
+
 namespace ssp
 {
   static inline uint32_t grayColor(int value)
@@ -29,6 +37,7 @@ namespace ssp
 
   Window::Window()
   {
+#if SSP_USE_SDL
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");
 
     window = SDL_CreateWindow(
@@ -50,6 +59,13 @@ namespace ssp
     {
       logFatal("Failed to create window texture: %s", SDL_GetError());
     }
+#else
+    framebuffer.reset(new HardwareFramebuffer(SCREEN_WIDTH, SCREEN_HEIGHT));
+    if (!framebuffer->init())
+    {
+      logFatal("Failed to initialize SSP hardware framebuffer.");
+    }
+#endif
 
     windowBuffer.resize(SCREEN_WIDTH * SCREEN_HEIGHT, SSP_RGBA(P_BACKGROUND, P_BACKGROUND, P_BACKGROUND, 255));
 
@@ -59,9 +75,11 @@ namespace ssp
 
   Window::~Window()
   {
+#if SSP_USE_SDL
     SDL_DestroyTexture(windowTexture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+#endif
   }
 
   void Window::renderMainFrame(uint8_t *frame)
@@ -104,9 +122,14 @@ namespace ssp
 
   void Window::onResized(int w, int h)
   {
+#if SSP_USE_SDL
     width = w;
     height = h;
     pauseDisplayTime = 1;
+#else
+    (void)w;
+    (void)h;
+#endif
   }
 
   void Window::update(uint8_t *mainFrame, uint8_t *subFrame)
@@ -118,7 +141,9 @@ namespace ssp
 
     if (t < pauseDisplayTime)
     {
+#if SSP_USE_SDL
       SDL_RenderPresent(renderer);
+#endif
       return;
     }
     pauseDisplayTime = 0;
@@ -131,13 +156,18 @@ namespace ssp
     renderMainFrame(mainFrame);
     renderSubFrame(subFrame);
 
+  #if SSP_USE_SDL
     SDL_UpdateTexture(windowTexture, NULL, windowBuffer.data(), SCREEN_WIDTH * (int)sizeof(uint32_t));
     SDL_RenderCopy(renderer, windowTexture, NULL, NULL);
     SDL_RenderPresent(renderer);
+  #else
+    framebuffer->present(windowBuffer.data());
+  #endif
   }
 
   void Window::setPosition(int x, int y, int correction)
   {
+#if SSP_USE_SDL
     // If the requested position is out of bounds then position in the center.
     SDL_Rect rect;
     SDL_GetDisplayBounds(0, &rect);
@@ -159,18 +189,32 @@ namespace ssp
 #else
     SDL_SetWindowPosition(window, x, y);
 #endif
+#else
+    (void)x;
+    (void)y;
+    (void)correction;
+#endif
   }
 
   void Window::getPosition(int &x, int &y)
   {
+#if SSP_USE_SDL
     SDL_GetWindowPosition(window, &x, &y);
+#else
+    x = 0;
+    y = 0;
+#endif
   }
 
   int Window::getTitleBarHeight()
   {
+#if SSP_USE_SDL
     int top;
     SDL_GetWindowBordersSize(window, &top, 0, 0, 0);
     return top;
+#else
+    return 0;
+#endif
   }
 
 } // namespace ssp

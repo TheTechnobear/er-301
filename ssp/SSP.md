@@ -21,18 +21,30 @@ the workflow etc, will initally be retained, buttons and encoders wil however be
 - button mapping see design ideas
 
 
-# Limitatons
-- SDL2 is limited to max 8 channels in and out! , need to consider alternative.
+# Implementation details
+## Approach
+for this approach, Ive made minimal changes to the files outside of the ssp sub-directory. 
+the only files touched, at this times are build related, that are not used / altered when compiling er301 or firmware (when not on ssp)
 
-alternatives? 
-Juce - too heavy, many dependancies
-rt_audio  - like traxhost, rtaudio for audio + SDL for display (only use SDL on mac, also for keyinput)
-rt_audio + somthing else, to ditch SDL
+## Submodules used 
+https://github.com/thestk/rtaudio.git -> libs/rtaudio
+https://github.com/tsoding/olive.c -> libs/olive_c
 
-think rt_audio + SDL for initial test
+## major changes 
+(and differences from emu)
+alot of the emu code is now gone, the main parts remaining are the hal stubs, and the hook into rendering the main/sub displays. Ive also retain the keyboard mapping though the UI buttons etc have gone.
 
-using 
-https://github.com/tsoding/olive.c
+the biggest drive for changes was to remove SDL from the ssp implementation.
+drawing code is now done using olive.c rather than SDL.
+rtaudio is used (both mac and ssp) for all audio, to overcome the 8 ch limits of SDL2.
+
+on macOs we continue to use SDL to finally render the olive buffer, and also provide the keyboard mapping.
+on SSP we write directly to the hardware fb, though we can optionally compile to SDL for testing.
+
+primary reasons not to use SDL were: 
+a) 8ch limits on audio
+b) SDL is not compiled / shipped on SSP, so would need to be supplied.
+c) SDL is heavy for what we need
 
 
 

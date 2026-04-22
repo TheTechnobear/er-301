@@ -3,8 +3,10 @@
 #include <hal/concurrency/Thread.h>
 //#define BUILDOPT_DEBUG_LEVEL 10
 #include <hal/log.h>
-#include <SDL2/SDL_thread.h>
-#include <SDL2/SDL_timer.h>
+
+#include <pthread.h>
+#include <sched.h>
+#include <unistd.h>
 
 #ifdef BUILDOPT_VERBOSE
 #include <typeinfo>
@@ -15,21 +17,12 @@ namespace od
 
   struct ThreadRunner
   {
-    static int threadEntry(void *ptr)
+    static void *threadEntry(void *ptr)
     {
       od::Thread *thread = (od::Thread *)ptr;
       logAssert(thread);
       TLS_setName(thread->mName.c_str());
       logInfo("Thread starting.");
-      if (thread->mPriority < TASK_PRIORITY_REALTIME)
-      {
-        SDL_SetThreadPriority(SDL_THREAD_PRIORITY_NORMAL);
-      }
-      else
-      {
-        SDL_SetThreadPriority(SDL_THREAD_PRIORITY_NORMAL);
-        // SDL_SetThreadPriority(SDL_THREAD_PRIORITY_TIME_CRITICAL);
-      }
       thread->mThreadRunning = true;
       thread->run();
       thread->mThreadRunning = false;
@@ -39,12 +32,12 @@ namespace od
 
   void Thread::sleep(uint32_t timeout)
   {
-    SDL_Delay(timeout);
+    usleep(timeout * 1000);
   }
 
   void Thread::yield()
   {
-    SDL_Delay(0);
+    sched_yield();
   }
 
   Thread::Thread(const char *name) : mName(name)
@@ -73,11 +66,16 @@ namespace od
     std::string classname = demangle(typeid(*this).name());
     logDebug(1, "%s(0x%x): start", classname.c_str(), this);
 #endif
-    mThreadHandle = (void *)SDL_CreateThread(ThreadRunner::threadEntry, mName.c_str(), (void *)this);
-    if (mThreadHandle == 0)
+    pthread_t *thread = new pthread_t;
+    if (pthread_create(thread, 0, ThreadRunner::threadEntry, (void *)this) != 0)
     {
-      logError("Failed to create SDL Thread.");
+      delete thread;
+      mThreadHandle = 0;
+      logError("Failed to create pthread.");
+      return;
     }
+
+    mThreadHandle = (void *)thread;
   }
 
   bool Thread::running()
@@ -98,9 +96,10 @@ namespace od
   {
     if (mThreadHandle)
     {
-      int ret;
-      SDL_Thread *thread = (SDL_Thread *)mThreadHandle;
-      SDL_WaitThread(thread, &ret);
+    pthread_t *thread = (pthread_t *)mThreadHandle;
+    pthread_join(*thread, 0);
+    delete thread;
+    mThreadHandle = 0;
 #ifdef BUILDOPT_VERBOSE
       logDebug(1, "%s(0x%x): stopped", classname.c_str(), this);
 #endif

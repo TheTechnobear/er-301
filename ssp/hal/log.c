@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <hal/breakpoint.h>
 #include <ssp/tls.h>
-#include <SDL2/SDL.h>
 
 #define LOG_FMT_FILE_LINE "\033[36m[%s:%d]\033[0m"
 #define LOG_FMT_FUNCTION "\033[34m%s()\033[0m"

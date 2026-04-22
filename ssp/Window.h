@@ -9,7 +9,20 @@
 #include <hal/channels.h>
 #include <hal/events.h>
 
+#ifndef SSP_USE_SDL
+#if defined(__APPLE__)
+#define SSP_USE_SDL 1
+#else
+#define SSP_USE_SDL 0
+#endif
+#endif
+
+#if SSP_USE_SDL
 #include <SDL2/SDL.h>
+#else
+#include <memory>
+#include <ssp/hw/Display.h>
+#endif
 
 #include <stdint.h>
 #include <array>
@@ -31,13 +44,20 @@ namespace ssp
     int getTitleBarHeight();
     void update(uint8_t *mainFrame, uint8_t *subFrame);
 
+  #if SSP_USE_SDL
     SDL_Window *window = 0;
     SDL_Renderer *renderer = 0;
     SDL_Texture *windowTexture = 0;
+  #else
+    std::unique_ptr<HardwareFramebuffer> framebuffer;
+  #endif
+
     std::vector<uint32_t> windowBuffer;
 
+  #if SSP_USE_SDL
     SDL_Rect mainRect{ .x = MAIN_X, .y = MAIN_Y, .w = MAIN_W, .h = MAIN_H };
     SDL_Rect subRect{ .x = SUB_X, .y = SUB_Y, .w = SUB_W, .h = SUB_H };
+  #endif
 
     std::array<Button, 19> buttons{
       Button{ "M1(QS)", BUTTON_MAIN1 }, Button{ "M2", BUTTON_MAIN2 },     Button{ "M3", BUTTON_MAIN3 },
