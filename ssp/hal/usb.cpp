@@ -1,5 +1,4 @@
 #include <hal/usb.h>
-#include <hal/log.h>
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -14,6 +13,19 @@ static struct USBLocals
   Mode mode = off;
   bool started = false;
 } local;
+
+namespace ssp
+{
+  bool usbStarted()
+  {
+    return local.started;
+  }
+
+  bool usbMassStorageMode()
+  {
+    return local.mode == USBLocals::massStorage;
+  }
+}
 
 extern "C"
 {

@@ -2,17 +2,6 @@
 
 This document describes how to cross-compile the ER-301 emulator (`emu`) from macOS (Apple Silicon) to Linux/ARM using the SSP SDK/buildroot toolchain.
 
-Important Note: 
-it appears, for now at least, the ER-301 is no longer in production and being developed.
-so its unlikey, I would push this back to the upstream repo, as it doesnt make much sense.
-frankly, its quite likely this is not something the original dev would wish for.
-if the **original** dev requested, I would be happy to push it upstream, but otherwise I will not.
-
-overtime, its likley this will turn increasingly into a 'derivitivte' projected, allowed under the original project's MIT License.
-
-Thanks and Kudos to OD's devs for making this possible and generously making the project open source.
-
-
 ## Table of Contents
 
 - [Scope](#scope)

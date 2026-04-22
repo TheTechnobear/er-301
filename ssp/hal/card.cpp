@@ -3,19 +3,136 @@
 #include <hal/log.h>
 #include <hal/card.h>
 #include <hal/events.h>
+#include <od/config.h>
 #include <ssp/ssp.h>
+
+#include <stdlib.h>
+#include <fstream>
+#include <string>
 
 typedef struct sd
 {
   int mode;
+  bool mountedBySystem;
 } sd_t;
 
 static sd_t sd[2];
+
+#if defined(TARGET_SSP)
+namespace ssp
+{
+  bool usbStarted();
+  bool usbMassStorageMode();
+}
+
+static std::string shellQuote(const char *text)
+{
+  std::string out = "'";
+  for (const char *p = text; *p; ++p)
+  {
+    if (*p == '\'')
+    {
+      out += "'\\''";
+    }
+    else
+    {
+      out += *p;
+    }
+  }
+  out += "'";
+  return out;
+}
+
+static bool runShellCommand(const std::string &command)
+{
+  int rc = system(command.c_str());
+  return rc == 0;
+}
+
+static bool isMountedAtPath(const char *mountPoint)
+{
+  std::ifstream stream("/proc/mounts");
+  if (!stream)
+  {
+    return false;
+  }
+
+  std::string device;
+  std::string mountedPath;
+  std::string fsType;
+  std::string options;
+  int dump = 0;
+  int pass = 0;
+  while (stream >> device >> mountedPath >> fsType >> options >> dump >> pass)
+  {
+    if (mountedPath == mountPoint)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+#endif
+
+static bool shouldUseFrontUSBMount(uint32_t drv)
+{
+#if defined(TARGET_SSP)
+  bool useFrontUSB = ssp::usbStarted() && ssp::usbMassStorageMode();
+  return drv == CARD_FRONT && useFrontUSB;
+#else
+  (void)drv;
+  return false;
+#endif
+}
+
+static bool mountFrontUSBCard()
+{
+#if defined(TARGET_SSP)
+  const char *device = "/dev/sda1";
+  const char *mountPoint = globalConfig.frontRoot;
+  std::string mountCmd = "mount ";
+  mountCmd += shellQuote(device);
+  mountCmd += " ";
+  mountCmd += shellQuote(mountPoint);
+  if (!runShellCommand(mountCmd))
+  {
+    if (isMountedAtPath(mountPoint))
+    {
+      logInfo("USB drive already mounted at %s.", mountPoint);
+      return true;
+    }
+    logWarn("Failed to mount USB drive %s at %s.", device, mountPoint);
+    return false;
+  }
+  logInfo("Mounted USB drive %s at %s.", device, mountPoint);
+  return true;
+#else
+  return true;
+#endif
+}
+
+static void unmountFrontUSBCard()
+{
+#if defined(TARGET_SSP)
+  const char *mountPoint = globalConfig.frontRoot;
+  std::string unmountCmd = "umount ";
+  unmountCmd += shellQuote(mountPoint);
+  if (!runShellCommand(unmountCmd))
+  {
+    logWarn("Failed to unmount USB drive at %s.", mountPoint);
+    return;
+  }
+  logInfo("Unmounted USB drive at %s.", mountPoint);
+#endif
+}
 
 void Card_init()
 {
   sd[0].mode = CARD_MODE_NOT_CONNECTED;
   sd[1].mode = CARD_MODE_NOT_CONNECTED;
+  sd[0].mountedBySystem = false;
+  sd[1].mountedBySystem = false;
 }
 
 bool Card_mount(uint32_t drv)
@@ -24,9 +141,26 @@ bool Card_mount(uint32_t drv)
   {
     if (sd[drv].mode == CARD_MODE_NOT_CONNECTED)
     {
+      if (shouldUseFrontUSBMount(drv))
+      {
+        if (!mountFrontUSBCard())
+        {
+          logWarn("Card_mount: USB front card mount failed");
+          return false;
+        }
+        sd[drv].mountedBySystem = true;
+      }
+
       if (Card_connect(drv, CARD_MODE_FATFS))
       {
         return true;
+      }
+
+      if (sd[drv].mountedBySystem)
+      {
+        logInfo("Card_mount: Card_connect failed, unmounting USB drive");
+        unmountFrontUSBCard();
+        sd[drv].mountedBySystem = false;
       }
     }
   }
@@ -39,6 +173,11 @@ void Card_unmount(uint32_t drv)
   if (Card_isMounted(drv))
   {
     Card_disconnect(drv);
+    if (sd[drv].mountedBySystem)
+    {
+      unmountFrontUSBCard();
+      sd[drv].mountedBySystem = false;
+    }
   }
 }
 
