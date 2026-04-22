@@ -21,6 +21,8 @@ namespace ssp
 #endif
   const int SCREEN_BRIGHTNESS = 15; // 1-16
   const float SCREEN_TINT = 0.85f;
+  const int MAIN_DISPLAY_AMBER_R = 15 * SCREEN_BRIGHTNESS;
+  const int MAIN_DISPLAY_AMBER_G = (int)(MAIN_DISPLAY_AMBER_R * SCREEN_TINT);
 
   // panel color
   const int P_BACKGROUND = 10;
@@ -28,7 +30,7 @@ namespace ssp
   const int ENCODER_SPEED = 5;
 
   // outer margin
-  const int MARGIN = 16;
+  const int MARGIN = 32;
 
   // main display
   const int MAIN_X = MARGIN;

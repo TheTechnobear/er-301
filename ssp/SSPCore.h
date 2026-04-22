@@ -32,6 +32,8 @@ namespace ssp
 
   private:
     void loop();
+    void handleEncoderDelta(SSPEncoderId encoder, int delta);
+    void handleEncoderSwitch(SSPEncoderId encoder, bool pressed);
 #if SSP_USE_SDL
     void handleKeyUp(SDL_Keysym sym);
     void handleKeyDown(SDL_Keysym sym);

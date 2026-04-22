@@ -7,7 +7,7 @@ namespace ssp
   constexpr int kEncoderCount = 4;
   constexpr int kEncoderStartX = 90;
   constexpr int kEncoderStepX = 200;
-  constexpr int kEncoderY = 392;
+  constexpr int kEncoderY = 364;
   constexpr int kEncoderRadius = 62;
 
   constexpr int kShadowOffsetX = 6;

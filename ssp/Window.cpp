@@ -19,20 +19,90 @@ namespace ssp
     return SSP_RGBA(value, (int)(value * SCREEN_TINT), 0, 255);
   }
 
+  static inline void renderMainColumnLabels(Olivec_Canvas canvas)
+  {
+    static const char *topLabels[3] = { "M1", "M2", "M3" };
+    static const char *bottomLabels[3] = { "M4", "M5", "M6" };
+
+    const int fontSize = 16;
+    const int mainW = MAIN_HORIZONTAL_PIXELS * MAIN_SCALE;
+    const int mainH = MAIN_VERTICAL_PIXELS * MAIN_SCALE;
+    const int columnW = mainW / 6;
+    const int topY = MAIN_Y - 22;
+    const int bottomY = MAIN_Y + mainH + 6;
+    const uint32_t color = SSP_RGBA(MAIN_DISPLAY_AMBER_R, MAIN_DISPLAY_AMBER_G, 0, 255);
+
+    for (int i = 0; i < 3; i++)
+    {
+      int topTextW = 0;
+      int topTextH = 0;
+      ssp_olive_od_text_metrics(topLabels[i], fontSize, &topTextW, &topTextH);
+      int topCx = MAIN_X + (i * columnW) + columnW / 2;
+      ssp_olive_od_text(canvas, topLabels[i], topCx - topTextW / 2, topY, fontSize, color);
+
+      int bottomTextW = 0;
+      int bottomTextH = 0;
+      ssp_olive_od_text_metrics(bottomLabels[i], fontSize, &bottomTextW, &bottomTextH);
+      int bottomCx = MAIN_X + ((i + 3) * columnW) + columnW / 2;
+      ssp_olive_od_text(canvas, bottomLabels[i], bottomCx - bottomTextW / 2, bottomY, fontSize, color);
+    }
+  }
+
+  static inline void renderSubColumnLabels(Olivec_Canvas canvas)
+  {
+    static const char *labels[3] = { "S1", "S2", "S3" };
+
+    const int fontSize = 16;
+    const int subW = SUB_HORIZONTAL_PIXELS * SUB_SCALE;
+    const int subH = SUB_VERTICAL_PIXELS * SUB_SCALE;
+    const int columnW = subW / 3;
+    const int labelY = SUB_Y + subH + 6;
+    const uint32_t color = SSP_RGBA(MAIN_DISPLAY_AMBER_R, MAIN_DISPLAY_AMBER_G, 0, 255);
+
+    for (int i = 0; i < 3; i++)
+    {
+      int textW = 0;
+      int textH = 0;
+      ssp_olive_od_text_metrics(labels[i], fontSize, &textW, &textH);
+      int cx = SUB_X + (i * columnW) + columnW / 2;
+      ssp_olive_od_text(canvas, labels[i], cx - textW / 2, labelY, fontSize, color);
+    }
+  }
+
   static inline void renderPanelOverlay(Window &window, Olivec_Canvas canvas)
   {
     // SSP panel.
     // olivec_rect(canvas, 0, 0, SCREEN_WIDTH - 150, SCREEN_HEIGHT - 180 , SSP_RGBA(5, 5, 5, 255));
 
-    for (const Encoder &encoder : window.encoders)
+    renderMainColumnLabels(canvas);
+    renderSubColumnLabels(canvas);
+
+    for (size_t i = 0; i < 1 && i < window.encoders.size(); i++)
     {
-      encoder.render(canvas);
+      window.encoders[i].render(canvas);
     }
 
     for (const Button &button : window.buttons)
     {
       button.render(canvas);
     }
+
+    for (const Toggle &toggle : window.toggles)
+    {
+      toggle.render(canvas);
+    }
+
+    window.leds[0].render(canvas);
+    // window.leds[1].render(canvas); // coarse
+    // window.leds[2].render(canvas); // I/O
+    // window.leds[3].render(canvas); // safe
+    window.leds[4].render(canvas);
+    window.leds[5].render(canvas);
+    window.leds[6].render(canvas);
+    window.leds[7].render(canvas);
+    window.leds[8].render(canvas);
+    window.leds[9].render(canvas);
+    window.leds[10].render(canvas);
   }
 
   Window::Window()
@@ -71,6 +141,8 @@ namespace ssp
 
     Button::applyDefaultRectLayout(buttons);
     Encoder::applyDefaultLayout(encoders);
+    Led::applyDefaultLayout(leds);
+    Toggle::applyDefaultLayout(toggles);
   }
 
   Window::~Window()

@@ -60,13 +60,13 @@ namespace ssp
   #endif
 
     std::array<Button, 19> buttons{
-      Button{ "M1(QS)", BUTTON_MAIN1 }, Button{ "M2", BUTTON_MAIN2 },     Button{ "M3", BUTTON_MAIN3 },
+      Button{ "M1", BUTTON_MAIN1 }, Button{ "M2", BUTTON_MAIN2 },     Button{ "M3", BUTTON_MAIN3 },
       Button{ "M4", BUTTON_MAIN4 },     Button{ "M5", BUTTON_MAIN5 },     Button{ "M6", BUTTON_MAIN6 },
-      Button{ "", BUTTON_DIAL1 },       Button{ "CANCEL", BUTTON_DIAL2 }, Button{ "HOME", BUTTON_DIAL3 },
+      Button{ "", BUTTON_DIAL1 },       Button{ "CAN", BUTTON_DIAL2 }, Button{ "HOME", BUTTON_DIAL3 },
       Button{ "S1", BUTTON_SUB1 },      Button{ "S2", BUTTON_SUB2 },      Button{ "S3", BUTTON_SUB3 },
-      Button{ "ENTER", BUTTON_ENTER },  Button{ "UP", BUTTON_UP },        Button{ "(SHIFT)", BUTTON_SHIFT },
-      Button{ "", BUTTON_SELECT1 },     Button{ "", BUTTON_SELECT2 },     Button{ "", BUTTON_SELECT3 },
-      Button{ "", BUTTON_SELECT4 }
+      Button{ "ENTER", BUTTON_ENTER },  Button{ "UP", BUTTON_UP },        Button{ "SHIFT", BUTTON_SHIFT },
+      Button{ "1", BUTTON_SELECT1 },     Button{ "2", BUTTON_SELECT2 },     Button{ "3", BUTTON_SELECT3 },
+      Button{ "4", BUTTON_SELECT4 }
     };
 
     std::array<Encoder, 4> encoders{
@@ -74,6 +74,20 @@ namespace ssp
       Encoder{ "OUT", BUTTON_DIAL2 },
       Encoder{ "STORE", BUTTON_DIAL3 },
       Encoder{ "MODE", BUTTON_ENTER }
+    };
+
+    std::array<Led, 11> leds{
+      RedLed{ "fine", LED_DIAL1 },
+      RedLed{ "coarse", LED_DIAL2 },
+      RedLed{ "I/O", LED_IO },
+      RedLed{ "safe", LED_SAFE },
+      OrangeLed{ "1", LED_OUT1 },
+      OrangeLed{ "2", LED_OUT2 },
+      OrangeLed{ "3", LED_OUT3 },
+      OrangeLed{"4", LED_OUT4 },
+      RedLed{ "link", LED_LINK12 },
+      RedLed{ "link", LED_LINK23 },
+      RedLed{ "link", LED_LINK34 }
     };
 
 

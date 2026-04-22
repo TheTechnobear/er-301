@@ -117,10 +117,135 @@ namespace ssp
   {
   }
 
+  void SSPCore::handleEncoderDelta(SSPEncoderId encoder, int delta)
+  {
+    switch ((int)encoder)
+    {
+    case 0:
+      // encoder 0 = data wheel
+      encoderValue += delta * ENCODER_SPEED;
+      break;
+    case 1:
+    {
+      // encoder 1 = output select, moves active select between 1..4
+      bool found = false;
+      for (int x = BUTTON_SELECT1; !found && x <= BUTTON_SELECT4; x++)
+      {
+        if (Gpio_read(x))
+        {
+          if (delta > 0)
+          {
+            if (x < BUTTON_SELECT4)
+            {
+              Gpio_write(x + 1, true);
+            }
+          }
+          else if (delta < 0)
+          {
+            if (x > BUTTON_SELECT1)
+            {
+              Gpio_write(x - 1, true);
+            }
+          }
+          found = true;
+        }
+      }
+      break;
+    }
+    case 2:
+      // encoder 2 = storage up/down
+      if (delta > 0)
+      {
+        window->toggles[Window::TGL_STORE].switchDown();
+      }
+      else if (delta < 0)
+      {
+        window->toggles[Window::TGL_STORE].switchUp();
+      }
+      break;
+    case 3:
+      // encoder 3 = mode up/down
+      if (delta > 0)
+      {
+        window->toggles[Window::TGL_MODE].switchDown();
+      }
+      else if (delta < 0)
+      {
+        window->toggles[Window::TGL_MODE].switchUp();
+      }
+      break;
+    default:
+      break;
+    }
+  }
+
+  void SSPCore::handleEncoderSwitch(SSPEncoderId encoder, bool pressed)
+  {
+    switch ((int)encoder)
+    {
+    case 0:
+      Gpio_write(BUTTON_DIAL1, !pressed);
+      break;
+    case 1:
+      // Gpio_write(BUTTON_DIAL2, !pressed);
+      break;
+    case 2:
+      // Gpio_write(BUTTON_DIAL3, !pressed);
+      break;
+    case 3:
+      // Gpio_write(BUTTON_ENTER, !pressed);
+      break;
+    default:
+      break;
+    }
+  }
+
   #if SSP_USE_SDL
 
   void SSPCore::handleKeyUp(SDL_Keysym keysym)
   {
+    switch (keysym.scancode)
+    {
+    case SDL_SCANCODE_0:
+      handleEncoderDelta((SSPEncoderId)0, -1);
+      return;
+    case SDL_SCANCODE_EQUALS:
+      handleEncoderDelta((SSPEncoderId)0, +1);
+      return;
+    case SDL_SCANCODE_MINUS:
+      handleEncoderSwitch((SSPEncoderId)0, false);
+      return;
+    case SDL_SCANCODE_O:
+      handleEncoderDelta((SSPEncoderId)1, -1);
+      return;
+    case SDL_SCANCODE_LEFTBRACKET:
+      handleEncoderDelta((SSPEncoderId)1, +1);
+      return;
+    case SDL_SCANCODE_P:
+      handleEncoderSwitch((SSPEncoderId)1, false);
+      return;
+    case SDL_SCANCODE_K:
+      handleEncoderDelta((SSPEncoderId)2, -1);
+      return;
+    case SDL_SCANCODE_SEMICOLON:
+      handleEncoderDelta((SSPEncoderId)2, +1);
+      return;
+    case SDL_SCANCODE_L:
+      handleEncoderSwitch((SSPEncoderId)2, false);
+      return;
+    case SDL_SCANCODE_M:
+      handleEncoderDelta((SSPEncoderId)3, -1);
+      return;
+    case SDL_SCANCODE_PERIOD:
+      handleEncoderDelta((SSPEncoderId)3, +1);
+      return;
+    case SDL_SCANCODE_COMMA:
+      handleEncoderSwitch((SSPEncoderId)3, false);
+      return;
+    default:
+      break;
+    }
+
     std::string name = SDL_GetKeyName(keysym.sym);
     if (name == storageToggleFocusKey)
     {
@@ -143,6 +268,24 @@ namespace ssp
 
   void SSPCore::handleKeyDown(SDL_Keysym keysym)
   {
+    switch (keysym.scancode)
+    {
+    case SDL_SCANCODE_MINUS:
+      handleEncoderSwitch((SSPEncoderId)0, true);
+      return;
+    case SDL_SCANCODE_P:
+      handleEncoderSwitch((SSPEncoderId)1, true);
+      return;
+    case SDL_SCANCODE_L:
+      handleEncoderSwitch((SSPEncoderId)2, true);
+      return;
+    case SDL_SCANCODE_COMMA:
+      handleEncoderSwitch((SSPEncoderId)3, true);
+      return;
+    default:
+      break;
+    }
+
     std::string name = SDL_GetKeyName(keysym.sym);
     if (name == storageToggleFocusKey)
     {
@@ -271,79 +414,11 @@ namespace ssp
           },
           [this](SSPEncoderId encoder, int delta)
           {
-            switch ((int)encoder)
-            {
-            case 0:
-              // encoder 0 = data wheel aka encoder on er301
-              encoderValue += delta * ENCODER_SPEED;
-              break;
-            case 1:
-            {
-              // encoder 1 = output select, goes from 1 to 4 aka SELECT 1-4, press = link
-              bool found = false;
-              // NOT working... are gpio supposed to toggle?
-              // is it just a UI issues?
-              // TODO - incomplete, this wont handle linked case
-              // i.e. select 1 & 2 are active
-              for (int x = BUTTON_SELECT1; !found && x <= BUTTON_SELECT4; x++)
-              {
-                if (Gpio_read(x))
-                {
-                  if (delta > 0)
-                  {
-                    if (x < BUTTON_SELECT4)
-                    {
-                      Gpio_write(x + 1, true);
-                    }
-                  }
-                  else
-                  {
-                    if (x > BUTTON_SELECT1)
-                    {
-                      Gpio_write(x - 1, true);
-                    }
-                  }
-                  found = true;
-                }
-              }
-              break;
-            }
-            case 2:
-              // encoder 2  = storage up/ down
-              if (delta > 0)
-              {
-                window->toggles[Window::TGL_STORE].switchUp();
-              }
-              else
-              {
-                window->toggles[Window::TGL_STORE].switchDown();
-              }
-              break;
-            case 3:
-              // encoder 3  = mode up/ down
-              if (delta > 0)
-              {
-                window->toggles[Window::TGL_MODE].switchUp();
-              }
-              else
-              {
-                window->toggles[Window::TGL_MODE].switchDown();
-              }
-              break;
-            default:;
-            }
+            handleEncoderDelta(encoder, delta);
           },
           [this](SSPEncoderId encoder, bool pressed)
           {
-            switch ((int)encoder)
-            {
-            case 0:
-              Gpio_write(BUTTON_DIAL1, !pressed);
-              break;
-            case 1:
-              // TODO : here we will link this channel with previous (assuming active>0)
-              break;
-            }
+            handleEncoderSwitch(encoder, pressed);
           });
       }
 

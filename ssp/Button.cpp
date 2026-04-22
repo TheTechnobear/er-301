@@ -5,7 +5,7 @@ namespace ssp
   constexpr int kButtonWidth = 80;
   constexpr int kButtonHeightBase = 66;
   constexpr int kButtonHeight = (kButtonHeightBase * 9) / 10;
-  constexpr int kButtonGapX = 20;
+  constexpr int kButtonGapX = 18;
   constexpr int kButtonGapYBase = 22;
   constexpr int kButtonGapY = (kButtonGapYBase * 9) / 10;
 
@@ -22,8 +22,8 @@ namespace ssp
   constexpr int kRightColumnTopY = kRightColumnTopYBase + kRightColumnYOffset;
   constexpr int kRightColumnStepY = kButtonHeight + kButtonGapY;
 
-  constexpr int kLabelFontSmall = 12;
-  constexpr int kLabelFontLarge = 12;
+  constexpr int kLabelFontSmall = 16;
+  constexpr int kLabelFontLarge = 16;
   constexpr int kLargeLabelThreshold = 90;
 
   constexpr int kShadowOffsetX = 4;
@@ -46,65 +46,21 @@ namespace ssp
     return kGridStartX + index * (kButtonWidth + kButtonGapX);
   }
 
-  static const char *buttonLabelForRender(const Button &button)
+  void Button::renderCenteredLabel(Olivec_Canvas canvas) const
   {
-    switch (button.id)
-    {
-    case BUTTON_MAIN1:
-      return "m1";
-    case BUTTON_MAIN2:
-      return "m2";
-    case BUTTON_MAIN3:
-      return "m3";
-    case BUTTON_MAIN4:
-      return "m4";
-    case BUTTON_MAIN5:
-      return "m5";
-    case BUTTON_MAIN6:
-      return "m6";
-    case BUTTON_DIAL2:
-      return "can";
-    case BUTTON_DIAL3:
-      return "home";
-    case BUTTON_ENTER:
-      return "enter";
-    case BUTTON_UP:
-      return "up";
-    case BUTTON_SHIFT:
-      return "shift";
-    case BUTTON_SUB1:
-      return "s1";
-    case BUTTON_SUB2:
-      return "s2";
-    case BUTTON_SUB3:
-      return "s3";
-    case BUTTON_SELECT1:
-      return "1";
-    case BUTTON_SELECT2:
-      return "2";
-    case BUTTON_SELECT3:
-      return "3";
-    case BUTTON_SELECT4:
-      return "4";
-    default:
-      return "";
-    }
-  }
-
-  static inline void renderCenteredLabel(Olivec_Canvas canvas, const Button &button)
-  {
-    const char *text = buttonLabelForRender(button);
+    // const char *text = buttonLabelForRender(button);
+    const char *text = label.c_str();
     if (text[0] == '\0')
     {
       return;
     }
 
-    int fontSize = button.h >= kLargeLabelThreshold ? kLabelFontLarge : kLabelFontSmall;
+    int fontSize = h >= kLargeLabelThreshold ? kLabelFontLarge : kLabelFontSmall;
     int textW = 0;
     int textH = 0;
     ssp_olive_od_text_metrics(text, fontSize, &textW, &textH);
-    int tx = button.x + (button.w - textW) / 2;
-    int ty = button.y + (button.h - textH) / 2;
+    int tx = x + (w - textW) / 2;
+    int ty = y + (h - textH) / 2;
 
     ssp_olive_od_text(canvas, text, tx, ty, fontSize, kColorLabel);
   }
@@ -171,6 +127,6 @@ namespace ssp
     olivec_frame(canvas, x, y, w, h, kFrameThickness, kColorEdge);
     olivec_rect(
       canvas, x + kHighlightInset, y + kHighlightInset, w - 2 * kHighlightInset, kHighlightHeight, kColorHighlight);
-    renderCenteredLabel(canvas, *this);
+    renderCenteredLabel(canvas);
   }
 } // namespace ssp
