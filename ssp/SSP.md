@@ -8,17 +8,30 @@ Phase 1 is to integrate tightly with the SSP hardware, a dedicated UI, and ensur
 the basic premise is, the visualised buttons, jacks, encoder etc are a skeumorphic UI, which are not required on the SSP hardware platform, as it has a phyical form factor. also the main window and subwindow need to be large / more promient given the size of the SSP display, compared to a desktop.
 the workflow etc, will initally be retained, buttons and encoders wil however be switched to using the SSP hardware instead (or additionally).
 
+# Out of scope (phase 1.)
+things out of scope, see below for more details.
+- XMX (vs SSP)
+- Changes to the er-301 firmware
+- Synthor plugin
 
 # Status
-- stripped unnecessary UI
-- added inputs (have map but not used yet)
+- functionally complete
+- UI done, IO working 
+- dev testing underway
 
+# Immediate next steps?
+- more testing, more patching
+- usaiblity testing
+- package for SSP, including perccmd
 
-
-# To do
-- UI for SSP , labels
-- encoder mapping, see design ideas
-- button mapping see design ideas
+# Future, before release? but optional
+- XMX, quick test, and viablity check
+- USB audio interface ?!
+- code tidy up / refactor 
+  the old 'emu' structure no longer fits well
+- clang? 
+  it be nice to move to compiling with clang but we need to see amount of errors we get.
+  this is a possibly prerequisite to a plugin implementation
 
 
 # Implementation details
@@ -47,17 +60,32 @@ b) SDL is not compiled / shipped on SSP, so would need to be supplied.
 c) SDL is heavy for what we need
 
 
+## Testing notes:
+keyboard mapping is done to emulate SSP
+row 1 keys = 1-9
+row 2 keys = q - u
+encode 1 : 0-=
+encode 2 : op[
+encode 3 : kl;
+encode 4 : m,.
 
 
-# Out of scope (phase 1.)
-things out of scope, see below for more details.
-- XMX (vs SSP)
-- Changes to the er-301 firmware, see below
-- Synthor plugin
+# Future Ideas
 
 # XMX implementation
 not technically hard, but the I need to see how the UI fits onto the larger SSP, then decide if it makes sense for XMX.
 less buttons, smaller screen spcace, less IO make it questioable.
+
+note: my implementation is already keep this as a consideration, but its not complete
+
+main idea is
+- free up one of the encoders, by having a 'switch mode'
+- use new encoder to move between M1-M6 and S1-S3, 
+  this frees up, most of the buttons... leaving just ENTER, CANCEL, UP, SHIFT, HOME
+  for the 8 buttons.
+- we also have  page/up which might move between main/sub display?
+
+need to see UI size though as this could all get unreadably small
 
 # Deeper integegation (phase 2+ ?)
 the emulator is built on emualating the hardware thru a HAL. this integration is pretty low level, and requires no (?) changes in the underlying firmware thats used on the er-301 hardware. this SSP version will do the same.
@@ -73,6 +101,18 @@ I make this a synthor plugin, which has some benefits (eg. multiple instances), 
 ALSO, Im keen to give lighter, more focused experience - less is more. 
 Synthor and ER301 are two complex beasts already, combining is possibly a bit of overkill. 
 
+note: 
+my standalone works makes a plugin feasible as Ive remove SDL2, and we have a good hook for audio/encoders and display.
+possibly we woudl need to move to clang? esp if I was to move into tbplugins
+however, we wont be using my framework, as we dont need juce etc.
+one thing to consider for plugin is also persistency.
+
+overall, I think a plugin would be after a refactor, clang move, and possibly er301 code split (move to plugin repo?)... do we do a VST or vcv implementation?
+(note: vst/vcv all would need mouse support? so non trivial?)
+
+
+# Midi
+er301 does not have midi support, but we could add Midi support, possibly as units.
 
 
 # Observations

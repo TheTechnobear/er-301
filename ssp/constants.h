@@ -19,10 +19,10 @@ namespace ssp
   const int SCREEN_WIDTH = 1600;
   const int SCREEN_HEIGHT = 480;
 #endif
-  const int SCREEN_BRIGHTNESS = 15; // 1-16
-  const float SCREEN_TINT = 0.85f;
-  const int MAIN_DISPLAY_AMBER_R = 15 * SCREEN_BRIGHTNESS;
-  const int MAIN_DISPLAY_AMBER_G = (int)(MAIN_DISPLAY_AMBER_R * SCREEN_TINT);
+  constexpr int SCREEN_BRIGHTNESS = 15; // 1-16
+  constexpr float SCREEN_TINT = 0.85f;
+  constexpr int MAIN_DISPLAY_AMBER_R = 15 * SCREEN_BRIGHTNESS;
+  constexpr int MAIN_DISPLAY_AMBER_G = (int)(MAIN_DISPLAY_AMBER_R * SCREEN_TINT);
 
   // panel color
   const int P_BACKGROUND = 10;
