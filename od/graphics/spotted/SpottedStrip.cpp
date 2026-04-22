@@ -346,10 +346,10 @@ namespace od
 
     int SpottedStrip::calculateWorldLeft(Location &location)
     {
-        if (mSections.size() > 0)
+        if ((int) mSections.size() > location.section)
         {
             SpottedSection *section = mSections[location.section];
-            if (section->mSpots.size() > 0)
+            if ((int) section->mSpots.size() > location.spot)
             {
                 return section->mWorldLeft + section->mSpots[location.spot].center;
             }
