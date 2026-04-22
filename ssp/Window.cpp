@@ -82,40 +82,55 @@ namespace ssp
 #endif
   }
 
-  void Window::renderMainFrame(uint8_t *frame)
+  void Window::renderMainFrame(uint8_t *frame, int scale, int x, int y)
   {
     uint16_t *src = (uint16_t *)frame;
-    for (int y = 0; y < MAIN_VERTICAL_PIXELS; y++)
+    const int stride = MAIN_HORIZONTAL_PIXELS >> 1; // uint16_t values per source row
+    for (int src_y = 0; src_y < MAIN_VERTICAL_PIXELS; src_y++)
     {
-      uint32_t *row = &windowBuffer[(MAIN_Y + y) * SCREEN_WIDTH + MAIN_X];
-      int yy = MAIN_VERTICAL_PIXELS - y - 1;
-      for (int x = 0; x < MAIN_HORIZONTAL_PIXELS; x++)
+      int yy = MAIN_VERTICAL_PIXELS - src_y - 1;
+      for (int src_x = 0; src_x < MAIN_HORIZONTAL_PIXELS; src_x++)
       {
-        int xx = MAIN_HORIZONTAL_PIXELS - x - 1;
-        uint16_t cell = *(src + (yy << 7) + (xx >> 1));
+        int xx = MAIN_HORIZONTAL_PIXELS - src_x - 1;
+        uint16_t cell = *(src + yy * stride + (xx >> 1));
         int shift = (((~xx) & 0b1) << 2);
         int value = (cell >> shift) & 0xF;
         value *= SCREEN_BRIGHTNESS;
-        row[x] = grayColor(value);
+        uint32_t color = grayColor(value);
+        for (int dy = 0; dy < scale; dy++)
+        {
+          uint32_t *row = &windowBuffer[(y + src_y * scale + dy) * SCREEN_WIDTH + x + src_x * scale];
+          for (int dx = 0; dx < scale; dx++)
+          {
+            row[dx] = color;
+          }
+        }
       }
     }
   }
 
-  void Window::renderSubFrame(uint8_t *frame)
+  void Window::renderSubFrame(uint8_t *frame, int scale, int x, int y)
   {
     uint16_t *src = (uint16_t *)frame;
-    for (int y = 0; y < SUB_VERTICAL_PIXELS; y++)
+    for (int src_y = 0; src_y < SUB_VERTICAL_PIXELS; src_y++)
     {
-      uint32_t *row = &windowBuffer[(SUB_Y + y) * SCREEN_WIDTH + SUB_X];
-      int yy = SUB_VERTICAL_PIXELS - y - 1;
+      int yy = SUB_VERTICAL_PIXELS - src_y - 1;
       int shift = yy & 0b111;
-      for (int x = 0; x < SUB_HORIZONTAL_PIXELS; x++)
+      for (int src_x = 0; src_x < SUB_HORIZONTAL_PIXELS; src_x++)
       {
-        int xx = SUB_HORIZONTAL_PIXELS - x - 1;
+        int xx = SUB_HORIZONTAL_PIXELS - src_x - 1;
         uint16_t cell = *(src + ((yy >> 3) << 7) + xx);
         int value = (cell >> shift) & 0b1;
         value *= 0xF * SCREEN_BRIGHTNESS;
-        row[x] = grayColor(value);
+        uint32_t color = grayColor(value);
+        for (int dy = 0; dy < scale; dy++)
+        {
+          uint32_t *row = &windowBuffer[(y + src_y * scale + dy) * SCREEN_WIDTH + x + src_x * scale];
+          for (int dx = 0; dx < scale; dx++)
+          {
+            row[dx] = color;
+          }
+        }
       }
     }
   }
@@ -152,9 +167,8 @@ namespace ssp
     olivec_fill(canvas, SSP_RGBA(P_BACKGROUND, P_BACKGROUND, P_BACKGROUND, 255));
 
     renderPanelOverlay(*this, canvas);
-
-    renderMainFrame(mainFrame);
-    renderSubFrame(subFrame);
+    renderMainFrame(mainFrame, MAIN_SCALE);
+    renderSubFrame(subFrame, SUB_SCALE);
 
   #if SSP_USE_SDL
     SDL_UpdateTexture(windowTexture, NULL, windowBuffer.data(), SCREEN_WIDTH * (int)sizeof(uint32_t));

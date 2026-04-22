@@ -6,7 +6,7 @@
 namespace ssp
 {
 
-  class Window;
+  struct Window;
   struct Toggle
   {
     Toggle(

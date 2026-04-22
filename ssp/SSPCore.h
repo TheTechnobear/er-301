@@ -76,8 +76,6 @@ namespace ssp
     std::map<uint32_t, std::string> gpioKeyMap;
     std::string storageToggleFocusKey;
     std::string modeToggleFocusKey;
-    std::string zoomInKey;
-    std::string zoomOutKey;
     std::string quitKey; // Must be modified with CTRL.
 
   };

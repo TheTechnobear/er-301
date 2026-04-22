@@ -9,7 +9,7 @@
 namespace ssp
 {
 
-  class Window;
+  struct Window;
   struct Button
   {
     Button(const char *label, uint32_t id) : label(label), id(id)

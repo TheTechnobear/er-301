@@ -37,8 +37,8 @@ namespace ssp
 
     void onResized(int w, int h);
 
-    void renderMainFrame(uint8_t *frame);
-    void renderSubFrame(uint8_t *frame);
+    void renderMainFrame(uint8_t *frame, int scale = 1, int x = MAIN_X, int y = MAIN_Y);
+    void renderSubFrame(uint8_t *frame, int scale = 1, int x = SUB_X, int y = SUB_Y);
     void setPosition(int x, int y, int correction = 0);
     void getPosition(int &x, int &y);
     int getTitleBarHeight();
@@ -82,7 +82,6 @@ namespace ssp
                                    Toggle{ "MODE", TOGGLE_MODE_A, TOGGLE_MODE_B, "X", "hold", "edit", "scope" } };
     static constexpr int TGL_STORE = 0;
     static constexpr int TGL_MODE = 1;
-
 
     int width = SCREEN_WIDTH;
     int height = SCREEN_HEIGHT;

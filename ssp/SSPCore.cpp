@@ -470,8 +470,6 @@ namespace ssp
     f << "# BUTTON_SELECT4_KEY " << gpioKeyMap[BUTTON_SELECT4] << '\n';
     f << "# STORAGE_FOCUS_KEY " << storageToggleFocusKey << '\n';
     f << "# MODE_FOCUS_KEY " << modeToggleFocusKey << '\n';
-    f << "# ZOOM_IN_KEY " << zoomInKey << '\n';
-    f << "# ZOOM_OUT_KEY " << zoomOutKey << '\n';
     f << "# QUIT_KEY " << quitKey << '\n';
     f << '\n';
     f << "## Knob mapping\n";

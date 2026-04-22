@@ -7,7 +7,7 @@
 
 namespace ssp
 {
-  class Window;
+  struct Window;
   struct Led
   {
     Led(const char *label, uint32_t id) : label(label), id(id) {};
