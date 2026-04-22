@@ -4,7 +4,6 @@
 #include <ssp/Window.h>
 #include <ssp/hw/SSPButEnc.h>
 #include <hal/display.h>
-#include <map>
 
 #ifndef SSP_USE_SDL
 #if defined(__APPLE__)
@@ -39,8 +38,6 @@ namespace ssp
     void handleKeyDown(SDL_Keysym sym);
     void handleMouseButton(SDL_MouseButtonEvent &e);
 #endif
-    void mapButtonToKey(uint32_t id, const std::string &key);
-
     bool writeDefaultConfiguration(const std::string &filename);
     void loadDefaultConfiguration();
     bool loadConfiguration(const std::string &filename);
@@ -51,8 +48,6 @@ namespace ssp
     std::string sessionFilename;
     std::string configFilename;
     double mouseWheelToKnobFactor;
-    double leftRightToKnobFactor;
-    double upDownToKnobFactor;
     bool rearCardPresent = true;
     bool frontCardPresent = true;
 
@@ -68,17 +63,8 @@ namespace ssp
   #endif
     double encoderValue = 0;
     bool quit = false;
-    bool storageToggleFocused = false;
-    bool modeToggleFocused = false;
     SSPButEnc hardwareInput;
     bool hardwareInputEnabled = false;
-
-    // Keyboard Mapping
-    std::map<std::string, uint32_t> keyGpioMap;
-    std::map<uint32_t, std::string> gpioKeyMap;
-    std::string storageToggleFocusKey;
-    std::string modeToggleFocusKey;
-    std::string quitKey; // Must be modified with CTRL.
 
   };
 }

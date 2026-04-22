@@ -59,14 +59,12 @@ namespace ssp
     SDL_Rect subRect{ .x = SUB_X, .y = SUB_Y, .w = SUB_W, .h = SUB_H };
   #endif
 
-    std::array<Button, 19> buttons{
+    std::array<Button, 15> buttons{
       Button{ "M1", BUTTON_MAIN1 }, Button{ "M2", BUTTON_MAIN2 },     Button{ "M3", BUTTON_MAIN3 },
       Button{ "M4", BUTTON_MAIN4 },     Button{ "M5", BUTTON_MAIN5 },     Button{ "M6", BUTTON_MAIN6 },
       Button{ "", BUTTON_DIAL1 },       Button{ "CAN", BUTTON_DIAL2 }, Button{ "HOME", BUTTON_DIAL3 },
       Button{ "S1", BUTTON_SUB1 },      Button{ "S2", BUTTON_SUB2 },      Button{ "S3", BUTTON_SUB3 },
-      Button{ "ENTER", BUTTON_ENTER },  Button{ "UP", BUTTON_UP },        Button{ "SHIFT", BUTTON_SHIFT },
-      Button{ "1", BUTTON_SELECT1 },     Button{ "2", BUTTON_SELECT2 },     Button{ "3", BUTTON_SELECT3 },
-      Button{ "4", BUTTON_SELECT4 }
+      Button{ "ENTER", BUTTON_ENTER },  Button{ "UP", BUTTON_UP },        Button{ "SHIFT", BUTTON_SHIFT }
     };
 
     std::array<Encoder, 4> encoders{

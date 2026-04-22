@@ -36,7 +36,7 @@ namespace ssp
 
     void render(Olivec_Canvas canvas) const;
     void renderCenteredLabel(Olivec_Canvas canvas) const;
-    static void applyDefaultRectLayout(std::array<Button, 19> &buttons);
+    static void applyDefaultRectLayout(std::array<Button, 15> &buttons);
 
     std::string key;
     std::string label;

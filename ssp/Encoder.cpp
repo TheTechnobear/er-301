@@ -124,9 +124,5 @@ namespace ssp
     drawFilledCircle(canvas, cx, cy, r + kOuterRadiusOffset, kColorShell);
     drawFilledCircle(canvas, cx, cy, r - kFaceRadiusInset, kColorFace);
     drawRing(canvas, cx, cy, r - kRimOuterInset, r - kRimInnerInset, kColorRim);
-    if (isPressed())
-    {
-      drawFilledCircle(canvas, cx, cy, r / 3, kColorGlow);
-    }
   }
 }

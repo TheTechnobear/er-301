@@ -97,7 +97,7 @@ namespace ssp
     { BUTTON_SELECT4, kRightColumnX, kRightColumnTopY + 3 * kRightColumnStepY, kButtonWidth, kButtonHeight },
   };
 
-  void Button::applyDefaultRectLayout(std::array<Button, 19> &buttons)
+  void Button::applyDefaultRectLayout(std::array<Button, 15> &buttons)
   {
     for (const RectButtonLayout &layout : gRectButtons)
     {

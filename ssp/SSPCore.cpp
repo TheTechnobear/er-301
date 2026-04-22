@@ -45,8 +45,10 @@
 
 using namespace od;
 
-namespace ssp
-{
+namespace ssp {
+
+// Track the currently selected output (1-based, 1..4)
+static int activeOutput = 1;
 
 #if defined(TARGET_SSP) && !defined(__APPLE__)
   static void pinCurrentThreadToCore(int core, const char *label)
@@ -112,6 +114,45 @@ namespace ssp
     }
   }
 
+#if SSP_USE_SDL
+  static SSPButtonId mapSdlScancodeToSspButton(SDL_Scancode scancode)
+  {
+    switch (scancode)
+    {
+    case SDL_SCANCODE_1:
+      return SSPButtonId::Soft1;
+    case SDL_SCANCODE_2:
+      return SSPButtonId::Soft2;
+    case SDL_SCANCODE_3:
+      return SSPButtonId::Soft3;
+    case SDL_SCANCODE_4:
+      return SSPButtonId::Soft4;
+    case SDL_SCANCODE_Q:
+      return SSPButtonId::Soft5;
+    case SDL_SCANCODE_W:
+      return SSPButtonId::Soft6;
+    case SDL_SCANCODE_E:
+      return SSPButtonId::Soft7;
+    case SDL_SCANCODE_R:
+      return SSPButtonId::Soft8;
+    case SDL_SCANCODE_6:
+      return SSPButtonId::Up;
+    case SDL_SCANCODE_Y:
+      return SSPButtonId::Down;
+    case SDL_SCANCODE_5:
+      return SSPButtonId::LShift;
+    case SDL_SCANCODE_7:
+      return SSPButtonId::RShift;
+    case SDL_SCANCODE_T:
+      return SSPButtonId::Left;
+    case SDL_SCANCODE_U:
+      return SSPButtonId::Right;
+    default:
+      return SSPButtonId::Invalid;
+    }
+  }
+#endif
+
 
   SSPCore::SSPCore()
   {
@@ -126,32 +167,28 @@ namespace ssp
       encoderValue += delta * ENCODER_SPEED;
       break;
     case 1:
-    {
       // encoder 1 = output select, moves active select between 1..4
-      bool found = false;
-      for (int x = BUTTON_SELECT1; !found && x <= BUTTON_SELECT4; x++)
-      {
-        if (Gpio_read(x))
-        {
-          if (delta > 0)
-          {
-            if (x < BUTTON_SELECT4)
-            {
-              Gpio_write(x + 1, true);
-            }
-          }
-          else if (delta < 0)
-          {
-            if (x > BUTTON_SELECT1)
-            {
-              Gpio_write(x - 1, true);
-            }
-          }
-          found = true;
-        }
+      // Functionally similar to using SELECT1-4 buttons.
+      if (delta > 0) {
+        // Move to next output (wrap around 1..4)
+        activeOutput = (activeOutput % 4) + 1;
+      } else if (delta < 0) {
+        // Move to previous output (wrap around 1..4)
+        activeOutput = (activeOutput == 1) ? 4 : (activeOutput - 1);
+      }
+      // Release all SELECT buttons first
+      Gpio_write(BUTTON_SELECT1, true);
+      Gpio_write(BUTTON_SELECT2, true);
+      Gpio_write(BUTTON_SELECT3, true);
+      Gpio_write(BUTTON_SELECT4, true);
+      // Press only the active one
+      switch (activeOutput) {
+        case 1: Gpio_write(BUTTON_SELECT1, false); break;
+        case 2: Gpio_write(BUTTON_SELECT2, false); break;
+        case 3: Gpio_write(BUTTON_SELECT3, false); break;
+        case 4: Gpio_write(BUTTON_SELECT4, false); break;
       }
       break;
-    }
     case 2:
       // encoder 2 = storage up/down
       if (delta > 0)
@@ -187,7 +224,33 @@ namespace ssp
       Gpio_write(BUTTON_DIAL1, !pressed);
       break;
     case 1:
-      // Gpio_write(BUTTON_DIAL2, !pressed);
+      // Pressing encoder 1 links/unlinks current output with the next one
+      if (pressed) {
+        // Simulate pressing both SELECT buttons for link/unlink
+        int out1 = activeOutput;
+        int out2 = (activeOutput % 4) + 1;
+        uint32_t btn1 = 0, btn2 = 0;
+        switch (out1) {
+          case 1: btn1 = BUTTON_SELECT1; break;
+          case 2: btn1 = BUTTON_SELECT2; break;
+          case 3: btn1 = BUTTON_SELECT3; break;
+          case 4: btn1 = BUTTON_SELECT4; break;
+        }
+        switch (out2) {
+          case 1: btn2 = BUTTON_SELECT1; break;
+          case 2: btn2 = BUTTON_SELECT2; break;
+          case 3: btn2 = BUTTON_SELECT3; break;
+          case 4: btn2 = BUTTON_SELECT4; break;
+        }
+        // Press both buttons (active low)
+        Gpio_write(btn1, false);
+        Gpio_write(btn2, false);
+        // Small delay to simulate user press (busy-wait, ~10ms)
+        for (volatile int i = 0; i < 100000; ++i) {}
+        // Release both buttons
+        Gpio_write(btn1, true);
+        Gpio_write(btn2, true);
+      }
       break;
     case 2:
       // Gpio_write(BUTTON_DIAL3, !pressed);
@@ -246,23 +309,11 @@ namespace ssp
       break;
     }
 
-    std::string name = SDL_GetKeyName(keysym.sym);
-    if (name == storageToggleFocusKey)
+    SSPButtonId button = mapSdlScancodeToSspButton(keysym.scancode);
+    uint32_t gpioId = mapLogicalSspButtonToGpio(button);
+    if (gpioId < NUM_GPIO_IDS)
     {
-      storageToggleFocused = false;
-    }
-    else if (name == modeToggleFocusKey)
-    {
-      modeToggleFocused = false;
-    }
-    else
-    {
-      auto i = keyGpioMap.find(name);
-      if (i != keyGpioMap.end())
-      {
-        uint id = (*i).second;
-        Gpio_write(id, true);
-      }
+      Gpio_write(gpioId, true);
     }
   }
 
@@ -286,63 +337,11 @@ namespace ssp
       break;
     }
 
-    std::string name = SDL_GetKeyName(keysym.sym);
-    if (name == storageToggleFocusKey)
+    SSPButtonId button = mapSdlScancodeToSspButton(keysym.scancode);
+    uint32_t gpioId = mapLogicalSspButtonToGpio(button);
+    if (gpioId < NUM_GPIO_IDS)
     {
-      storageToggleFocused = true;
-    }
-    else if (name == modeToggleFocusKey)
-    {
-      modeToggleFocused = true;
-    }
-    else if (name == quitKey && (keysym.mod & KMOD_CTRL))
-    {
-      quit = true;
-    }
-    else if (keysym.scancode == SDL_SCANCODE_UP && storageToggleFocused)
-    {
-      if (window)
-        window->toggles[Window::TGL_STORE].switchUp();
-    }
-    else if (keysym.scancode == SDL_SCANCODE_UP && modeToggleFocused)
-    {
-      if (window)
-        window->toggles[Window::TGL_MODE].switchUp();
-    }
-    else if (keysym.scancode == SDL_SCANCODE_DOWN && storageToggleFocused)
-    {
-      if (window)
-        window->toggles[Window::TGL_STORE].switchDown();
-    }
-    else if (keysym.scancode == SDL_SCANCODE_DOWN && modeToggleFocused)
-    {
-      if (window)
-        window->toggles[Window::TGL_MODE].switchDown();
-    }
-    else if (keysym.scancode == SDL_SCANCODE_LEFT)
-    {
-      encoderValue -= leftRightToKnobFactor * ENCODER_SPEED;
-    }
-    else if (keysym.scancode == SDL_SCANCODE_RIGHT)
-    {
-      encoderValue += leftRightToKnobFactor * ENCODER_SPEED;
-    }
-    else if (keysym.scancode == SDL_SCANCODE_UP)
-    {
-      encoderValue += upDownToKnobFactor * ENCODER_SPEED;
-    }
-    else if (keysym.scancode == SDL_SCANCODE_DOWN)
-    {
-      encoderValue -= upDownToKnobFactor * ENCODER_SPEED;
-    }
-    else
-    {
-      auto i = keyGpioMap.find(name);
-      if (i != keyGpioMap.end())
-      {
-        uint id = (*i).second;
-        Gpio_write(id, false);
-      }
+      Gpio_write(gpioId, false);
     }
   }
 
@@ -522,41 +521,10 @@ namespace ssp
     f << "# FRONT_ROOT " + prefix + "/front\n";
     f << "# FRONT_PRESENT true\n";
     f << '\n';
-    f << "## Key mapping\n";
-    f << '\n';
-    f << "# BUTTON_MAIN1_KEY " << gpioKeyMap[BUTTON_MAIN1] << '\n';
-    f << "# BUTTON_MAIN2_KEY " << gpioKeyMap[BUTTON_MAIN2] << '\n';
-    f << "# BUTTON_MAIN3_KEY " << gpioKeyMap[BUTTON_MAIN3] << '\n';
-    f << "# BUTTON_MAIN4_KEY " << gpioKeyMap[BUTTON_MAIN4] << '\n';
-    f << "# BUTTON_MAIN5_KEY " << gpioKeyMap[BUTTON_MAIN5] << '\n';
-    f << "# BUTTON_MAIN6_KEY " << gpioKeyMap[BUTTON_MAIN6] << '\n';
-    f << "# BUTTON_DIAL1_KEY " << gpioKeyMap[BUTTON_DIAL1] << '\n';
-    f << "# BUTTON_DIAL2_KEY " << gpioKeyMap[BUTTON_DIAL2] << '\n';
-    f << "# BUTTON_DIAL3_KEY " << gpioKeyMap[BUTTON_DIAL3] << '\n';
-    f << "# BUTTON_SUB1_KEY " << gpioKeyMap[BUTTON_SUB1] << '\n';
-    f << "# BUTTON_SUB2_KEY " << gpioKeyMap[BUTTON_SUB2] << '\n';
-    f << "# BUTTON_SUB3_KEY " << gpioKeyMap[BUTTON_SUB3] << '\n';
-    f << "# BUTTON_ENTER_KEY " << gpioKeyMap[BUTTON_ENTER] << '\n';
-    f << "# BUTTON_UP_KEY " << gpioKeyMap[BUTTON_UP] << '\n';
-    f << "# BUTTON_SHIFT_KEY " << gpioKeyMap[BUTTON_SHIFT] << '\n';
-    f << "# BUTTON_SELECT1_KEY " << gpioKeyMap[BUTTON_SELECT1] << '\n';
-    f << "# BUTTON_SELECT2_KEY " << gpioKeyMap[BUTTON_SELECT2] << '\n';
-    f << "# BUTTON_SELECT3_KEY " << gpioKeyMap[BUTTON_SELECT3] << '\n';
-    f << "# BUTTON_SELECT4_KEY " << gpioKeyMap[BUTTON_SELECT4] << '\n';
-    f << "# STORAGE_FOCUS_KEY " << storageToggleFocusKey << '\n';
-    f << "# MODE_FOCUS_KEY " << modeToggleFocusKey << '\n';
-    f << "# QUIT_KEY " << quitKey << '\n';
-    f << '\n';
     f << "## Knob mapping\n";
     f << '\n';
     f << "##  Scale factor for mouse wheel. Negate to invert.\n";
     f << "# MOUSE_WHEEL_FACTOR " << mouseWheelToKnobFactor << "\n";
-    f << '\n';
-    f << "##  Scale factor for LEFT/RIGHT arrow keys. Negate to invert.\n";
-    f << "# LEFT_RIGHT_ARROWS_FACTOR " << leftRightToKnobFactor << "\n";
-    f << '\n';
-    f << "##  Scale factor for UP/DOWN arrow keys. Negate to invert.\n";
-    f << "# UP_DOWN_ARROWS_FACTOR " << upDownToKnobFactor << '\n';
     f << '\n';
 
     f.close();
@@ -587,34 +555,8 @@ namespace ssp
     realpathEx(xroot.c_str(), tmp);
     xRoot = tmp;
 
-    // Set default key map
-    mapButtonToKey(BUTTON_MAIN1, "Q");
-    mapButtonToKey(BUTTON_MAIN2, "W");
-    mapButtonToKey(BUTTON_MAIN3, "E");
-    mapButtonToKey(BUTTON_MAIN4, "R");
-    mapButtonToKey(BUTTON_MAIN5, "T");
-    mapButtonToKey(BUTTON_MAIN6, "Y");
-    mapButtonToKey(BUTTON_DIAL1, "A");
-    mapButtonToKey(BUTTON_DIAL2, "S");
-    mapButtonToKey(BUTTON_DIAL3, "D");
-    mapButtonToKey(BUTTON_SUB1, "F");
-    mapButtonToKey(BUTTON_SUB2, "G");
-    mapButtonToKey(BUTTON_SUB3, "H");
-    mapButtonToKey(BUTTON_ENTER, "V");
-    mapButtonToKey(BUTTON_UP, "B");
-    mapButtonToKey(BUTTON_SHIFT, "N");
-    mapButtonToKey(BUTTON_SELECT1, "1");
-    mapButtonToKey(BUTTON_SELECT2, "2");
-    mapButtonToKey(BUTTON_SELECT3, "3");
-    mapButtonToKey(BUTTON_SELECT4, "4");
-    storageToggleFocusKey = "Z";
-    modeToggleFocusKey = "X";
-    quitKey = "Q";
-
     // Set default knob mapping
     mouseWheelToKnobFactor = 0.5;
-    leftRightToKnobFactor = 1;
-    upDownToKnobFactor = 0.25;
   }
 
   bool SSPCore::loadConfiguration(const std::string &filename)
@@ -622,34 +564,8 @@ namespace ssp
     KeyValueStore db;
     if (db.load(filename))
     {
-      // Override default key map
-      mapButtonToKey(BUTTON_MAIN1, db.get("BUTTON_MAIN1_KEY", gpioKeyMap[BUTTON_MAIN1]));
-      mapButtonToKey(BUTTON_MAIN2, db.get("BUTTON_MAIN2_KEY", gpioKeyMap[BUTTON_MAIN2]));
-      mapButtonToKey(BUTTON_MAIN3, db.get("BUTTON_MAIN3_KEY", gpioKeyMap[BUTTON_MAIN3]));
-      mapButtonToKey(BUTTON_MAIN4, db.get("BUTTON_MAIN4_KEY", gpioKeyMap[BUTTON_MAIN4]));
-      mapButtonToKey(BUTTON_MAIN5, db.get("BUTTON_MAIN5_KEY", gpioKeyMap[BUTTON_MAIN5]));
-      mapButtonToKey(BUTTON_MAIN6, db.get("BUTTON_MAIN6_KEY", gpioKeyMap[BUTTON_MAIN6]));
-      mapButtonToKey(BUTTON_DIAL1, db.get("BUTTON_DIAL1_KEY", gpioKeyMap[BUTTON_DIAL1]));
-      mapButtonToKey(BUTTON_DIAL2, db.get("BUTTON_DIAL2_KEY", gpioKeyMap[BUTTON_DIAL2]));
-      mapButtonToKey(BUTTON_DIAL3, db.get("BUTTON_DIAL3_KEY", gpioKeyMap[BUTTON_DIAL3]));
-      mapButtonToKey(BUTTON_SUB1, db.get("BUTTON_SUB1_KEY", gpioKeyMap[BUTTON_SUB1]));
-      mapButtonToKey(BUTTON_SUB2, db.get("BUTTON_SUB2_KEY", gpioKeyMap[BUTTON_SUB2]));
-      mapButtonToKey(BUTTON_SUB3, db.get("BUTTON_SUB3_KEY", gpioKeyMap[BUTTON_SUB3]));
-      mapButtonToKey(BUTTON_ENTER, db.get("BUTTON_ENTER_KEY", gpioKeyMap[BUTTON_ENTER]));
-      mapButtonToKey(BUTTON_UP, db.get("BUTTON_UP_KEY", gpioKeyMap[BUTTON_UP]));
-      mapButtonToKey(BUTTON_SHIFT, db.get("BUTTON_SHIFT_KEY", gpioKeyMap[BUTTON_SHIFT]));
-      mapButtonToKey(BUTTON_SELECT1, db.get("BUTTON_SELECT1_KEY", gpioKeyMap[BUTTON_SELECT1]));
-      mapButtonToKey(BUTTON_SELECT2, db.get("BUTTON_SELECT2_KEY", gpioKeyMap[BUTTON_SELECT2]));
-      mapButtonToKey(BUTTON_SELECT3, db.get("BUTTON_SELECT3_KEY", gpioKeyMap[BUTTON_SELECT3]));
-      mapButtonToKey(BUTTON_SELECT4, db.get("BUTTON_SELECT4_KEY", gpioKeyMap[BUTTON_SELECT4]));
-      storageToggleFocusKey = db.get("STORAGE_FOCUS_KEY", storageToggleFocusKey);
-      modeToggleFocusKey = db.get("MODE_FOCUS_KEY", modeToggleFocusKey);
-      quitKey = db.get("QUIT_KEY", quitKey);
-
       // Override knob settings
       mouseWheelToKnobFactor = db.getFloat("MOUSE_WHEEL_FACTOR", mouseWheelToKnobFactor);
-      leftRightToKnobFactor = db.getFloat("LEFT_RIGHT_ARROWS_FACTOR", leftRightToKnobFactor);
-      upDownToKnobFactor = db.getFloat("UP_DOWN_ARROWS_FACTOR", upDownToKnobFactor);
 
       // Override default paths
       char tmp[PATH_MAX];
@@ -767,26 +683,6 @@ namespace ssp
     else
     {
       logWarn("Failed to save to %s.", sessionFilename.c_str());
-    }
-  }
-
-  void SSPCore::mapButtonToKey(uint32_t id, const std::string &key)
-  {
-    keyGpioMap[key] = id;
-    gpioKeyMap[id] = key;
-    for (Button &b : window->buttons)
-    {
-      if (id == b.id)
-      {
-        b.key = key;
-      }
-    }
-    for (Encoder &e : window->encoders)
-    {
-      if (id == e.id)
-      {
-        e.key = key;
-      }
     }
   }
 
