@@ -14,7 +14,7 @@ CompileFlags:
     - "-I/Users/kodiak/projects/er-301/hal"
     # Project includes (relative)
     - "-I."
-    - "-I./ssp"
+    - "-I./percussa"
     - "-I./arch/darwin"
     - "-I./libs/lua54"
     - "-I./libs/lodepng"

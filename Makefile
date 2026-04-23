@@ -1,10 +1,10 @@
 # top-level makefile
 
 # Define all build targets
-BUILD_TARGETS = firmware app-libs app core teletype emu
+BUILD_TARGETS = firmware app-libs app core teletype emu percussa-ssp percussa-xmx
 
 # Define all clean targets
-CLEAN_TARGETS = firmware-clean app-libs-clean app-clean core-clean teletype-clean emu-clean
+CLEAN_TARGETS = firmware-clean app-libs-clean app-clean core-clean teletype-clean emu-clean percussa-ssp-clean percussa-xmx-clean
 
 # Add new all and clean targets at the top
 .PHONY: all clean $(BUILD_TARGETS) $(CLEAN_TARGETS)
@@ -99,6 +99,24 @@ emu-clean:
 	+$(MAKE) -f scripts/lodepng.mk clean
 	+$(MAKE) -f scripts/emu.mk clean
 
+percussa-ssp:
+	+$(MAKE) -f scripts/lua.mk
+	+$(MAKE) -f scripts/miniz.mk
+	+$(MAKE) -f scripts/lodepng.mk
+	+$(MAKE) FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) PERCUSSA_PANEL=ssp -f scripts/percussa.mk
+
+percussa-ssp-clean:
+	+$(MAKE) PERCUSSA_PANEL=ssp -f scripts/percussa.mk clean
+
+percussa-xmx:
+	+$(MAKE) -f scripts/lua.mk
+	+$(MAKE) -f scripts/miniz.mk
+	+$(MAKE) -f scripts/lodepng.mk
+	+$(MAKE) FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) PERCUSSA_PANEL=xmx -f scripts/percussa.mk
+
+percussa-xmx-clean:
+	+$(MAKE) PERCUSSA_PANEL=xmx -f scripts/percussa.mk clean
+
 ssp: 
 	+$(MAKE) -f scripts/lua.mk
 	+$(MAKE) -f scripts/miniz.mk
@@ -119,4 +137,4 @@ dist-clean:
 	+$(MAKE) -C tutorial/step2 dist-clean
 	+$(MAKE) -C tutorial/step3 dist-clean
 
-.PHONY: app sbl pbl emu ssp ssp-clean
+.PHONY: app sbl pbl emu ssp ssp-clean percussa-ssp percussa-ssp-clean percussa-xmx percussa-xmx-clean

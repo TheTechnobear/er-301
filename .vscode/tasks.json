@@ -2,11 +2,11 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Make: build ssp",
+			"label": "Make: build percussa-ssp",
 			"type": "shell",
 			"command": "make",
 			"args": [
-				"ssp"
+				"percussa-ssp"
 			],
 			"isBackground": false,
 			"problemMatcher": [],
@@ -16,11 +16,11 @@
 			}
 		},
 		{
-			"label": "Make: build ssp-clean",
+			"label": "Make: build percussa-ssp-clean",
 			"type": "shell",
 			"command": "make",
 			"args": [
-				"ssp-clean"
+				"percussa-ssp-clean"
 			],
 			"isBackground": false,
 			"problemMatcher": [],

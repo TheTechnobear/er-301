@@ -5,12 +5,12 @@
       "name": "Debug SSP (build)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/testing/darwin/ssp/ssp.elf",
+      "program": "${workspaceFolder}/testing/darwin/percussa-ssp/percussa-ssp.elf",
       "args": [],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "Make: build ssp"
+      "preLaunchTask": "Make: build percussa-ssp"
     },
     {
       "name": "Debug EMU (build)",
