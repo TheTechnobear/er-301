@@ -53,7 +53,6 @@ namespace percussa
         case SDL_SCANCODE_R:
           button = input::HardwareButtonId::Button8;
           return true;
-#if defined(PERCUSSA_PANEL_SSP)
         case SDL_SCANCODE_6:
           button = input::HardwareButtonId::Up;
           return true;
@@ -72,16 +71,6 @@ namespace percussa
         case SDL_SCANCODE_U:
           button = input::HardwareButtonId::Right;
           return true;
-#elif defined(PERCUSSA_PANEL_XMX)
-        case SDL_SCANCODE_UP:
-          button = input::HardwareButtonId::Up;
-          return true;
-        case SDL_SCANCODE_DOWN:
-          button = input::HardwareButtonId::Down;
-          return true;
-#else
-#error "No percussa panel selected at build time."
-#endif
         default:
           return false;
         }

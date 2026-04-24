@@ -99,10 +99,10 @@ namespace percussa
         mButtons.push_back(ui::ButtonWidget("S2", ui::Rect(columnX(5), kGridBottomY, kButtonWidth, kButtonHeight), "sub", true, BUTTON_SUB2));
         mButtons.push_back(ui::ButtonWidget("S3", ui::Rect(columnX(6), kGridBottomY, kButtonWidth, kButtonHeight), "sub", true, BUTTON_SUB3));
 
-        mButtons.push_back(ui::ButtonWidget("1", ui::Rect(kRightColumnX, kRightColumnTopY + 0 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT1));
-        mButtons.push_back(ui::ButtonWidget("2", ui::Rect(kRightColumnX, kRightColumnTopY + 1 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT2));
-        mButtons.push_back(ui::ButtonWidget("3", ui::Rect(kRightColumnX, kRightColumnTopY + 2 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT3));
-        mButtons.push_back(ui::ButtonWidget("4", ui::Rect(kRightColumnX, kRightColumnTopY + 3 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT4));
+        // mButtons.push_back(ui::ButtonWidget("1", ui::Rect(kRightColumnX, kRightColumnTopY + 0 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT1));
+        // mButtons.push_back(ui::ButtonWidget("2", ui::Rect(kRightColumnX, kRightColumnTopY + 1 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT2));
+        // mButtons.push_back(ui::ButtonWidget("3", ui::Rect(kRightColumnX, kRightColumnTopY + 2 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT3));
+        // mButtons.push_back(ui::ButtonWidget("4", ui::Rect(kRightColumnX, kRightColumnTopY + 3 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT4));
 
         mEncoders.push_back(ui::EncoderWidget("DATA", encoderRect(0)));
         mEncoders.push_back(ui::EncoderWidget("OUT", encoderRect(1)));
@@ -110,9 +110,10 @@ namespace percussa
         mEncoders.push_back(ui::EncoderWidget("MODE", encoderRect(3)));
 
         mLeds.push_back(ui::LedWidget("fine", ui::Rect(kLedFineX, kLedFineY, kLedFineCoarseW, kLedDefaultH), "red", LED_DIAL1));
-        mLeds.push_back(ui::LedWidget("coarse", ui::Rect(kLedFineX + kLedFineCoarseW + 4, kLedFineY, kLedFineCoarseW, kLedDefaultH), "red", LED_DIAL2));
-        mLeds.push_back(ui::LedWidget("I/O", ui::Rect(kLedFineX, kLedFineY + 30, kLedFineCoarseW, kLedDefaultH), "red", LED_IO));
-        mLeds.push_back(ui::LedWidget("safe", ui::Rect(kLedFineX, kLedFineY + 56, kLedFineCoarseW, kLedDefaultH), "red", LED_SAFE));
+        // mLeds.push_back(ui::LedWidget("coarse", ui::Rect(kLedFineX + kLedFineCoarseW + 4, kLedFineY, kLedFineCoarseW, kLedDefaultH), "red", LED_DIAL2));
+        // mLeds.push_back(ui::LedWidget("I/O", ui::Rect(kLedFineX, kLedFineY + 30, kLedFineCoarseW, kLedDefaultH), "red", LED_IO));
+        // mLeds.push_back(ui::LedWidget("safe", ui::Rect(kLedFineX, kLedFineY + 56, kLedFineCoarseW, kLedDefaultH), "red", LED_SAFE));
+
         mLeds.push_back(ui::LedWidget("1", ui::Rect(kLedOutColumnX, kLedOut1Y + 0 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT1));
         mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 1 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK12));
         mLeds.push_back(ui::LedWidget("2", ui::Rect(kLedOutColumnX, kLedOut1Y + 2 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT2));
@@ -179,10 +180,6 @@ namespace percussa
 
         for (size_t i = 0; i < mLeds.size(); ++i)
         {
-          if (i == 1 || i == 2 || i == 3)
-          {
-            continue;
-          }
           mLeds[i].render(canvas);
         }
       }
