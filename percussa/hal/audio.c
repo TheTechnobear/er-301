@@ -7,21 +7,13 @@
 #include <od/config.h>
 #include <string.h>
 
-#if defined(TARGET_SSP) && !defined(__APPLE__)
+#if defined(__linux__)
 #include <pthread.h>
 #include <sched.h>
 #endif
 
 #define MAX_CAPTURE_CHANNELS 32
 #define MAX_PLAYBACK_CHANNELS 32
-
-#if !defined(PERCUSSA_PANEL_SSP)
-__attribute__((weak)) void Pump_callback(float *inputs, float *outputs)
-{
-  (void)inputs;
-  memset(outputs, 0, sizeof(float) * MAX_AUDIO_FRAME_LENGTH * NUM_OUTPUT_CHANNELS);
-}
-#endif
 
 void SspModulation_ingestInterleavedS32(const int *samples, uint32_t frames, uint32_t channels);
 void SspModulation_copyFrame(float *dst, uint32_t frames);
@@ -42,23 +34,15 @@ static struct AudioLocals {
 
 static unsigned int currentSampleRate(void)
 {
-#if defined(PERCUSSA_PANEL_SSP)
   return (unsigned int)globalConfig.sampleRate;
-#else
-  return 48000;
-#endif
 }
 
 static unsigned int currentFrameLength(void)
 {
-#if defined(PERCUSSA_PANEL_SSP)
   return (unsigned int)globalConfig.frameLength;
-#else
-  return 128;
-#endif
 }
 
-#if defined(TARGET_SSP) && !defined(__APPLE__)
+#if defined(__linux__)
 static void Audio_pinCurrentThreadToCore(int core, const char *label)
 {
   cpu_set_t cpuset;
@@ -76,23 +60,73 @@ static void Audio_pinCurrentThreadToCore(int core, const char *label)
 }
 #endif
 
-#if defined(TARGET_SSP) && !defined(PERCUSSA_PLATFORM_HOST_SDL)
+#if defined(__linux__)
+#if defined(TARGET_SSP)
 #define kAudioInCh 16
+#define kAudioOutCh 8
 static int kInChMap[kAudioInCh] = {11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4};
+static int kOutChMap[kAudioOutCh] = { 3, 2, 1, 0, 7, 6, 5, 4 };
+// static constexpr float inGain = 0.2f / 0.18795f;
+// static constexpr float outGain = 5.0f / 5.248f;
+// static constexpr float inOffset = 0.02300f;
+// static constexpr float outOffset = 0.f;
 
+#elif defined(TARGET_XMX) 
+#define kAudioInCh 8
+#define kAudioOutCh 2
+
+static int kInChMap[kAudioInCh] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+static int kOutChMap[kAudioOutCh] = { 0, 1 };
+// // static constexpr float inGain = -1.0f;
+// // static constexpr float outGain = -5.0f / 2.36f;
+// static constexpr float inGain = -0.8f;
+// static constexpr float outGain = -5.0f / 2.7f;
+// static constexpr float inOffset = 0.f;
+// static constexpr float outOffset = 0.f;
+#endif  // xmx
+#endif  // linux
+
+// logical mapping
 static int inputChannelMap[NUM_INPUT_CHANNELS] = {
     INPUT_IN1, INPUT_IN2, INPUT_IN3, INPUT_IN4, INPUT_G1, INPUT_G2, INPUT_G3, INPUT_G4, INPUT_A1, INPUT_B1, INPUT_C1, INPUT_D1,
     INPUT_A2, INPUT_B2, INPUT_C2, INPUT_D2, INPUT_A3, INPUT_B3, INPUT_C3, INPUT_D3};
-
-static int outputChannelMap[NUM_OUTPUT_CHANNELS] = {3, 2, 1, 0};
-
-#else
-static int inputChannelMap[NUM_INPUT_CHANNELS] = {
-    INPUT_IN1, INPUT_IN2, INPUT_IN3, INPUT_IN4, INPUT_G1, INPUT_G2, INPUT_G3, INPUT_G4, INPUT_A1, INPUT_B1, INPUT_C1, INPUT_D1,
-    INPUT_A2, INPUT_B2, INPUT_C2, INPUT_D2, INPUT_A3, INPUT_B3, INPUT_C3, INPUT_D3};
-
 static int outputChannelMap[NUM_OUTPUT_CHANNELS] = {0, 1, 2, 3};
+
+static int Audio_mapOutputChannel(uint32_t logicalChannel, uint32_t playbackChannels)
+{
+  if (logicalChannel >= (uint32_t)NUM_OUTPUT_CHANNELS)
+  {
+    return -1;
+  }
+
+  int routedChannel = outputChannelMap[logicalChannel];
+  if (routedChannel < 0)
+  {
+    return -1;
+  }
+
+#if (defined(TARGET_SSP) || defined(TARGET_XMX)) && defined(__linux__)
+  if ((uint32_t)routedChannel >= (uint32_t)kAudioOutCh)
+  {
+    return -1;
+  }
+
+  int hwChannel = kOutChMap[routedChannel];
+  if (hwChannel < 0 || (uint32_t)hwChannel >= playbackChannels)
+  {
+    return -1;
+  }
+
+  return hwChannel;
+#else
+  if ((uint32_t)routedChannel >= playbackChannels)
+  {
+    return -1;
+  }
+
+  return routedChannel;
 #endif
+}
 
 static void Audio_buildInputRoutingMap(void)
 {
@@ -101,7 +135,7 @@ static void Audio_buildInputRoutingMap(void)
     local.inputRoutingMap[i] = -1;
   }
 
-#if defined(TARGET_SSP) && !defined(PERCUSSA_PLATFORM_HOST_SDL)
+#if (defined(TARGET_SSP) || defined(TARGET_XMX)) && defined(__linux__)
   uint32_t logicalCount = kAudioInCh;
   if (logicalCount > (uint32_t)NUM_INPUT_CHANNELS)
   {
@@ -188,7 +222,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer,
   (void)status;
   (void)userdata;
 
-#if defined(TARGET_SSP) && !defined(__APPLE__)
+#if defined(__linux__)
   if (local.debugFrameCounter == 0)
   {
     Audio_pinCurrentThreadToCore(1, "audio");
@@ -248,35 +282,16 @@ static int audioCallback(void *outputBuffer, void *inputBuffer,
     }
 
     memset(out, 0, frameLength * outChannels * sizeof(int));
-    if (outChannels < 4)
+    for (uint32_t i = 0; i < frameLength; i++)
     {
-      for (uint32_t i = 0; i < frameLength; i++)
+      for (uint32_t c = 0; c < NUM_OUTPUT_CHANNELS; c++)
       {
-        float x0 = local.outFrame[4 * i + 0];
-        if (x0 > 1.0f) x0 = 1.0f; else if (x0 < -1.0f) x0 = -1.0f;
-        float x1 = local.outFrame[4 * i + 1];
-        if (x1 > 1.0f) x1 = 1.0f; else if (x1 < -1.0f) x1 = -1.0f;
-        float x2 = local.outFrame[4 * i + 2];
-        if (x2 > 1.0f) x2 = 1.0f; else if (x2 < -1.0f) x2 = -1.0f;
-        float x3 = local.outFrame[4 * i + 3];
-        if (x3 > 1.0f) x3 = 1.0f; else if (x3 < -1.0f) x3 = -1.0f;
-        out[2 * i] = (int)((x0 + x2) * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 7;
-        out[2 * i + 1] = (int)((x1 + x3) * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 7;
-      }
-    }
-    else
-    {
-      for (uint32_t i = 0; i < frameLength; i++)
-      {
-        for (uint32_t c = 0; c < NUM_OUTPUT_CHANNELS; c++)
+        int dstCh = Audio_mapOutputChannel(c, outChannels);
+        if (dstCh >= 0)
         {
-          int dstCh = outputChannelMap[c];
-          if (dstCh >= 0 && (uint32_t)dstCh < outChannels)
-          {
-            float x = local.outFrame[4 * i + c];
-            if (x > 1.0f) x = 1.0f; else if (x < -1.0f) x = -1.0f;
-            out[i * outChannels + (uint32_t)dstCh] = (int)(x * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 8;
-          }
+          float x = local.outFrame[NUM_OUTPUT_CHANNELS * i + c];
+          if (x > 1.0f) x = 1.0f; else if (x < -1.0f) x = -1.0f;
+          out[i * outChannels + (uint32_t)dstCh] = (int)(x * AUDIO_SAFE_MAX_OUTPUT_VALUE) << 8;
         }
       }
     }
@@ -337,12 +352,14 @@ void Audio_start(void)
 #if defined(__APPLE__)
   outputPrefix = "Virtual-SSP-Out";
   inputPrefix = "Virtual-SSP-In";
-#elif defined(TARGET_SSP)
+#elif defined(__linux__) 
+#if defined(TARGET_SSP)
   outputPrefix = "ak4458";
   inputPrefix = "ak4458";
 #elif defined(TARGET_XMX)
   outputPrefix = "rockchip";
   inputPrefix = "rockchip";
+#endif
 #endif
 
   if (outputPrefix)

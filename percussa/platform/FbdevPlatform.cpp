@@ -8,6 +8,7 @@
 
 #include <hal/display.h>
 #include <hal/events.h>
+#include <hal/log.h>
 
 #include <chrono>
 #include <iostream>
@@ -36,6 +37,7 @@ namespace percussa
       hw::Framebuffer framebuffer(rendered.width, rendered.height);
       if (!framebuffer.init())
       {
+        logError("FbdevPlatform: framebuffer init failed for panel '%s' at %dx%d.", runtime.panel().name(), rendered.width, rendered.height);
         return 1;
       }
 

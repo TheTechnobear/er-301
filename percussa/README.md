@@ -136,13 +136,3 @@ The current SSP bootstrap now uses the percussa-local `AppInterpreter` path, so 
 The host SDL keyboard path is intended to emulate hardware-facing panel input,
 not UI widgets directly. It should only emit shared hardware actions such as
 `button(id, pressed)`, `encoder(id, delta)`, and encoder-press actions.
-
-Current host key map:
-
-- `1 2 3 4 q w e r` -> `Button1..Button8`
-- arrow keys -> `Left/Right/Up/Down`
-- left shift / right shift -> `ShiftL / ShiftR`
-- `u i o p` -> `P1..P4`
-- `a/z`, `s/x`, `d/c`, `f/v` -> encoder `1..4` delta `-1/+1`
-- `5 6 7 8` -> encoder press `1..4`
-- `Esc` -> quit

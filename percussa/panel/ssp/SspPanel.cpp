@@ -7,7 +7,7 @@
 
 namespace
 {
-  const uint32_t kSspBackground = PERCUSSA_RGBA(10, 10, 10, 255);
+  const uint32_t kBackground = PERCUSSA_RGBA(10, 10, 10, 255);
 }
 
 namespace percussa
@@ -143,7 +143,7 @@ namespace percussa
 
       void SspPanel::render(Olivec_Canvas canvas) const
       {
-        olivec_fill(canvas, kSspBackground);
+        olivec_fill(canvas, kBackground);
 
         const DisplayBuffer *buffer = Display_getLastPutBuffer();
         for (size_t i = 0; i < mDisplays.size(); ++i)

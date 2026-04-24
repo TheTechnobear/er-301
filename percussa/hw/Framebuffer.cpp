@@ -1,5 +1,7 @@
 #include <percussa/hw/Framebuffer.h>
 
+#include <hal/log.h>
+
 #include <cstring>
 #include <cstdio>
 
@@ -88,6 +90,7 @@ namespace percussa
       fbfd_ = open("/dev/fb0", O_RDWR);
       if (fbfd_ < 0)
       {
+        logError("Framebuffer: failed to open /dev/fb0.");
         std::fprintf(stderr, "Failed to open /dev/fb0.\n");
         return false;
       }
@@ -96,24 +99,28 @@ namespace percussa
       fb_var_screeninfo varInfo;
       if (ioctl(fbfd_, FBIOGET_FSCREENINFO, &fixInfo) == -1)
       {
+        logError("Framebuffer: failed to read fixed screen info.");
         std::fprintf(stderr, "Failed to read framebuffer fixed info.\n");
         return false;
       }
 
       if (ioctl(fbfd_, FBIOGET_VSCREENINFO, &varInfo) == -1)
       {
+        logError("Framebuffer: failed to read variable screen info.");
         std::fprintf(stderr, "Failed to read framebuffer variable info.\n");
         return false;
       }
 
       if ((int)varInfo.xres != width_ || (int)varInfo.yres != height_)
       {
+        logError("Framebuffer: size mismatch. Expected %dx%d, got %ux%u.", width_, height_, varInfo.xres, varInfo.yres);
         std::fprintf(stderr, "Framebuffer size mismatch. Expected %dx%d, got %ux%u.\n", width_, height_, varInfo.xres, varInfo.yres);
         return false;
       }
 
       if (varInfo.bits_per_pixel != 32)
       {
+        logError("Framebuffer: unsupported format %u bpp. Expected 32 bpp.", varInfo.bits_per_pixel);
         std::fprintf(stderr, "Unsupported framebuffer format: %u bpp. Expected 32 bpp.\n", varInfo.bits_per_pixel);
         return false;
       }
@@ -139,6 +146,7 @@ namespace percussa
       if (mapped_ == MAP_FAILED)
       {
         mapped_ = nullptr;
+        logError("Framebuffer: failed to map framebuffer memory.");
         std::fprintf(stderr, "Failed to map framebuffer memory.\n");
         return false;
       }

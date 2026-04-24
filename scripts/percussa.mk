@@ -104,7 +104,10 @@ panel_cpp_sources += $(program_dir)/hal/card.cpp
 panel_cpp_sources += $(program_dir)/hal/concurrency/Mutex.cpp
 panel_cpp_sources += $(program_dir)/hal/usb.cpp
 panel_cpp_sources += $(program_dir)/hal/pump/pump.cpp
+panel_cpp_sources += $(program_dir)/app/Bootstrap.cpp
 panel_cpp_sources += $(program_dir)/app/CardState.cpp
+panel_cpp_sources += $(program_dir)/support/CommandLine.cpp
+panel_cpp_sources += $(program_dir)/support/KeyValueStore.cpp
 panel_c_sources := $(program_dir)/od/config.c
 panel_c_sources += $(program_dir)/hal/simd.c
 panel_c_sources += $(program_dir)/hal/pump/pidcontrol.c
@@ -113,9 +116,6 @@ panel_c_sources += $(program_dir)/hal/pump/resample4.c
 ifeq ($(PERCUSSA_PANEL),ssp)
 panel_cpp_sources += $(program_dir)/panel/ssp/SspController.cpp
 panel_cpp_sources += $(program_dir)/panel/ssp/SspPanel.cpp
-panel_cpp_sources += $(program_dir)/app/Bootstrap.cpp
-panel_cpp_sources += $(program_dir)/support/CommandLine.cpp
-panel_cpp_sources += $(program_dir)/support/KeyValueStore.cpp
 else ifeq ($(PERCUSSA_PANEL),xmx)
 panel_cpp_sources += $(program_dir)/panel/xmx/XmxController.cpp
 panel_cpp_sources += $(program_dir)/panel/xmx/XmxPanel.cpp

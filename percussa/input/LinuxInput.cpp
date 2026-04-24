@@ -14,7 +14,11 @@ namespace percussa
   {
     namespace
     {
+#if defined(TARGET_SSP)
       static constexpr int kEncoderMultiplier = 1;
+#else
+      static constexpr int kEncoderMultiplier = -1;
+#endif
     }
 
     LinuxInput::LinuxInput()
@@ -79,7 +83,7 @@ namespace percussa
 
     HardwareButtonId LinuxInput::mapButtonCode(int code) const
     {
-#if defined(PERCUSSA_PANEL_SSP)
+#if defined(TARGET_SSP)
       switch (code)
       {
       case 88:
@@ -121,7 +125,7 @@ namespace percussa
       default:
         return HardwareButtonId::Invalid;
       }
-#elif defined(PERCUSSA_PANEL_XMX)
+#elif defined(TARGET_XMX)
       switch (code)
       {
       case 59:

@@ -1,9 +1,7 @@
 #include <percussa/panel/Family.h>
 #include <percussa/runtime/Runtime.h>
 
-#if defined(PERCUSSA_PANEL_SSP)
 #include <percussa/app/Bootstrap.h>
-#endif
 
 #if defined(PERCUSSA_PLATFORM_HOST_SDL)
 #include <percussa/platform/HostSdlPlatform.h>
@@ -29,13 +27,11 @@ int main(int argc, char **argv)
     }
   }
 
-#if defined(PERCUSSA_PANEL_SSP)
   percussa::app::Bootstrap bootstrap(argc, argv);
   if (!bootstrap.initialize())
   {
     return 1;
   }
-#endif
 
   percussa::panel::Family family = percussa::panel::createFamily();
 
@@ -50,8 +46,6 @@ int main(int argc, char **argv)
 
   percussa::runtime::Runtime runtime(std::move(family.panel), std::move(family.controller), std::move(platform), once);
   int result = runtime.run();
-#if defined(PERCUSSA_PANEL_SSP)
   bootstrap.finalize();
-#endif
   return result;
 }

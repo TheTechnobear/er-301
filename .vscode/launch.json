@@ -13,6 +13,17 @@
       "preLaunchTask": "Make: build percussa-ssp"
     },
     {
+      "name": "Debug XMX (build)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/testing/darwin/percussa-xmx/percussa-xmx.elf",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "Make: build percussa-xmx"
+    },
+    {
       "name": "Debug EMU (build)",
       "type": "cppdbg",
       "request": "launch",

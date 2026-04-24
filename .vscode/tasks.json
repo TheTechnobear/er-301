@@ -30,6 +30,34 @@
 			}
 		},
 		{
+			"label": "Make: build percussa-xmx",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"percussa-xmx"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "Make: build percussa-xmx-clean",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"percussa-xmx-clean"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
 			"label": "Make: build emu",
 			"type": "shell",
 			"command": "make",

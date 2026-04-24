@@ -20,7 +20,7 @@ typedef struct sd
 
 static sd_t sd[2];
 
-#if defined(TARGET_SSP)
+#if defined(__linux__)
 namespace percussa
 {
   namespace app
@@ -85,7 +85,7 @@ namespace
 
 static bool shouldUseFrontUSBMount(uint32_t drv)
 {
-#if defined(TARGET_SSP)
+#if defined(__linux__)
   bool useFrontUSB = percussa::app::usbStarted() && percussa::app::usbMassStorageMode();
   return drv == CARD_FRONT && useFrontUSB;
 #else
@@ -96,7 +96,7 @@ static bool shouldUseFrontUSBMount(uint32_t drv)
 
 static bool mountFrontUSBCard()
 {
-#if defined(TARGET_SSP)
+#if defined(__linux__)
   const char *device = "/dev/sda1";
   const char *mountPoint = globalConfig.frontRoot;
   std::string mountCmd = "mount ";
@@ -122,7 +122,7 @@ static bool mountFrontUSBCard()
 
 static void unmountFrontUSBCard()
 {
-#if defined(TARGET_SSP)
+#if defined(__linux__)
   const char *mountPoint = globalConfig.frontRoot;
   std::string unmountCmd = "umount ";
   unmountCmd += shellQuote(mountPoint);
