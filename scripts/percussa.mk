@@ -85,6 +85,7 @@ all_c_sources := $(foreach D,$(src_dirs),$(call rwildcard,$D,*.c))
 all_cpp_sources := $(filter-out \
 	$(hal_dir)/events.cpp \
 	$(hal_dir)/pump/pump.cpp \
+	$(od_dir)/glue/AppInterpreter.cpp \
 	$(od_dir)/glue/Interpreter.cpp, \
 	$(all_cpp_sources))
 
@@ -98,11 +99,12 @@ all_c_sources := $(filter-out \
 	$(all_c_sources))
 
 panel_cpp_sources := $(program_dir)/panel/Family.cpp
+panel_cpp_sources += $(program_dir)/od/glue/AppInterpreter.cpp
 panel_cpp_sources += $(program_dir)/hal/card.cpp
 panel_cpp_sources += $(program_dir)/hal/concurrency/Mutex.cpp
 panel_cpp_sources += $(program_dir)/hal/usb.cpp
 panel_cpp_sources += $(program_dir)/hal/pump/pump.cpp
-panel_cpp_sources += $(program_dir)/runtime/ssp/CardState.cpp
+panel_cpp_sources += $(program_dir)/app/CardState.cpp
 panel_c_sources := $(program_dir)/od/config.c
 panel_c_sources += $(program_dir)/hal/simd.c
 panel_c_sources += $(program_dir)/hal/pump/pidcontrol.c
@@ -110,12 +112,10 @@ panel_c_sources += $(program_dir)/hal/pump/rfifo4.c
 panel_c_sources += $(program_dir)/hal/pump/resample4.c
 ifeq ($(PERCUSSA_PANEL),ssp)
 panel_cpp_sources += $(program_dir)/panel/ssp/SspController.cpp
-panel_cpp_sources += $(program_dir)/panel/ssp/SspFrontPanelState.cpp
 panel_cpp_sources += $(program_dir)/panel/ssp/SspPanel.cpp
-panel_cpp_sources += $(program_dir)/runtime/ssp/SspBootstrap.cpp
-panel_cpp_sources += $(program_dir)/runtime/ssp/LegacyHardware.cpp
-panel_cpp_sources += $(program_dir)/ssp/CommandLine.cpp
-panel_cpp_sources += $(program_dir)/ssp/KeyValueStore.cpp
+panel_cpp_sources += $(program_dir)/app/Bootstrap.cpp
+panel_cpp_sources += $(program_dir)/support/CommandLine.cpp
+panel_cpp_sources += $(program_dir)/support/KeyValueStore.cpp
 else ifeq ($(PERCUSSA_PANEL),xmx)
 panel_cpp_sources += $(program_dir)/panel/xmx/XmxController.cpp
 panel_cpp_sources += $(program_dir)/panel/xmx/XmxPanel.cpp
@@ -132,18 +132,17 @@ endif
 
 common_cpp_sources := $(filter-out \
 	$(program_dir)/hal/card.cpp \
+	$(program_dir)/od/glue/AppInterpreter.cpp \
 	$(program_dir)/hal/concurrency/Mutex.cpp \
 	$(program_dir)/hal/usb.cpp \
 	$(program_dir)/hal/pump/pump.cpp \
-	$(program_dir)/runtime/ssp/CardState.cpp \
+	$(program_dir)/app/CardState.cpp \
 	$(program_dir)/panel/Family.cpp \
 	$(program_dir)/panel/ssp/SspController.cpp \
-	$(program_dir)/panel/ssp/SspFrontPanelState.cpp \
 	$(program_dir)/panel/ssp/SspPanel.cpp \
-	$(program_dir)/runtime/ssp/SspBootstrap.cpp \
-	$(program_dir)/runtime/ssp/LegacyHardware.cpp \
-	$(program_dir)/ssp/CommandLine.cpp \
-	$(program_dir)/ssp/KeyValueStore.cpp \
+	$(program_dir)/app/Bootstrap.cpp \
+	$(program_dir)/support/CommandLine.cpp \
+	$(program_dir)/support/KeyValueStore.cpp \
 	$(program_dir)/panel/xmx/XmxController.cpp \
 	$(program_dir)/panel/xmx/XmxPanel.cpp \
 	$(program_dir)/platform/HostSdlPlatform.cpp \

@@ -5,6 +5,10 @@
 #include <percussa/runtime/Runtime.h>
 #include <percussa/ui/PanelRenderer.h>
 
+#include <hal/display.h>
+#include <hal/events.h>
+
+#include <chrono>
 #include <iostream>
 #include <ostream>
 
@@ -18,6 +22,8 @@ namespace percussa
   {
     namespace
     {
+  const auto kDisplayTickPeriod = std::chrono::milliseconds(14);
+
 #if defined(PERCUSSA_PLATFORM_HOST_SDL)
       bool mapScancodeToButton(SDL_Scancode scancode, input::HardwareButtonId &button)
       {
@@ -48,35 +54,23 @@ namespace percussa
           button = input::HardwareButtonId::Button8;
           return true;
 #if defined(PERCUSSA_PANEL_SSP)
-        case SDL_SCANCODE_UP:
+        case SDL_SCANCODE_6:
           button = input::HardwareButtonId::Up;
           return true;
-        case SDL_SCANCODE_DOWN:
+        case SDL_SCANCODE_Y:
           button = input::HardwareButtonId::Down;
           return true;
-        case SDL_SCANCODE_LEFT:
-          button = input::HardwareButtonId::Left;
-          return true;
-        case SDL_SCANCODE_RIGHT:
-          button = input::HardwareButtonId::Right;
-          return true;
-        case SDL_SCANCODE_LSHIFT:
+        case SDL_SCANCODE_5:
           button = input::HardwareButtonId::ShiftL;
           return true;
-        case SDL_SCANCODE_RSHIFT:
+        case SDL_SCANCODE_7:
           button = input::HardwareButtonId::ShiftR;
           return true;
+        case SDL_SCANCODE_T:
+          button = input::HardwareButtonId::Left;
+          return true;
         case SDL_SCANCODE_U:
-          button = input::HardwareButtonId::P1;
-          return true;
-        case SDL_SCANCODE_I:
-          button = input::HardwareButtonId::P2;
-          return true;
-        case SDL_SCANCODE_O:
-          button = input::HardwareButtonId::P3;
-          return true;
-        case SDL_SCANCODE_P:
-          button = input::HardwareButtonId::P4;
+          button = input::HardwareButtonId::Right;
           return true;
 #elif defined(PERCUSSA_PANEL_XMX)
         case SDL_SCANCODE_UP:
@@ -97,35 +91,35 @@ namespace percussa
       {
         switch (scancode)
         {
-        case SDL_SCANCODE_A:
+        case SDL_SCANCODE_0:
           encoder = input::HardwareEncoderId::Encoder1;
           delta = -1;
           return true;
-        case SDL_SCANCODE_Z:
+        case SDL_SCANCODE_EQUALS:
           encoder = input::HardwareEncoderId::Encoder1;
           delta = 1;
           return true;
-        case SDL_SCANCODE_S:
+        case SDL_SCANCODE_O:
           encoder = input::HardwareEncoderId::Encoder2;
           delta = -1;
           return true;
-        case SDL_SCANCODE_X:
+        case SDL_SCANCODE_LEFTBRACKET:
           encoder = input::HardwareEncoderId::Encoder2;
           delta = 1;
           return true;
-        case SDL_SCANCODE_D:
+        case SDL_SCANCODE_K:
           encoder = input::HardwareEncoderId::Encoder3;
           delta = -1;
           return true;
-        case SDL_SCANCODE_C:
+        case SDL_SCANCODE_SEMICOLON:
           encoder = input::HardwareEncoderId::Encoder3;
           delta = 1;
           return true;
-        case SDL_SCANCODE_F:
+        case SDL_SCANCODE_M:
           encoder = input::HardwareEncoderId::Encoder4;
           delta = -1;
           return true;
-        case SDL_SCANCODE_V:
+        case SDL_SCANCODE_PERIOD:
           encoder = input::HardwareEncoderId::Encoder4;
           delta = 1;
           return true;
@@ -138,16 +132,16 @@ namespace percussa
       {
         switch (scancode)
         {
-        case SDL_SCANCODE_5:
+        case SDL_SCANCODE_MINUS:
           encoder = input::HardwareEncoderId::Encoder1;
           return true;
-        case SDL_SCANCODE_6:
+        case SDL_SCANCODE_P:
           encoder = input::HardwareEncoderId::Encoder2;
           return true;
-        case SDL_SCANCODE_7:
+        case SDL_SCANCODE_L:
           encoder = input::HardwareEncoderId::Encoder3;
           return true;
-        case SDL_SCANCODE_8:
+        case SDL_SCANCODE_COMMA:
           encoder = input::HardwareEncoderId::Encoder4;
           return true;
         default:
@@ -209,6 +203,7 @@ namespace percussa
         SDL_RenderCopy(rendererHandle, texture, 0, 0);
         SDL_RenderPresent(rendererHandle);
       }
+
 #endif
     }
 
@@ -226,7 +221,7 @@ namespace percussa
     {
 #if defined(PERCUSSA_PLATFORM_HOST_SDL)
       ui::PanelRenderer renderer;
-      ui::RenderedPanel rendered = renderer.render(runtime.panel(), runtime.presentationState());
+      ui::RenderedPanel rendered = renderer.render(runtime.panel());
 
       if (SDL_Init(SDL_INIT_VIDEO) != 0)
       {
@@ -277,8 +272,17 @@ namespace percussa
 
       bool quit = runtime.options().once;
       bool firstFrame = true;
+      DisplayBuffer *lastPresentedBuffer = Display_getLastPutBuffer();
+      std::chrono::steady_clock::time_point lastDisplayTick = std::chrono::steady_clock::now() - kDisplayTickPeriod;
       while (true)
       {
+        std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+        if (now - lastDisplayTick >= kDisplayTickPeriod)
+        {
+          Events_push(EVENT_DISPLAY_READY);
+          lastDisplayTick = now;
+        }
+
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
@@ -300,7 +304,7 @@ namespace percussa
                 continue;
               }
               runtime.handleAction(action);
-              rendered = renderer.render(runtime.panel(), runtime.presentationState());
+              rendered = renderer.render(runtime.panel());
               SDL_UpdateTexture(texture, 0, &rendered.pixels[0], rendered.width * (int)sizeof(uint32_t));
             }
           }
@@ -310,10 +314,18 @@ namespace percussa
             if (mapKeyUpToAction(event.key.keysym.scancode, action))
             {
               runtime.handleAction(action);
-              rendered = renderer.render(runtime.panel(), runtime.presentationState());
+              rendered = renderer.render(runtime.panel());
               SDL_UpdateTexture(texture, 0, &rendered.pixels[0], rendered.width * (int)sizeof(uint32_t));
             }
           }
+        }
+
+        DisplayBuffer *currentBuffer = Display_getLastPutBuffer();
+        if (currentBuffer != lastPresentedBuffer)
+        {
+          rendered = renderer.render(runtime.panel());
+          SDL_UpdateTexture(texture, 0, &rendered.pixels[0], rendered.width * (int)sizeof(uint32_t));
+          lastPresentedBuffer = currentBuffer;
         }
 
         presentTexture(rendererHandle, texture);

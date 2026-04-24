@@ -1,6 +1,7 @@
 #pragma once
 
 #include <percussa/ui/Geometry.h>
+#include <percussa/ui/olive_bridge.h>
 
 #include <string>
 
@@ -20,6 +21,8 @@ namespace percussa
       std::string label;
       Rect bounds;
       bool visible;
+
+      void render(Olivec_Canvas canvas) const;
     };
   }
 }

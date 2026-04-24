@@ -115,8 +115,8 @@ Current migrated pieces:
 - existing arch heap support is now wired into SSP builds and `Heap_init()` is restored in the bootstrap order
 - `percussa/hal/audio.c` is now based on `ssp/hal/audio.c`, using RtAudio plus SSP channel mapping at the HAL boundary
 - `percussa/hal/pump/*` now mirrors the HAL pump file layout and provides the current strong `Audio_callback(...)` path
-- SSP config/session restore and save via `percussa/runtime/ssp/SspBootstrap.*`
-- a narrow copied `od/glue/Interpreter` that initializes Lua and seeds `package.path` and `app.roots`
+- SSP config/session restore and save via `percussa/app/Bootstrap.*`
+- a percussa-local `od/glue/AppInterpreter` that seeds `app.*`, opens the app bindings, and boots through `xroot/boot/logging.lua` and `xroot/boot/start.lua`
 - an SSP-only runtime bridge that feeds shared hardware actions into the migrated legacy GPIO/event/encoder surface
 
 Current behavior:
@@ -129,7 +129,7 @@ Current behavior:
 - SSP action input now also drives the migrated legacy encoder and event queue surface
 - SSP bootstrap now initializes the SSP-derived HAL audio path and pump init path; the deeper `Pump_callback(...)` side is still pending
 
-This is intentionally not the full `AppInterpreter` migration yet. It wires in the smallest useful `SSPCore` bootstrap slice first.
+The current SSP bootstrap now uses the percussa-local `AppInterpreter` path, so host runs execute the same `app` bootstrap surface as the legacy SSP startup while the deeper audio/runtime migration remains in progress.
 
 ## Host SDL Input
 

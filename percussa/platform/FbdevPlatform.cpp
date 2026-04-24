@@ -6,6 +6,9 @@
 #include <percussa/runtime/Runtime.h>
 #include <percussa/ui/PanelRenderer.h>
 
+#include <hal/display.h>
+#include <hal/events.h>
+
 #include <chrono>
 #include <iostream>
 #include <ostream>
@@ -28,7 +31,7 @@ namespace percussa
     int FbdevPlatform::run(runtime::Runtime &runtime) const
     {
       ui::PanelRenderer renderer;
-      ui::RenderedPanel rendered = renderer.render(runtime.panel(), runtime.presentationState());
+      ui::RenderedPanel rendered = renderer.render(runtime.panel());
 
       hw::Framebuffer framebuffer(rendered.width, rendered.height);
       if (!framebuffer.init())
@@ -45,17 +48,42 @@ namespace percussa
         return 0;
       }
 
+      DisplayBuffer *lastPresentedBuffer = Display_getLastPutBuffer();
+      int delayMs = 0;
+      const double targetMs = 1000.0 / 70.0;
+
       while (true)
       {
+        if (delayMs > 0)
+        {
+          std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+        }
+
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
         input.poll(
           [&](const input::Action &action)
           {
             runtime.handleAction(action);
-            rendered = renderer.render(runtime.panel(), runtime.presentationState());
-            framebuffer.present(rendered.pixels.data());
           });
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        DisplayBuffer *currentBuffer = Display_getLastPutBuffer();
+        if (currentBuffer != lastPresentedBuffer)
+        {
+          rendered = renderer.render(runtime.panel());
+          framebuffer.present(rendered.pixels.data());
+          lastPresentedBuffer = currentBuffer;
+        }
+
+        Events_push(EVENT_DISPLAY_READY);
+
+        double elapsedMs = std::chrono::duration<double, std::milli>(
+          std::chrono::steady_clock::now() - start).count();
+        delayMs = (int)(targetMs - elapsedMs);
+        if (delayMs < 0)
+        {
+          delayMs = 0;
+        }
       }
     }
   }

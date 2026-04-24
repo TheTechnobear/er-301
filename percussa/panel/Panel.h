@@ -5,7 +5,9 @@
 #include <percussa/ui/EncoderWidget.h>
 #include <percussa/ui/LedWidget.h>
 #include <percussa/ui/ToggleWidget.h>
+#include <percussa/ui/olive_bridge.h>
 
+#include <memory>
 #include <vector>
 
 namespace percussa
@@ -22,8 +24,9 @@ namespace percussa
       virtual const char *name() const = 0;
       virtual int width() const = 0;
       virtual int height() const = 0;
+      virtual void render(Olivec_Canvas canvas) const = 0;
 
-      virtual const std::vector<ui::DisplayWidget> &displays() const = 0;
+      virtual const std::vector<std::shared_ptr<ui::DisplayWidget>> &displays() const = 0;
       virtual const std::vector<ui::ButtonWidget> &buttons() const = 0;
       virtual const std::vector<ui::EncoderWidget> &encoders() const = 0;
       virtual const std::vector<ui::LedWidget> &leds() const = 0;

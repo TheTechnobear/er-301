@@ -1,7 +1,8 @@
 #pragma once
 
 #include <percussa/panel/Controller.h>
-#include <percussa/panel/ssp/SspFrontPanelState.h>
+
+#include <stdint.h>
 
 namespace percussa
 {
@@ -17,16 +18,21 @@ namespace percussa
         explicit SspController(const Panel &panel);
 
         void handleAction(const input::Action &action);
-        const ui::PresentationState &presentationState() const;
         const std::string &statusText() const;
 
       private:
         const Panel &mPanel;
-        SspFrontPanelState mFrontPanelState;
-        ui::PresentationState mPresentationState;
         std::string mStatusText;
+        int mActiveOutput = 1;
+        bool mLinkGestureActive = false;
 
-        void refreshPresentationState();
+        uint32_t mapButtonToGpio(input::HardwareButtonId button) const;
+        int activeOutput() const;
+        void clearSelectButtons() const;
+        void setActiveOutput(int output);
+        void switchToggle(uint32_t idA, uint32_t idB, int delta) const;
+        int toggleState(uint32_t idA, uint32_t idB) const;
+        void syncIndicators() const;
       };
     }
   }

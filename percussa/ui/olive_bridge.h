@@ -33,6 +33,8 @@ void olivec_text(Olivec_Canvas oc, const char *text, int x, int y, Olivec_Font f
 
 Olivec_Font percussa_olive_default_font(void);
 void percussa_olive_text_metrics(const char *text, int fontSize, int *width, int *height);
+void percussa_od_text_metrics(const char *text, int fontSize, int *width, int *height);
+void percussa_od_text(Olivec_Canvas oc, const char *text, int x, int y, int fontSize, uint32_t color);
 
 #define OLIVEC_RGBA(r, g, b, a) ((((r)&0xFF)<<(8*0)) | (((g)&0xFF)<<(8*1)) | (((b)&0xFF)<<(8*2)) | (((a)&0xFF)<<(8*3)))
 

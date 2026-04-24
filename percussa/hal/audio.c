@@ -76,7 +76,7 @@ static void Audio_pinCurrentThreadToCore(int core, const char *label)
 }
 #endif
 
-#if TARGET_SSP
+#if defined(TARGET_SSP) && !defined(PERCUSSA_PLATFORM_HOST_SDL)
 #define kAudioInCh 16
 static int kInChMap[kAudioInCh] = {11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4};
 
@@ -101,7 +101,7 @@ static void Audio_buildInputRoutingMap(void)
     local.inputRoutingMap[i] = -1;
   }
 
-#if TARGET_SSP
+#if defined(TARGET_SSP) && !defined(PERCUSSA_PLATFORM_HOST_SDL)
   uint32_t logicalCount = kAudioInCh;
   if (logicalCount > (uint32_t)NUM_INPUT_CHANNELS)
   {

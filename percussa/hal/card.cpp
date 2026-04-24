@@ -6,7 +6,7 @@
 #include <hal/events.h>
 #include <hal/log.h>
 
-#include <percussa/runtime/ssp/CardState.h>
+#include <percussa/app/CardState.h>
 
 #include <fstream>
 #include <stdlib.h>
@@ -21,6 +21,15 @@ typedef struct sd
 static sd_t sd[2];
 
 #if defined(TARGET_SSP)
+namespace percussa
+{
+  namespace app
+  {
+    bool usbStarted();
+    bool usbMassStorageMode();
+  }
+}
+
 namespace
 {
   static std::string shellQuote(const char *text)
@@ -77,8 +86,8 @@ namespace
 static bool shouldUseFrontUSBMount(uint32_t drv)
 {
 #if defined(TARGET_SSP)
-  (void)drv;
-  return false;
+  bool useFrontUSB = percussa::app::usbStarted() && percussa::app::usbMassStorageMode();
+  return drv == CARD_FRONT && useFrontUSB;
 #else
   (void)drv;
   return false;
@@ -340,11 +349,11 @@ extern "C"
   {
     if (drv == CARD_REAR)
     {
-      return percussa::runtime::ssp::isRearCardPresent();
+      return percussa::app::isRearCardPresent();
     }
     if (drv == CARD_FRONT)
     {
-      return percussa::runtime::ssp::isFrontCardPresent();
+      return percussa::app::isFrontCardPresent();
     }
     return false;
   }

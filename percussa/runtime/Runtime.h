@@ -2,7 +2,6 @@
 
 #include <percussa/input/Action.h>
 #include <percussa/panel/Controller.h>
-#include <percussa/ui/PresentationState.h>
 
 #include <memory>
 #include <string>
@@ -38,7 +37,6 @@ namespace percussa
       void handleAction(const input::Action &action);
       const panel::Panel &panel() const;
       const RunOptions &options() const;
-      const ui::PresentationState &presentationState() const;
       const std::string &statusText() const;
 
     private:

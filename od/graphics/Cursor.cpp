@@ -7,6 +7,30 @@
 
 namespace od
 {
+	float Cursor::sTweenStep = TWEEN_STEP;
+	float Cursor::sBreathStep = BREATH_STEP;
+
+	float Cursor::defaultTweenStep()
+	{
+		return TWEEN_STEP;
+	}
+
+	float Cursor::defaultBreathStep()
+	{
+		return BREATH_STEP;
+	}
+
+	void Cursor::setAnimationSteps(float tweenStep, float breathStep)
+	{
+		sTweenStep = tweenStep;
+		sBreathStep = breathStep;
+	}
+
+	void Cursor::resetAnimationSteps()
+	{
+		sTweenStep = TWEEN_STEP;
+		sBreathStep = BREATH_STEP;
+	}
 
 	void CursorState::copyAttributes(CursorState &cs)
 	{
@@ -35,11 +59,11 @@ namespace od
 		{
 			if (mX < target.x)
 			{
-				mX += MIN(dx, TWEEN_STEP);
+				mX += MIN(dx, sTweenStep);
 			}
 			else
 			{
-				mX -= MIN(dx, TWEEN_STEP);
+				mX -= MIN(dx, sTweenStep);
 			}
 		}
 		left = (int)mX;
@@ -48,11 +72,11 @@ namespace od
 		{
 			if (mY < target.y)
 			{
-				mY += MIN(dy, TWEEN_STEP);
+				mY += MIN(dy, sTweenStep);
 			}
 			else
 			{
-				mY -= MIN(dy, TWEEN_STEP);
+				mY -= MIN(dy, sTweenStep);
 			}
 		}
 		bottom = (int)mY;
@@ -62,7 +86,7 @@ namespace od
 		case 0:
 			if (mBreath < 3.5f)
 			{
-				mBreath += BREATH_STEP;
+				mBreath += sBreathStep;
 			}
 			else
 			{
@@ -72,7 +96,7 @@ namespace od
 		case 1:
 			if (mBreath > 0.0f)
 			{
-				mBreath -= BREATH_STEP;
+				mBreath -= sBreathStep;
 			}
 			else
 			{

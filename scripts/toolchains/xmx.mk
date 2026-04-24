@@ -2,6 +2,7 @@ PERCUSSA_TOOLCHAIN_NAME := xmx
 PERCUSSA_TOOLCHAIN_PANEL := xmx
 PERCUSSA_PANEL ?= xmx
 LIBS_BUILD_FLAVOR := xmx
+FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3-xmx/usr
 
 ARCH := linux
 CROSS_COMPILE := 1

@@ -15,13 +15,11 @@ struct Local
   od::EventFlags events;
 #define onPost od::EventFlags::flag00
   int buttonTimer[19];
-  int lastEncoderValue;
 
   Local() :
     q(),
     events(),
-    buttonTimer{0},
-    lastEncoderValue(0)
+    buttonTimer{0}
   {
   }
 };
@@ -51,12 +49,7 @@ static void checkButtonRepeat(uint32_t id)
 
 static void checkEncoder(void)
 {
-  int value = Encoder_getValue();
-  if (value != local.lastEncoderValue)
-  {
-    Events_push(EVENT_KNOB);
-    local.lastEncoderValue = value;
-  }
+  (void)Encoder_getValue();
 }
 
 static void configureButtonEvents(uint32_t id)
@@ -93,8 +86,6 @@ extern "C"
     Gpio_setEvents(TOGGLE_MODE_B, EVENT_MODE, EVENT_MODE);
     Gpio_setEvents(TOGGLE_STORAGE_A, EVENT_STORAGE, EVENT_STORAGE);
     Gpio_setEvents(TOGGLE_STORAGE_B, EVENT_STORAGE, EVENT_STORAGE);
-
-    local.lastEncoderValue = Encoder_getValue();
   }
 
   void Events_push(uint32_t e)

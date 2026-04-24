@@ -2,7 +2,7 @@
 #include <percussa/runtime/Runtime.h>
 
 #if defined(PERCUSSA_PANEL_SSP)
-#include <percussa/runtime/ssp/SspBootstrap.h>
+#include <percussa/app/Bootstrap.h>
 #endif
 
 #if defined(PERCUSSA_PLATFORM_HOST_SDL)
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
   }
 
 #if defined(PERCUSSA_PANEL_SSP)
-  percussa::runtime::ssp::SspBootstrap bootstrap(argc, argv);
+  percussa::app::Bootstrap bootstrap(argc, argv);
   if (!bootstrap.initialize())
   {
     return 1;

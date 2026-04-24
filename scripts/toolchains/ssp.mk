@@ -2,6 +2,7 @@ PERCUSSA_TOOLCHAIN_NAME := ssp
 PERCUSSA_TOOLCHAIN_PANEL := ssp
 PERCUSSA_PANEL ?= ssp
 LIBS_BUILD_FLAVOR := ssp
+FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3-ssp/usr
 
 ARCH := linux
 CROSS_COMPILE := 1

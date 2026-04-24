@@ -16,6 +16,22 @@ static struct USBLocals
   bool started = false;
 } local;
 
+namespace percussa
+{
+  namespace app
+  {
+    bool usbStarted()
+    {
+      return local.started;
+    }
+
+    bool usbMassStorageMode()
+    {
+      return local.mode == USBLocals::massStorage;
+    }
+  }
+}
+
 extern "C"
 {
   void USB_init(void)

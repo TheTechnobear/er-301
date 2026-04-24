@@ -1,7 +1,5 @@
 #pragma once
 
-#include <percussa/ui/PresentationState.h>
-
 #include <string>
 #include <stdint.h>
 
@@ -26,7 +24,7 @@ namespace percussa
     class PanelRenderer
     {
     public:
-      RenderedPanel render(const panel::Panel &panel, const PresentationState &state) const;
+      RenderedPanel render(const panel::Panel &panel) const;
     };
   }
 }

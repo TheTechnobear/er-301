@@ -4,10 +4,6 @@
 #include <percussa/panel/Panel.h>
 #include <percussa/platform/Platform.h>
 
-#if defined(PERCUSSA_PANEL_SSP)
-#include <percussa/runtime/ssp/LegacyHardware.h>
-#endif
-
 namespace percussa
 {
   namespace runtime
@@ -30,9 +26,6 @@ namespace percussa
 
     void Runtime::handleAction(const input::Action &action)
     {
-#if defined(PERCUSSA_PANEL_SSP)
-      ssp::applyLegacyHardwareAction(action);
-#endif
       mController->handleAction(action);
     }
 
@@ -44,11 +37,6 @@ namespace percussa
     const RunOptions &Runtime::options() const
     {
       return mOptions;
-    }
-
-    const ui::PresentationState &Runtime::presentationState() const
-    {
-      return mController->presentationState();
     }
 
     const std::string &Runtime::statusText() const

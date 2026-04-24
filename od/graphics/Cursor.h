@@ -32,10 +32,16 @@ namespace od
 	public:
 		Cursor();
 		virtual ~Cursor();
+		static float defaultTweenStep();
+		static float defaultBreathStep();
+		static void setAnimationSteps(float tweenStep, float breathStep);
+		static void resetAnimationSteps();
 		void draw(CursorState &target, FrameBuffer &fb);
 		void setPosition(int x, int y);
 
 	private:
+		static float sTweenStep;
+		static float sBreathStep;
 		float mX = 0;
 		float mY = 0;
 		float mBreath = 0;

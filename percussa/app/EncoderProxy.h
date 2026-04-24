@@ -1,6 +1,16 @@
 #pragma once
 
 #ifdef __cplusplus
+namespace percussa
+{
+  namespace app
+  {
+    void initEncoderProxy();
+    int encoderProxyValue();
+    int encoderProxyChange();
+  }
+}
+
 extern "C"
 {
 #endif

@@ -2,7 +2,7 @@
 #include <hal/timing.h>
 #include <hal/uart.h>
 
-#include <percussa/ssp/tls.h>
+#include <percussa/support/tls.h>
 
 #include <stdarg.h>
 #include <stdbool.h>
