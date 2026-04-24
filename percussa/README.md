@@ -88,9 +88,19 @@ Panel and platform are selected at build time.
 - `PERCUSSA_PANEL=ssp|xmx`
 - `PERCUSSA_PLATFORM=host-sdl|fbdev|plugin`
 
-Cross builds should go through the existing buildroot flow, for example:
+## Build
 
-- `BUILDROOT=$SSP_BUILDROOT make percussa PERCUSSA_PANEL=ssp`
+Briefly:
+
+- macOS SSP: `make percussa-ssp`
+- macOS XMX: `make percussa-xmx`
+- linux SSP cross-build: `make percussa-ssp PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
+- linux XMX cross-build: `make percussa-xmx PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
+
+If the staged FFTW dependency needs rebuilding:
+
+- SSP: `TOOLCHAIN_FLAVOR=ssp ./scripts/build-fftw-cross.sh`
+- XMX: `TOOLCHAIN_FLAVOR=xmx ./scripts/build-fftw-cross.sh`
 
 ## SSP Bootstrap Migration
 

@@ -51,6 +51,7 @@ Important settled design change:
 
 - `PERCUSSA_PLATFORM` is now the single source of truth for platform choice
 - the earlier separate SDL toggle has been removed because SDL and fbdev are mutually exclusive platform choices
+- cross toolchain selection is explicit via `PERCUSSA_TOOLCHAIN_FILE`; no toolchain file means native build
 
 ## Settled Design Decisions
 
@@ -119,18 +120,28 @@ The SSP path is no longer just scaffold code. It now includes real migrated slic
 
 That is enough to prove the architecture, but not enough to call the XMX definition complete.
 
-we have not tested with xmx toolchain yet.
-`BUILDROOT=$XMX_BUILDROOT make percussa-xmx`
+XMX cross-build validation now goes through an explicit toolchain include.
 
-this will  result in errors, as percussa.mk (and ssp.mk) are assuming cross compile = ssp hardware!
-the flags were set based on xcSSP.cmake-ref-only, used by another projects.
-we need to have XMX flags that are reflected in xcXMX.cmake-ref-only
+Valid shape:
 
-this means, the build now needs to know not only its a cross compile, but for what target platform xmx or ssp! 
-this can fit naturally with the targets...
-for linux - target-percussa-xmx means its XMX, percussa-ssp = SSP
-i.e we do not need to build the ssp target using the XMX toolchain or vice versa.
-for macOS either are valid, and no issue there, as we are not cross-compiling.
+- `XMX_BUILDROOT=... make percussa-xmx PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
+
+The matching SSP form is:
+
+- `SSP_BUILDROOT=... make percussa-ssp PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
+
+Cross-built support libraries are also separated by toolchain now, so SSP and XMX no longer reuse the same `testing/linux/libs` archive outputs.
+
+Cross-built FFTW staging is also separated by toolchain now:
+
+- SSP uses `testing/linux/fftw3-ssp/usr`
+- XMX uses `testing/linux/fftw3-xmx/usr`
+
+Invalid combinations remain invalid:
+
+- XMX toolchain with `percussa-ssp`
+- SSP toolchain with `percussa-xmx`
+- raw `BUILDROOT=... make percussa-*` without `PERCUSSA_TOOLCHAIN_FILE`
 
 
 
@@ -140,8 +151,10 @@ Validated working paths at the moment:
 
 - `make percussa-ssp` on macOS
 - `make percussa-xmx` on macOS
-- `BUILDROOT=$SSP_BUILDROOT make percussa-ssp` for the linux cross build
+- `SSP_BUILDROOT=... make percussa-ssp PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/ssp.mk` for the linux cross build
+- `XMX_BUILDROOT=... make percussa-xmx PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/xmx.mk` for the linux cross build
 - panel-specific output directories and clean targets
+- separated SSP and XMX staged dependency outputs for support libraries and FFTW
 - linux defaulting to `fbdev`
 - explicit linux override with `PERCUSSA_PLATFORM=host-sdl`
 
@@ -205,13 +218,14 @@ Current state:
 
 - XMX builds cleanly
 - XMX has separate panel and controller classes
+- XMX now also cross-builds cleanly with the explicit XMX toolchain and separated staged dependencies
 
 What is missing:
 
 - a real hardware-backed panel definition
 - any deeper XMX-specific runtime behavior beyond the current scaffold level
 
-we also need to build this with the XMX toolchain, and extended percussa.mk to handle two different cross compile targets, see above.
+the build-side separation is now in place; the remaining XMX work is runtime and hardware-definition work, not cross-toolchain plumbing.
 
 ### 5. `plugin` remains intentionally incomplete
 
@@ -275,6 +289,8 @@ Success looks like:
 
 This should happen after the SSP-side runtime/audio seam is better understood.
 
+Build-side SSP/XMX separation is already validated and should not be treated as the next blocker.
+
 ## Not In Scope Right Now
 
 - rewriting `ssp`
@@ -290,21 +306,20 @@ Use these as the current smoke tests.
 - `make percussa-xmx`
 - `./testing/darwin/percussa-ssp/percussa-ssp.elf --once`
 - `./testing/darwin/percussa-xmx/percussa-xmx.elf --once`
-- `BUILDROOT=$SSP_BUILDROOT make percussa-ssp`
+- `SSP_BUILDROOT=... make percussa-ssp PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
+- `SSP_BUILDROOT=... make percussa-ssp PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/ssp.mk PERCUSSA_PLATFORM=host-sdl` (low priority)
+- `XMX_BUILDROOT=... make percussa-xmx PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
 
-- `BUILDROOT=$SSP_BUILDROOT make percussa-xmx PERCUSSA_PLATFORM=host-sdl`
-^^^^ THIS IS WRONG, and INVALID...
-we never need to build percussa-xmx on the SSP
+If the staged FFTW dependencies need rebuilding:
 
-the following are valid
-- `BUILDROOT=$SSP_BUILDROOT make percussa-ssp PERCUSSA_PLATFORM=host-sdl` (low priority)
+- `TOOLCHAIN_FLAVOR=ssp ./scripts/build-fftw-cross.sh`
+- `TOOLCHAIN_FLAVOR=xmx ./scripts/build-fftw-cross.sh`
 
-- `BUILDROOT=$XMX_BUILDROOT make percussa-xmx`
-- `BUILDROOT=$XMX_BUILDROOT make percussa-ssp PERCUSSA_PLATFORM=host-sdl` (low priority)
+Invalid combinations:
 
-for completeness, it'd also be invaid to build ssp on xmx, e.g. 
-- `BUILDROOT=$XMX_BUILDROOT make percussa-ssp
-^^^^ THIS IS WRONG, and INVALID...
+- `XMX_BUILDROOT=... make percussa-ssp PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
+- `SSP_BUILDROOT=... make percussa-xmx PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
+- raw `BUILDROOT=... make percussa-*` without `PERCUSSA_TOOLCHAIN_FILE`
 
 
 ## Definition Of Progress

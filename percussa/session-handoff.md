@@ -9,6 +9,7 @@
 - panel-specific output directories
 - a growing real SSP migration surface through `hal`, `runtime/ssp`, and `panel/ssp`
 - an honest full-surface build that compiles and links through the broader ER-301 surface instead of a shallow percussa-only subset
+- explicit SSP and XMX linux cross-builds with separated staged dependencies
 
 The work is still in the proving-ground phase. `ssp` remains unchanged.
 
@@ -27,6 +28,7 @@ Important recent design cleanup:
 - `PERCUSSA_PLATFORM` is now the single platform selector
 - there is no separate SDL toggle anymore
 - SDL and fbdev are treated as mutually exclusive platform choices
+- cross toolchain selection is explicit via `PERCUSSA_TOOLCHAIN_FILE`; no toolchain file means native build
 
 ## Active Build Targets
 
@@ -121,19 +123,21 @@ It works, but it still relies on broad recursive source lists plus `filter-out`.
 
 `Interpreter.*` exists, but the broader `AppInterpreter`/`luaopen_app(...)` surface is still not migrated.
 
-### 6. XMX build
-we have not tested with xmx toolchain yet.
-`BUILDROOT=$XMX_BUILDROOT make percussa-xmx`
+### 6. Build-side SSP/XMX separation is no longer the blocker
 
-this will  result in errors, as percussa.mk (and ssp.mk) are assuming cross compile = ssp hardware!
-the flags were set based on xcSSP.cmake-ref-only, used by another projects.
-we need to have XMX flags that are reflected in xcXMX.cmake-ref-only
+The explicit toolchain split is now in place and validated.
 
-this means, the build now needs to know not only its a cross compile, but for what target platform xmx or ssp! 
-this can fit naturally with the targets...
-for linux - target-percussa-xmx means its XMX, percussa-ssp = SSP
-i.e we do not need to build the ssp target using the XMX toolchain or vice versa.
-for macOS either are valid, and no issue there, as we are not cross-compiling.
+Current validated shapes:
+
+- `SSP_BUILDROOT=... make percussa-ssp PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
+- `XMX_BUILDROOT=... make percussa-xmx PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
+
+Separated staged dependency outputs are also in place:
+
+- support libraries: `testing/linux/libs-ssp` and `testing/linux/libs-xmx`
+- FFTW staging: `testing/linux/fftw3-ssp/usr` and `testing/linux/fftw3-xmx/usr`
+
+That means the remaining work is no longer buildroot/toolchain plumbing. The next blocker is still the runtime/audio ownership seam.
 
 
 
@@ -149,13 +153,16 @@ The right bias is:
 
 In practice that means focusing on `od/AudioThread.cpp` and the runtime/process graph around it, not on adding more outer HAL shells.
 
+The build-side SSP and XMX split is now good enough that it should not be the focus of the next session unless a concrete new regression appears.
+
 ## Validation State
 
 Confirmed recently:
 
 - `make percussa-ssp`
 - `make percussa-xmx`
-- `BUILDROOT=$SSP_BUILDROOT make percussa-ssp`
+- `SSP_BUILDROOT=... make percussa-ssp PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
+- `XMX_BUILDROOT=... make percussa-xmx PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
 - panel-specific output directories and clean targets
 - linux defaulting to `fbdev`
 - explicit linux SDL path via `PERCUSSA_PLATFORM=host-sdl`
@@ -166,8 +173,10 @@ Useful smoke commands:
 - `make percussa-xmx`
 - `./testing/darwin/percussa-ssp/percussa-ssp.elf --once`
 - `./testing/darwin/percussa-xmx/percussa-xmx.elf --once`
-- `BUILDROOT=$SSP_BUILDROOT make percussa-ssp`
-- `BUILDROOT=$XMX_BUILDROOT make percussa-xmx`
+- `SSP_BUILDROOT=... make percussa-ssp PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
+- `XMX_BUILDROOT=... make percussa-xmx PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
+- `TOOLCHAIN_FLAVOR=ssp ./scripts/build-fftw-cross.sh`
+- `TOOLCHAIN_FLAVOR=xmx ./scripts/build-fftw-cross.sh`
 
 ## Do And Do Not
 

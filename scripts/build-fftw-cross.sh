@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Cross-build FFTW from official tarballs for arm-linux-gnueabihf using LLVM,
-# installing into a project-local staging tree by default.
+# Cross-build FFTW from official tarballs for the active Percussa linux
+# toolchain using LLVM, installing into a project-local staging tree by default.
 #
 # This does NOT modify your SSP sysroot unless you choose a DESTDIR inside it.
 
@@ -14,30 +14,87 @@ FFTW_TARBALL="fftw-${FFTW_VERSION}.tar.gz"
 FFTW_DIRNAME="fftw-${FFTW_VERSION}"
 FFTW_URL="${FFTW_URL:-https://www.fftw.org/${FFTW_TARBALL}}"
 
-TARGET="${TARGET:-arm-linux-gnueabihf}"
+TOOLCHAIN_FLAVOR="${TOOLCHAIN_FLAVOR:-auto}"
 TOOLSROOT="${TOOLSROOT:-/opt/homebrew/opt/llvm/bin}"
 
+detect_toolchain_flavor() {
+  local candidate_buildroot="${1:-}"
+
+  if [[ -n "$candidate_buildroot" ]]; then
+    if [[ -d "$candidate_buildroot/aarch64-rockchip-linux-gnu/sysroot" ]]; then
+      echo xmx
+      return
+    fi
+    if [[ -d "$candidate_buildroot/arm-rockchip-linux-gnueabihf/sysroot" ]]; then
+      echo ssp
+      return
+    fi
+  fi
+
+  case "${TARGET:-}" in
+    aarch64-rockchip-linux-gnu)
+      echo xmx
+      ;;
+    arm-linux-gnueabihf)
+      echo ssp
+      ;;
+    *)
+      echo unknown
+      ;;
+  esac
+}
+
+if [[ "$TOOLCHAIN_FLAVOR" == "auto" ]]; then
+  if [[ -n "${XMX_BUILDROOT:-}" && -z "${BUILDROOT:-}" ]]; then
+    TOOLCHAIN_FLAVOR=xmx
+  elif [[ -n "${SSP_BUILDROOT:-}" && -z "${BUILDROOT:-}" ]]; then
+    TOOLCHAIN_FLAVOR=ssp
+  else
+    TOOLCHAIN_FLAVOR="$(detect_toolchain_flavor "${BUILDROOT:-}")"
+  fi
+fi
+
+case "$TOOLCHAIN_FLAVOR" in
+  xmx)
+    DEFAULT_BUILDROOT="${XMX_BUILDROOT:-${BUILDROOT:-}}"
+    DEFAULT_TARGET="aarch64-rockchip-linux-gnu"
+    DEFAULT_SYSROOT_SUFFIX="aarch64-rockchip-linux-gnu/sysroot"
+    DEFAULT_GCCROOT_SUFFIX="lib/gcc/aarch64-rockchip-linux-gnu/8.4.0"
+    DEFAULT_STAGE_DIR="$REPO_ROOT/testing/linux/fftw3-xmx"
+    ;;
+  ssp)
+    DEFAULT_BUILDROOT="${SSP_BUILDROOT:-${BUILDROOT:-}}"
+    DEFAULT_TARGET="arm-linux-gnueabihf"
+    DEFAULT_SYSROOT_SUFFIX="arm-rockchip-linux-gnueabihf/sysroot"
+    DEFAULT_GCCROOT_SUFFIX="lib/gcc/arm-rockchip-linux-gnueabihf/8.4.0"
+    DEFAULT_STAGE_DIR="$REPO_ROOT/testing/linux/fftw3-ssp"
+    ;;
+  *)
+    echo "error: unable to determine toolchain flavor. Set TOOLCHAIN_FLAVOR=ssp|xmx or provide TARGET/BUILDROOT." >&2
+    exit 1
+    ;;
+esac
+
+BUILDROOT="${BUILDROOT:-$DEFAULT_BUILDROOT}"
+TARGET="${TARGET:-$DEFAULT_TARGET}"
+
 # Keep install local to project by default, as requested.
-DESTDIR="${DESTDIR:-$REPO_ROOT/.local/fftw-stage}"
+DESTDIR="${DESTDIR:-$DEFAULT_STAGE_DIR}"
 PREFIX="${PREFIX:-/usr}"
 
 # Optional sysroot for include/lib resolution during compile/link.
-if [[ -n "${SSP_BUILDROOT:-}" ]]; then
-  SYSROOT_DEFAULT="${SSP_BUILDROOT}/arm-rockchip-linux-gnueabihf/sysroot"
-elif [[ -n "${BUILDROOT:-}" ]]; then
-  SYSROOT_DEFAULT="${BUILDROOT}/arm-rockchip-linux-gnueabihf/sysroot"
+if [[ -n "$BUILDROOT" ]]; then
+  SYSROOT_DEFAULT="${BUILDROOT}/${DEFAULT_SYSROOT_SUFFIX}"
 else
   SYSROOT_DEFAULT=""
 fi
 SYSROOT="${SYSROOT:-$SYSROOT_DEFAULT}"
 GCCROOT="${GCCROOT:-}"
-if [[ -z "$GCCROOT" && -n "${SSP_BUILDROOT:-}" ]]; then
-  GCCROOT="${SSP_BUILDROOT}/lib/gcc/arm-rockchip-linux-gnueabihf/8.4.0"
-elif [[ -z "$GCCROOT" && -n "${BUILDROOT:-}" ]]; then
-  GCCROOT="${BUILDROOT}/lib/gcc/arm-rockchip-linux-gnueabihf/8.4.0"
+if [[ -z "$GCCROOT" && -n "$BUILDROOT" ]]; then
+  GCCROOT="${BUILDROOT}/${DEFAULT_GCCROOT_SUFFIX}"
 fi
 
-BUILD_DIR="${BUILD_DIR:-$REPO_ROOT/.build/fftw-cross}"
+BUILD_DIR="${BUILD_DIR:-$REPO_ROOT/.build/fftw-cross-${TOOLCHAIN_FLAVOR}}"
 SRC_DIR="$BUILD_DIR/src"
 PKG_DIR="$BUILD_DIR/pkg"
 STAMP_DIR="$BUILD_DIR/stamps"
@@ -99,7 +156,7 @@ if [[ -n "$SYSROOT" && ! -d "$SYSROOT" ]]; then
   exit 1
 fi
 if [[ -z "$GCCROOT" || ! -d "$GCCROOT" ]]; then
-  echo "error: GCCROOT not found. Set GCCROOT explicitly or provide SSP_BUILDROOT/BUILDROOT." >&2
+  echo "error: GCCROOT not found. Set GCCROOT explicitly or provide BUILDROOT, SSP_BUILDROOT, or XMX_BUILDROOT." >&2
   exit 1
 fi
 
@@ -172,6 +229,8 @@ popd >/dev/null
 
 echo
 echo "FFTW cross-build complete."
+echo "Toolchain flavor: $TOOLCHAIN_FLAVOR"
+echo "Target used: $TARGET"
 echo "GCCROOT used: $GCCROOT"
 echo "Staged files are under: $DESTDIR$PREFIX"
 echo "Expected key outputs:"

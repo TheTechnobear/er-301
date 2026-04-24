@@ -39,6 +39,7 @@ TRIPLE ?= arm-linux-gnueabihf
 SYSROOT ?= $(BUILDROOT)/arm-rockchip-linux-gnueabihf/sysroot
 GCCROOT ?= $(BUILDROOT)/lib/gcc/arm-rockchip-linux-gnueabihf/8.4.0
 GXXROOT ?= $(BUILDROOT)/arm-rockchip-linux-gnueabihf/include/c++/8.4.0
+GXX_INCLUDE_TRIPLE ?= arm-rockchip-linux-gnueabihf
 CROSS_TOOL_FLAGS := --target=$(TRIPLE) --sysroot=$(SYSROOT)
 
 # clang: warning: argument unused during compilation: '-fmax-errors=5' [-Wunused-command-line-argument]
@@ -69,7 +70,7 @@ LFLAGS += -fuse-ld=lld
 
 # Match libstdc++ include paths used in xcSSP.cmake.
 CFLAGS += -I$(GXXROOT)
-CFLAGS += -I$(GXXROOT)/arm-rockchip-linux-gnueabihf
+CFLAGS += -I$(GXXROOT)/$(GXX_INCLUDE_TRIPLE)
 
 $(info using TOOLSROOT  :  $(TOOLSROOT))
 $(info using BUILDROOT  :  $(BUILDROOT))

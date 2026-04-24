@@ -100,22 +100,30 @@ emu-clean:
 	+$(MAKE) -f scripts/emu.mk clean
 
 percussa-ssp:
-	+$(MAKE) -f scripts/lua.mk
-	+$(MAKE) -f scripts/miniz.mk
-	+$(MAKE) -f scripts/lodepng.mk
-	+$(MAKE) FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) PERCUSSA_PANEL=ssp -f scripts/percussa.mk
+	@if [ "$(origin BUILDROOT)" = "command line" ] && [ -n "$(BUILDROOT)" ] && [ -z "$(PERCUSSA_TOOLCHAIN_FILE)" ]; then \
+		echo "Percussa cross-builds require PERCUSSA_TOOLCHAIN_FILE. Use scripts/toolchains/ssp.mk or scripts/toolchains/xmx.mk." >&2; \
+		exit 2; \
+	fi
+	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/lua.mk
+	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/miniz.mk
+	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/lodepng.mk
+	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) FFTW_STAGE_ROOT=$(PERCUSSA_FFTW_STAGE_ROOT) PERCUSSA_TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_PANEL=ssp -f scripts/percussa.mk
 
 percussa-ssp-clean:
-	+$(MAKE) PERCUSSA_PANEL=ssp -f scripts/percussa.mk clean
+	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_PANEL=ssp -f scripts/percussa.mk clean
 
 percussa-xmx:
-	+$(MAKE) -f scripts/lua.mk
-	+$(MAKE) -f scripts/miniz.mk
-	+$(MAKE) -f scripts/lodepng.mk
-	+$(MAKE) FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) PERCUSSA_PANEL=xmx -f scripts/percussa.mk
+	@if [ "$(origin BUILDROOT)" = "command line" ] && [ -n "$(BUILDROOT)" ] && [ -z "$(PERCUSSA_TOOLCHAIN_FILE)" ]; then \
+		echo "Percussa cross-builds require PERCUSSA_TOOLCHAIN_FILE. Use scripts/toolchains/ssp.mk or scripts/toolchains/xmx.mk." >&2; \
+		exit 2; \
+	fi
+	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/lua.mk
+	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/miniz.mk
+	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/lodepng.mk
+	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) FFTW_STAGE_ROOT=$(PERCUSSA_FFTW_STAGE_ROOT) PERCUSSA_TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_PANEL=xmx -f scripts/percussa.mk
 
 percussa-xmx-clean:
-	+$(MAKE) PERCUSSA_PANEL=xmx -f scripts/percussa.mk clean
+	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_PANEL=xmx -f scripts/percussa.mk clean
 
 ssp: 
 	+$(MAKE) -f scripts/lua.mk
@@ -130,6 +138,13 @@ ssp-clean:
 	+$(MAKE) -f scripts/ssp.mk clean
 
 FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3/usr
+ifeq ($(PERCUSSA_TOOLCHAIN_FILE),scripts/toolchains/ssp.mk)
+PERCUSSA_FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3-ssp/usr
+else ifeq ($(PERCUSSA_TOOLCHAIN_FILE),scripts/toolchains/xmx.mk)
+PERCUSSA_FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3-xmx/usr
+else
+PERCUSSA_FFTW_STAGE_ROOT ?= $(FFTW_STAGE_ROOT)
+endif
 
 dist-clean:
 	rm -rf testing debug release

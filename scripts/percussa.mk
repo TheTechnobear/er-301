@@ -1,3 +1,20 @@
+PERCUSSA_TOOLCHAIN_FILE ?=
+TOOLCHAIN_FILE ?= $(PERCUSSA_TOOLCHAIN_FILE)
+
+ifeq ($(strip $(PERCUSSA_TOOLCHAIN_FILE)),)
+ifneq ($(strip $(BUILDROOT)),)
+ifeq ($(origin BUILDROOT),command line)
+$(error Percussa cross-builds require PERCUSSA_TOOLCHAIN_FILE. Use scripts/toolchains/ssp.mk or scripts/toolchains/xmx.mk.)
+endif
+endif
+ifeq ($(origin CROSS_COMPILE),command line)
+ifeq ($(strip $(CROSS_COMPILE)),1)
+$(error Percussa cross-builds require PERCUSSA_TOOLCHAIN_FILE. Use scripts/toolchains/ssp.mk or scripts/toolchains/xmx.mk.)
+endif
+endif
+override BUILDROOT :=
+endif
+
 include scripts/env.mk
 include scripts/utils.mk
 
@@ -18,6 +35,13 @@ PERCUSSA_PLATFORM ?= fbdev
 endif
 
 PERCUSSA_PANEL ?= ssp
+
+ifneq ($(strip $(PERCUSSA_TOOLCHAIN_PANEL)),)
+ifneq ($(PERCUSSA_PANEL),$(PERCUSSA_TOOLCHAIN_PANEL))
+$(error PERCUSSA_PANEL '$(PERCUSSA_PANEL)' does not match toolchain panel '$(PERCUSSA_TOOLCHAIN_PANEL)'.)
+endif
+endif
+
 program_variant := $(program_name)-$(PERCUSSA_PANEL)
 out_dir := $(build_dir)/$(program_variant)
 

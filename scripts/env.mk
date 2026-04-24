@@ -2,6 +2,11 @@
 # testing | release | debug
 PROFILE ?= testing
 
+TOOLCHAIN_FILE ?=
+ifneq ($(strip $(TOOLCHAIN_FILE)),)
+include $(TOOLCHAIN_FILE)
+endif
+
 # Determine ARCH if it's not provided...
 # linux | darwin | am335x
 ifndef ARCH
@@ -42,7 +47,8 @@ describe_env = $(blueON)[$(scriptname) $(ARCH) $(PROFILE)]$(blueOFF)
 
 # Frequently used paths
 build_dir = $(PROFILE)/$(ARCH)
-libs_build_dir = $(build_dir)/libs
+LIBS_BUILD_FLAVOR ?=
+libs_build_dir = $(build_dir)/libs$(if $(LIBS_BUILD_FLAVOR),-$(LIBS_BUILD_FLAVOR))
 arch_dir = arch
 mods_dir = mods
 od_dir = od
@@ -106,6 +112,7 @@ pkg_install_dir = $(HOME)/.od/rear
 # - CROSS_COMPILE=1: force cross mode.
 # - CROSS_COMPILE=0: force native linux mode.
 CROSS_COMPILE ?= auto
+LINUX_CROSS_CPUFLAGS ?= -mcpu=cortex-a17 -mfloat-abi=hard -mfpu=neon-vfpv4
 
 ifeq ($(CROSS_COMPILE),auto)
 ifneq ($(BUILDROOT),)
@@ -121,7 +128,7 @@ include scripts/linux.mk
 includes += emu
 ifeq ($(CROSS_COMPILE),1)
 symbols += EMU_CROSS_COMPILE
-CFLAGS.linux = -Wno-deprecated-declarations -Wno-c++11-narrowing -mcpu=cortex-a17 -mfloat-abi=hard -mfpu=neon-vfpv4 -fPIC
+CFLAGS.linux = -Wno-deprecated-declarations -Wno-c++11-narrowing $(LINUX_CROSS_CPUFLAGS) -fPIC
 else
 CFLAGS.linux = -Wno-deprecated-declarations -msse4 -fPIC
 endif
