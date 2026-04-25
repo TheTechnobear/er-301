@@ -1,4 +1,4 @@
-#include <percussa/ui/ButtonWidget.h>
+#include <percussa/ui/BiButtonWidget.h>
 
 #include <percussa/hw/PercussaState.h>
 #include <percussa/ui/WidgetDrawing.h>
@@ -17,13 +17,12 @@ namespace percussa
       const uint32_t kButtonHighlight = PERCUSSA_RGBA(130, 136, 148, 100);
     }
 
-    void ButtonWidget::render(Olivec_Canvas canvas) const
+    void BiButtonWidget::render(Olivec_Canvas canvas) const
     {
-      bool active = gpioId < NUM_GPIO_IDS ? !percussa_state_read(gpioId) : false;
-      render(canvas, active);
+      render(canvas, false);
     }
 
-    void ButtonWidget::render(Olivec_Canvas canvas, bool active) const
+    void BiButtonWidget::render(Olivec_Canvas canvas, bool active) const
     {
       if (!visible)
       {
@@ -36,7 +35,7 @@ namespace percussa
       olivec_rect(canvas, bounds.x + 4, bounds.y + 4, bounds.w - 8, bounds.h - 8, face);
       olivec_frame(canvas, bounds.x, bounds.y, bounds.w, bounds.h, 2, kButtonEdge);
       olivec_rect(canvas, bounds.x + 6, bounds.y + 6, bounds.w - 12, bounds.h / 6, kButtonHighlight);
-      drawing::drawCenteredOdText(canvas, label, bounds, fontSize, drawing::kAmberText);
-    }
+      drawing::drawCenteredOdText(canvas, labels[(int)state], bounds, fontSize, drawing::kAmberText);
+     }
   }
 }

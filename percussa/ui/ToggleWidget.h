@@ -19,14 +19,16 @@ namespace percussa
                    const std::string &midLabel,
                    const std::string &highLabel,
                    uint32_t gpioLow = NUM_GPIO_IDS,
-                   uint32_t gpioHigh = NUM_GPIO_IDS) :
+                   uint32_t gpioHigh = NUM_GPIO_IDS, 
+                  int fontSize=16) :
         label(text),
         bounds(rect),
         low(lowLabel),
         mid(midLabel),
         high(highLabel),
         lowGpioId(gpioLow),
-        highGpioId(gpioHigh)
+        highGpioId(gpioHigh),
+        fontSize(fontSize)
       {
       }
 
@@ -37,6 +39,7 @@ namespace percussa
       std::string high;
       uint32_t lowGpioId;
       uint32_t highGpioId;
+      int fontSize=16;
 
       void render(Olivec_Canvas canvas) const;
       void render(Olivec_Canvas canvas, int position) const;

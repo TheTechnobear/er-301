@@ -6,34 +6,38 @@
 #include <percussa/ui/olive_bridge.h>
 
 #include <string>
+#include <vector>
 
 namespace percussa
 {
   namespace ui
   {
-    struct ButtonWidget
+    struct BiButtonWidget
     {
-      ButtonWidget(const std::string &text,
+      BiButtonWidget(const std::string &textA,
+                    const std::string &textB,
                    const Rect &rect,
                    const std::string &groupName,
                    bool isVisible = true,
-                   uint32_t gpio = NUM_GPIO_IDS,
                    int fontSize=16) :
-        label(text),
         bounds(rect),
         group(groupName),
         visible(isVisible),
-        gpioId(gpio),
-        fontSize(fontSize)
+        fontSize(fontSize),
+        state(false)
       {
+          labels.push_back(textA);
+          labels.push_back(textB);
       }
+      void setState(bool s) { state=s;}
+      bool getState() {return state;}
 
-      std::string label;
+      std::vector<std::string> labels;
       Rect bounds;
       std::string group;
       bool visible;
-      uint32_t gpioId;
       int fontSize;
+      bool state;
 
       void render(Olivec_Canvas canvas) const;
       void render(Olivec_Canvas canvas, bool active) const;

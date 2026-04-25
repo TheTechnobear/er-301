@@ -18,99 +18,117 @@ namespace percussa
     {
       namespace
       {
+        // note: XMX hardware FB is is 320x320, but displayable is 320x240
+        // so height() retuns 320 for FB pixel buffer, but we only draw 240
         const int kScreenWidth = 320;
-        const int kScreenHeight = 320;
-        
-        // const int kScreenHeight = 240; //320?
-
-        const int kMargin = 32;
+        const int kScreenHeight = 240;
+      
+        const int kMargin = 8;
         const int kMainX = kMargin;
-        const int kMainY = kMargin;
+        const int kMainY = kMargin * 2;
         const int kMainScale = 1;
         const int kMainWidth = 256 * kMainScale;
         const int kMainHeight = 64 * kMainScale;
 
-        const int kSubX = kMainX + kMainWidth + (kMargin * 2);
-        const int kSubY = kMargin;
-        const int kSubScale = 3;
+        const int kSubX = kMargin ; 
+        const int kSubY = kMainY + kMainHeight + kMargin;
+        const int kSubScale = 1;
         const int kSubWidth = 128 * kSubScale;
         const int kSubHeight = 64 * kSubScale;
 
-        const int kButtonWidth = 80;
-        const int kButtonHeight = (66 * 9) / 10;
-        const int kButtonGapX = 18;
-        const int kButtonGapY = (22 * 9) / 10;
-        const int kGridStartX = 870;
-        const int kGridTopY = 293 + kButtonHeight / 2;
+        const int kEncoderRadius = (kScreenWidth - (5 * kMargin))  / 4;
+        const int kEncoderY = kScreenHeight - kEncoderRadius - kMargin;
+
+        const int kButtonWidth = 45;
+        const int kButtonHeight = 25;
+        const int kButtonGapX = 4;
+        const int kButtonGapY = 4;
+        const int kGridTopY = kScreenHeight - kMargin - (2 * kButtonHeight) + kButtonGapY;
         const int kGridBottomY = kGridTopY + kButtonHeight + kButtonGapY;
 
-        const int kRightColumnX = 1470;
-        const int kRightColumnTopY = (293 - (4 * kButtonHeight + 3 * kButtonGapY) - 8) + (kButtonHeight / 4);
+        const int kRightColumnX = kScreenWidth - kButtonWidth - kMargin;
+        const int kRightColumnTopY = 0 + kMargin;
         const int kRightColumnStepY = kButtonHeight + kButtonGapY;
 
-        const int kEncoderY = 364;
-        const int kEncoderRadius = 62;
 
-        const int kLedFineX = 90 - kEncoderRadius;
-        const int kLedFineY = kEncoderY + kEncoderRadius + 8;
-        const int kLedFineCoarseW = 98;
-        const int kLedDefaultH = 28;
-        const int kLedOutW = 70;
-        const int kLedLinkW = 112;
-        const int kLedOutLinkStepY = 22;
-        const int kLedOutColumnX = (90 + 200) - (kLedOutW + 4 + kLedLinkW) / 2;
-        const int kLedLinkColumnX = kLedOutColumnX + kLedOutW + 4;
-        const int kLedOut1Y = (kScreenHeight - kLedDefaultH - 18) - 6 * kLedOutLinkStepY;
+        int fontSize = 12;
 
-        const int kToggleY = 334;
-        const int kToggleW = 126;
-        const int kToggleH = 104;
-        const int kToggleStorageX = 90 + 2 * 200 - kToggleW / 2;
-        const int kToggleModeX = 90 + 3 * 200 - kToggleW / 2;
+        ui::Rect encoderRect(int index)
+        {
+          int cx = ((kEncoderRadius + kMargin) * index) + kMargin;
+          return ui::Rect(cx , kEncoderY , kEncoderRadius, kEncoderRadius);
+        }
 
-      //   int columnX(int index)
-      //   {
-      //     return kGridStartX + index * (kButtonWidth + kButtonGapX);
-      //   }
+        const int kLedDefaultH = 10;
 
-      //   ui::Rect encoderRect(int index)
-      //   {
-      //     int cx = 90 + index * 200;
-      //     return ui::Rect(cx - kEncoderRadius, kEncoderY - kEncoderRadius, 2 * kEncoderRadius, 2 * kEncoderRadius);
-      //   }
+        auto outRect = encoderRect(3);
+        const int kLedOutW = outRect.w / 2;
+        const int kLedOutColumnX = outRect.x;
+        const int kLedLinkColumnX = kLedOutColumnX + kLedOutW - 5;
+
+        const int kLedLinkW = outRect.w / 2;
+        const int kLedOutLinkStepY = 8; // text h
+        const int kLedOut1Y = kScreenHeight - outRect.h + kMargin;
+
+        auto toggleStorage = encoderRect(2);
+        auto toggleMode = encoderRect(3);
+
+        const int kToggleY = kSubY + ( kMargin * 2);
+        const int kToggleW = toggleStorage.w;
+        const int kToggleH = toggleStorage.h;
+        const int kToggleStorageX = toggleStorage.x;
+        const int kToggleModeX = toggleMode.x;
+
+        int columnX(int index)
+        {
+          return kMargin + index * (kButtonWidth + kButtonGapX);
+        }
+
+        auto ledFine = encoderRect(0);
+        const int kLedFineCoarseW = ledFine.w;
+        const int kLedFineX = ledFine.x;
+        const int kLedFineY = kScreenHeight - ledFine.h;
+        // const int kLedFineY = kScreenHeight - kMargin;
       }
 
       XmxPanel::XmxPanel()
       {
-        mDisplays.push_back(std::shared_ptr<ui::DisplayWidget>(new ui::MainDisplayWidget(ui::Rect(kMainX, kMainY, kMainWidth, kMainHeight))));
+        mDisplays.push_back(std::shared_ptr<ui::DisplayWidget>(new ui::MainDisplayWidget(ui::Rect(kMainX, kMainY, kMainWidth, kMainHeight), fontSize)));
+        mDisplays.push_back(std::shared_ptr<ui::DisplayWidget>(new ui::SubDisplayWidget(ui::Rect(kSubX, kSubY, kSubWidth, kSubHeight),fontSize)));
 
-        // mButtons.push_back(ui::ButtonWidget("M1", ui::Rect(columnX(0), kGridTopY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN1));
-        // mButtons.push_back(ui::ButtonWidget("M2", ui::Rect(columnX(1), kGridTopY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN2));
-        // mButtons.push_back(ui::ButtonWidget("M3", ui::Rect(columnX(2), kGridTopY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN3));
-        // mButtons.push_back(ui::ButtonWidget("HOME", ui::Rect(columnX(3), kGridTopY, kButtonWidth, kButtonHeight), "dial", true, BUTTON_DIAL3));
+        mBiButtons.push_back(ui::BiButtonWidget("M1","S1",ui::Rect(columnX(0), kGridTopY, kButtonWidth, kButtonHeight), "main", true,fontSize));
+        mBiButtons.push_back(ui::BiButtonWidget("M2","S2", ui::Rect(columnX(1), kGridTopY, kButtonWidth, kButtonHeight), "main", true,fontSize));
+        mBiButtons.push_back(ui::BiButtonWidget("M3","S3", ui::Rect(columnX(2), kGridTopY, kButtonWidth, kButtonHeight), "main", true,fontSize));
+        mBiButtons.push_back(ui::BiButtonWidget("Ent", "Can", ui::Rect(columnX(3), kGridTopY, kButtonWidth, kButtonHeight), "dial", true,fontSize));
 
-        // mButtons.push_back(ui::ButtonWidget("M4", ui::Rect(columnX(0), kGridBottomY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN4));
-        // mButtons.push_back(ui::ButtonWidget("M5", ui::Rect(columnX(1), kGridBottomY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN5));
-        // mButtons.push_back(ui::ButtonWidget("M6", ui::Rect(columnX(2), kGridBottomY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN6));
-        // mButtons.push_back(ui::ButtonWidget("CAN", ui::Rect(columnX(3), kGridBottomY, kButtonWidth, kButtonHeight), "dial", true, BUTTON_DIAL2));
+        mBiButtons.push_back(ui::BiButtonWidget("M4", "", ui::Rect(columnX(0), kGridBottomY, kButtonWidth, kButtonHeight), "main", true,fontSize));
+        mBiButtons.push_back(ui::BiButtonWidget("M5", "", ui::Rect(columnX(1), kGridBottomY, kButtonWidth, kButtonHeight), "main", true,fontSize));
+        mBiButtons.push_back(ui::BiButtonWidget("M6", "", ui::Rect(columnX(2), kGridBottomY, kButtonWidth, kButtonHeight), "main", true,fontSize));
+        mBiButtons.push_back(ui::BiButtonWidget("Fn", "Fn", ui::Rect(columnX(3), kGridBottomY, kButtonWidth, kButtonHeight), "dial", true,fontSize));
 
-        // mEncoders.push_back(ui::EncoderWidget("DATA", encoderRect(0)));
-        // mEncoders.push_back(ui::EncoderWidget("OUT", encoderRect(1)));
-        // mEncoders.push_back(ui::EncoderWidget("STORE", encoderRect(2)));
-        // mEncoders.push_back(ui::EncoderWidget("MODE", encoderRect(3)));
+        mBiButtons.push_back(ui::BiButtonWidget("Up","Home",ui::Rect(kRightColumnX, kRightColumnTopY + 0 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true,fontSize));
+        mBiButtons.push_back(ui::BiButtonWidget("Shft", "", ui::Rect(kRightColumnX, kRightColumnTopY + 1 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true,fontSize));
 
-        // mLeds.push_back(ui::LedWidget("fine", ui::Rect(kLedFineX, kLedFineY, kLedFineCoarseW, kLedDefaultH), "red", LED_DIAL1));
 
-        // mLeds.push_back(ui::LedWidget("1", ui::Rect(kLedOutColumnX, kLedOut1Y + 0 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT1));
-        // mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 1 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK12));
-        // mLeds.push_back(ui::LedWidget("2", ui::Rect(kLedOutColumnX, kLedOut1Y + 2 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT2));
-        // mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 3 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK23));
-        // mLeds.push_back(ui::LedWidget("3", ui::Rect(kLedOutColumnX, kLedOut1Y + 4 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT3));
-        // mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 5 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK34));
-        // mLeds.push_back(ui::LedWidget("4", ui::Rect(kLedOutColumnX, kLedOut1Y + 6 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT4));
+        mLeds.push_back(ui::LedWidget("fine", ui::Rect(kLedFineX, kLedFineY, kLedFineCoarseW, kLedDefaultH), "red", LED_DIAL1,fontSize));
 
-        // mToggles.push_back(ui::ToggleWidget("STORAGE", ui::Rect(kToggleStorageX, kToggleY, kToggleW, kToggleH), "user", "admin", "eject", TOGGLE_STORAGE_A, TOGGLE_STORAGE_B));
-        // mToggles.push_back(ui::ToggleWidget("MODE", ui::Rect(kToggleModeX, kToggleY, kToggleW, kToggleH), "hold", "edit", "scope", TOGGLE_MODE_A, TOGGLE_MODE_B));
+        mLeds.push_back(ui::LedWidget("1", ui::Rect(kLedOutColumnX, kLedOut1Y + 0 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT1,fontSize));
+        mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 1 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK12,fontSize));
+        mLeds.push_back(ui::LedWidget("2", ui::Rect(kLedOutColumnX, kLedOut1Y + 2 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT2,fontSize));
+        mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 3 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK23,fontSize));
+        mLeds.push_back(ui::LedWidget("3", ui::Rect(kLedOutColumnX, kLedOut1Y + 4 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT3,fontSize));
+        mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 5 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK34,fontSize));
+        mLeds.push_back(ui::LedWidget("4", ui::Rect(kLedOutColumnX, kLedOut1Y + 6 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT4,fontSize));
+
+        mToggles.push_back(ui::ToggleWidget("STORAGE", ui::Rect(kToggleStorageX, kToggleY, kToggleW, kToggleH), "user", "admin", "eject", TOGGLE_STORAGE_A, TOGGLE_STORAGE_B,fontSize));
+        mToggles.push_back(ui::ToggleWidget("MODE", ui::Rect(kToggleModeX, kToggleY, kToggleW, kToggleH), "hold", "edit", "scope", TOGGLE_MODE_A, TOGGLE_MODE_B,fontSize));
+      }
+
+      void XmxPanel::setFnShift(bool s) {
+        for (size_t i = 0; i < mBiButtons.size(); ++i)
+        {
+          mBiButtons[i].setState(s);
+        }
       }
 
       const char *XmxPanel::name() const
@@ -125,7 +143,12 @@ namespace percussa
 
       int XmxPanel::height() const
       {
+#if defined(__linux__) && defined(TARGET_XMX)
+        // xmx hardware fb is 320, but only 240 is displayed!.
+        return 320;
+#else         
         return kScreenHeight;
+#endif 
       }
 
       void XmxPanel::render(Olivec_Canvas canvas) const
@@ -150,14 +173,18 @@ namespace percussa
           mDisplays[i]->render(canvas, frame);
         }
 
-        if (!mEncoders.empty())
-        {
-          mEncoders[0].render(canvas);
+        for (size_t i = 0; i < mEncoders.size(); ++i) {
+          mEncoders[i].render(canvas);
         }
 
         for (size_t i = 0; i < mButtons.size(); ++i)
         {
           mButtons[i].render(canvas);
+        }
+
+        for (size_t i = 0; i < mBiButtons.size(); ++i)
+        {
+          mBiButtons[i].render(canvas);
         }
 
         for (size_t i = 0; i < mToggles.size(); ++i)

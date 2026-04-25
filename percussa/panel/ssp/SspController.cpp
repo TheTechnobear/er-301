@@ -21,11 +21,11 @@ namespace percussa
         {
           if (output < 1)
           {
-            return 4;
+            return 1;
           }
           if (output > 4)
           {
-            return 1;
+            return 4;
           }
           return output;
         }
@@ -44,15 +44,12 @@ namespace percussa
             return BUTTON_SELECT4;
           }
         }
-      }
+      } // namespace
 
-      SspController::SspController(const Panel &panel) :
-        mPanel(panel),
-        mStatusText("ready")
+      SspController::SspController(SspPanel &panel) : mPanel(panel), mStatusText("ready")
       {
         clearSelectButtons();
         setActiveOutput(1);
-        syncIndicators();
       }
 
       void SspController::handleAction(const input::Action &action)
@@ -67,27 +64,6 @@ namespace percussa
           {
             percussa_state_write(gpioId, !action.pressed);
           }
-
-          if (action.pressed)
-          {
-            switch (action.hardwareButton)
-            {
-            case input::HardwareButtonId::P1:
-              setActiveOutput(1);
-              break;
-            case input::HardwareButtonId::P2:
-              setActiveOutput(2);
-              break;
-            case input::HardwareButtonId::P3:
-              setActiveOutput(3);
-              break;
-            case input::HardwareButtonId::P4:
-              setActiveOutput(4);
-              break;
-            default:
-              break;
-            }
-          }
         }
 
         if (action.type == input::ActionType::EncoderTurn)
@@ -98,6 +74,12 @@ namespace percussa
             PercussaEncoder_adjustValue(action.delta * 5);
             break;
           case input::HardwareEncoderId::Encoder2:
+            switchToggle(TOGGLE_STORAGE_A, TOGGLE_STORAGE_B, action.delta);
+            break;
+          case input::HardwareEncoderId::Encoder3:
+            switchToggle(TOGGLE_MODE_A, TOGGLE_MODE_B, action.delta);
+            break;
+          case input::HardwareEncoderId::Encoder4:
             if (action.delta > 0)
             {
               setActiveOutput(activeOutput() + 1);
@@ -106,12 +88,6 @@ namespace percussa
             {
               setActiveOutput(activeOutput() - 1);
             }
-            break;
-          case input::HardwareEncoderId::Encoder3:
-            switchToggle(TOGGLE_STORAGE_A, TOGGLE_STORAGE_B, action.delta);
-            break;
-          case input::HardwareEncoderId::Encoder4:
-            switchToggle(TOGGLE_MODE_A, TOGGLE_MODE_B, action.delta);
             break;
           default:
             break;
@@ -125,28 +101,22 @@ namespace percussa
           case input::HardwareEncoderId::Encoder1:
             percussa_state_write(BUTTON_DIAL1, !action.pressed);
             break;
-          case input::HardwareEncoderId::Encoder2:
-            mLinkGestureActive = action.pressed;
-            if (action.pressed)
-            {
-              uint32_t first = activeSelectGpio(activeOutput());
-              uint32_t second = activeSelectGpio((activeOutput() % 4) + 1);
-              percussa_state_write(first, false);
-              percussa_state_write(second, false);
-            }
-            else
-            {
-              clearSelectButtons();
-            }
-            break;
-          case input::HardwareEncoderId::Encoder3:
+          case input::HardwareEncoderId::Encoder2: break;
+          case input::HardwareEncoderId::Encoder3: break;
           case input::HardwareEncoderId::Encoder4:
+          {
+            if (mActiveOutput > 3)
+              return;
+            uint32_t first = activeSelectGpio(activeOutput());
+            uint32_t second = activeSelectGpio((activeOutput() + 1));
+            percussa_state_write(first, !action.pressed);
+            percussa_state_write(second, !action.pressed);
+            break;
+          }
           default:
             break;
           }
         }
-
-        syncIndicators();
       }
 
       const std::string &SspController::statusText() const
@@ -259,17 +229,6 @@ namespace percussa
         }
         return 1;
       }
-
-      void SspController::syncIndicators() const
-      {
-        int selectedOutput = activeOutput();
-
-        percussa_state_write(LED_LINK12, mLinkGestureActive && selectedOutput == 1);
-        percussa_state_write(LED_LINK23, mLinkGestureActive && selectedOutput == 2);
-        percussa_state_write(LED_LINK34, mLinkGestureActive && selectedOutput >= 3);
-        percussa_state_write(LED_IO, toggleState(TOGGLE_STORAGE_A, TOGGLE_STORAGE_B) != 1);
-        percussa_state_write(LED_SAFE, toggleState(TOGGLE_MODE_A, TOGGLE_MODE_B) == 2);
-      }
-    }
-  }
-}
+    } // namespace ssp
+  } // namespace panel
+} // namespace percussa

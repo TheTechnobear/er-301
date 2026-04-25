@@ -8,37 +8,38 @@ namespace percussa
 {
   namespace ui
   {
-    namespace
+    MainDisplayWidget::MainDisplayWidget(const Rect &rect, int fontSize) :
+      DisplayWidget("main", rect, "main"), fontSize(fontSize)
     {
-      void drawMainLabels(Olivec_Canvas canvas, const Rect &bounds)
-      {
-        const char *topLabels[3] = { "M1", "M2", "M3" };
-        const char *bottomLabels[3] = { "M4", "M5", "M6" };
-        int columnW = bounds.w / 6;
-        for (int i = 0; i < 3; ++i)
-        {
-          int textW = 0;
-          int textH = 0;
-          percussa_od_text_metrics(topLabels[i], 16, &textW, &textH);
-          int cx = bounds.x + i * columnW + columnW / 2;
-          percussa_od_text(canvas, topLabels[i], cx - textW / 2, bounds.y - 22, 16, drawing::kAmberText);
+    }
 
-          percussa_od_text_metrics(bottomLabels[i], 16, &textW, &textH);
-          cx = bounds.x + (i + 3) * columnW + columnW / 2;
-          percussa_od_text(canvas, bottomLabels[i], cx - textW / 2, bounds.y + bounds.h + 6, 16, drawing::kAmberText);
-        }
+    void MainDisplayWidget::drawMainLabels(Olivec_Canvas canvas) const
+    {
+      const char *topLabels[3] = { "M1", "M2", "M3" };
+      const char *bottomLabels[3] = { "M4", "M5", "M6" };
+      int scale = bounds.w / MAIN_HORIZONTAL_PIXELS;
+      int vertSpace = scale < 2  ? 14 : 22;
+
+      int columnW = bounds.w / 6;
+      for (int i = 0; i < 3; ++i)
+      {
+        int textW = 0;
+        int textH = 0;
+        percussa_od_text_metrics(topLabels[i], fontSize, &textW, &textH);
+        int cx = bounds.x + i * columnW + columnW / 2;
+        percussa_od_text(canvas, topLabels[i], cx - textW / 2, bounds.y - vertSpace, fontSize, drawing::kAmberText);
+
+        percussa_od_text_metrics(bottomLabels[i], fontSize, &textW, &textH);
+        cx = bounds.x + (i + 3) * columnW + columnW / 2;
+        percussa_od_text(canvas, bottomLabels[i], cx - textW / 2, bounds.y + bounds.h + 6, fontSize, drawing::kAmberText);
       }
     }
 
-    MainDisplayWidget::MainDisplayWidget(const Rect &rect) :
-      DisplayWidget("main", rect, "main")
-    {
-    }
 
     void MainDisplayWidget::render(Olivec_Canvas canvas, const uint8_t *frame) const
     {
       renderGeneric(canvas);
-      drawMainLabels(canvas, bounds);
+      drawMainLabels(canvas);
       renderFrame(canvas, frame);
     }
 

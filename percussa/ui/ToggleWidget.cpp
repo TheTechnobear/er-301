@@ -28,11 +28,11 @@ namespace percussa
     {
       int titleW = 0;
       int titleH = 0;
-      percussa_od_text_metrics(label.c_str(), 16, &titleW, &titleH);
-      percussa_od_text(canvas, label.c_str(), bounds.x + (bounds.w - titleW) / 2, bounds.y, 16, drawing::kAmberText);
+      percussa_od_text_metrics(label.c_str(), fontSize, &titleW, &titleH);
+      percussa_od_text(canvas, label.c_str(), bounds.x + (bounds.w - titleW) / 2, bounds.y, fontSize, drawing::kAmberText);
 
       int bodyTop = bounds.y + titleH + 6;
-      int rowHeight = std::max(20, (bounds.h - titleH - 12) / 3);
+      int rowHeight = (bounds.h - titleH - 12) / 3;
       int ledRadius = std::max(4, std::min(8, rowHeight / 3));
       int ledCx = bounds.x + 4 + ledRadius;
       int lineX1 = ledCx + ledRadius + 6;
@@ -44,7 +44,7 @@ namespace percussa
         int cy = bodyTop + i * rowHeight + rowHeight / 2;
         int textW = 0;
         int textH = 0;
-        percussa_od_text_metrics(rows[i], 16, &textW, &textH);
+        percussa_od_text_metrics(rows[i], fontSize, &textW, &textH);
         int textX = lineX1 + 2;
         int textY = cy - textH / 2;
         int gapLeft = textX - 4;
@@ -57,7 +57,7 @@ namespace percussa
         {
           olivec_line(canvas, gapRight, cy, lineX2, cy, drawing::kToggleLine);
         }
-        percussa_od_text(canvas, rows[i], textX, textY, 16, drawing::kAmberText);
+        percussa_od_text(canvas, rows[i], textX, textY, fontSize, drawing::kAmberText);
         drawing::drawIndicatorLight(canvas, ledCx, cy, ledRadius, i == position, drawing::kRed);
       }
     }

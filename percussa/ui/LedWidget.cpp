@@ -17,7 +17,7 @@ namespace percussa
 
     void LedWidget::render(Olivec_Canvas canvas, bool active) const
     {
-      int radius = std::max(2, std::min(bounds.h / 2 - 2, bounds.w / 6));
+      int radius = std::max(4, std::min(bounds.h / 2 - 2, bounds.w / 6));
       int cx = bounds.x + 2 + radius;
       int cy = bounds.y + bounds.h / 2;
       uint32_t color = colorName() == "amber" ? drawing::kAmberLed : drawing::kRed;
@@ -28,10 +28,10 @@ namespace percussa
       {
         int textW = 0;
         int textH = 0;
-        percussa_od_text_metrics(label.c_str(), 16, &textW, &textH);
+        percussa_od_text_metrics(label.c_str(), fontSize, &textW, &textH);
         int tx = cx + radius + 6;
         int ty = bounds.y + (bounds.h - textH) / 2;
-        percussa_od_text(canvas, label.c_str(), tx, ty, 16, drawing::kAmberText);
+        percussa_od_text(canvas, label.c_str(), tx, ty, fontSize, drawing::kAmberText);
       }
     }
 

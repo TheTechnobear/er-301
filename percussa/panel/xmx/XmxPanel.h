@@ -2,6 +2,7 @@
 
 #include <percussa/panel/Panel.h>
 
+#include <percussa/ui/BiButtonWidget.h>
 #include <memory>
 
 namespace percussa
@@ -24,6 +25,7 @@ namespace percussa
         const std::vector<ui::EncoderWidget> &encoders() const;
         const std::vector<ui::LedWidget> &leds() const;
         const std::vector<ui::ToggleWidget> &toggles() const;
+        void setFnShift(bool s);
 
       private:
         std::vector<std::shared_ptr<ui::DisplayWidget>> mDisplays;
@@ -31,6 +33,7 @@ namespace percussa
         std::vector<ui::EncoderWidget> mEncoders;
         std::vector<ui::LedWidget> mLeds;
         std::vector<ui::ToggleWidget> mToggles;
+        std::vector<ui::BiButtonWidget> mBiButtons;
       };
     }
   }

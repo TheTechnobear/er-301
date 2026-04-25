@@ -8,32 +8,31 @@ namespace percussa
 {
   namespace ui
   {
-    namespace
+
+    SubDisplayWidget::SubDisplayWidget(const Rect &rect,int fontSize) :
+      DisplayWidget("sub", rect, "sub"), fontSize((fontSize))
     {
-      void drawSubLabels(Olivec_Canvas canvas, const Rect &bounds)
+    }
+
+    void SubDisplayWidget::drawSubLabels(Olivec_Canvas canvas) const
+    {
+      const char *labels[3] = { "S1", "S2", "S3" };
+      int columnW = bounds.w / 3;
+      for (int i = 0; i < 3; ++i)
       {
-        const char *labels[3] = { "S1", "S2", "S3" };
-        int columnW = bounds.w / 3;
-        for (int i = 0; i < 3; ++i)
-        {
-          int textW = 0;
-          int textH = 0;
-          percussa_od_text_metrics(labels[i], 16, &textW, &textH);
-          int cx = bounds.x + i * columnW + columnW / 2;
-          percussa_od_text(canvas, labels[i], cx - textW / 2, bounds.y + bounds.h + 6, 16, drawing::kAmberText);
-        }
+        int textW = 0;
+        int textH = 0;
+        percussa_od_text_metrics(labels[i], fontSize, &textW, &textH);
+        int cx = bounds.x + i * columnW + columnW / 2;
+        percussa_od_text(canvas, labels[i], cx - textW / 2, bounds.y + bounds.h + 6, fontSize, drawing::kAmberText);
       }
     }
 
-    SubDisplayWidget::SubDisplayWidget(const Rect &rect) :
-      DisplayWidget("sub", rect, "sub")
-    {
-    }
 
     void SubDisplayWidget::render(Olivec_Canvas canvas, const uint8_t *frame) const
     {
       renderGeneric(canvas);
-      drawSubLabels(canvas, bounds);
+      drawSubLabels(canvas);
       renderFrame(canvas, frame);
     }
 

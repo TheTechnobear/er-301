@@ -54,21 +54,27 @@ namespace percussa
           button = input::HardwareButtonId::Button8;
           return true;
         case SDL_SCANCODE_6:
+        case SDL_SCANCODE_UP:
           button = input::HardwareButtonId::Up;
           return true;
         case SDL_SCANCODE_Y:
+        case SDL_SCANCODE_DOWN:
           button = input::HardwareButtonId::Down;
           return true;
         case SDL_SCANCODE_5:
+        case SDL_SCANCODE_LSHIFT:
           button = input::HardwareButtonId::ShiftL;
           return true;
         case SDL_SCANCODE_7:
+        case SDL_SCANCODE_RSHIFT:
           button = input::HardwareButtonId::ShiftR;
           return true;
         case SDL_SCANCODE_T:
+        case SDL_SCANCODE_LEFT:
           button = input::HardwareButtonId::Left;
           return true;
         case SDL_SCANCODE_U:
+        case SDL_SCANCODE_RIGHT:
           button = input::HardwareButtonId::Right;
           return true;
         default:

@@ -42,29 +42,28 @@ namespace percussa
         const int kGridTopY = 293 + kButtonHeight / 2;
         const int kGridBottomY = kGridTopY + kButtonHeight + kButtonGapY;
 
-        const int kRightColumnX = 1470;
-        const int kRightColumnTopY = (293 - (4 * kButtonHeight + 3 * kButtonGapY) - 8) + (kButtonHeight / 4);
-        const int kRightColumnStepY = kButtonHeight + kButtonGapY;
-
         const int kEncoderY = 364;
         const int kEncoderRadius = 62;
+
+        const int kLedDefaultH = 28;
 
         const int kLedFineX = 90 - kEncoderRadius;
         const int kLedFineY = kEncoderY + kEncoderRadius + 8;
         const int kLedFineCoarseW = 98;
-        const int kLedDefaultH = 28;
-        const int kLedOutW = 70;
-        const int kLedLinkW = 112;
-        const int kLedOutLinkStepY = 22;
-        const int kLedOutColumnX = (90 + 200) - (kLedOutW + 4 + kLedLinkW) / 2;
-        const int kLedLinkColumnX = kLedOutColumnX + kLedOutW + 4;
-        const int kLedOut1Y = (kScreenHeight - kLedDefaultH - 18) - 6 * kLedOutLinkStepY;
 
         const int kToggleY = 334;
         const int kToggleW = 126;
         const int kToggleH = 104;
-        const int kToggleStorageX = 90 + 2 * 200 - kToggleW / 2;
-        const int kToggleModeX = 90 + 3 * 200 - kToggleW / 2;
+        const int kToggleStorageX = 90 + 1 * 200 - kToggleW / 2;
+        const int kToggleModeX = 90 + 2 * 200 - kToggleW / 2;
+
+
+        const int kLedOutW = 70;
+        const int kLedLinkW = 112;
+        const int kLedOutLinkStepY = 22;
+        const int kLedOutColumnX = (90 + 3 * 200) - (kLedOutW + 4 + kLedLinkW) / 2;
+        const int kLedLinkColumnX = kLedOutColumnX + kLedOutW + 4;
+        const int kLedOut1Y = (kScreenHeight - kLedDefaultH - 18) - 6 * kLedOutLinkStepY;
 
         int columnX(int index)
         {
@@ -99,20 +98,12 @@ namespace percussa
         mButtons.push_back(ui::ButtonWidget("S2", ui::Rect(columnX(5), kGridBottomY, kButtonWidth, kButtonHeight), "sub", true, BUTTON_SUB2));
         mButtons.push_back(ui::ButtonWidget("S3", ui::Rect(columnX(6), kGridBottomY, kButtonWidth, kButtonHeight), "sub", true, BUTTON_SUB3));
 
-        // mButtons.push_back(ui::ButtonWidget("1", ui::Rect(kRightColumnX, kRightColumnTopY + 0 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT1));
-        // mButtons.push_back(ui::ButtonWidget("2", ui::Rect(kRightColumnX, kRightColumnTopY + 1 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT2));
-        // mButtons.push_back(ui::ButtonWidget("3", ui::Rect(kRightColumnX, kRightColumnTopY + 2 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT3));
-        // mButtons.push_back(ui::ButtonWidget("4", ui::Rect(kRightColumnX, kRightColumnTopY + 3 * kRightColumnStepY, kButtonWidth, kButtonHeight), "select", true, BUTTON_SELECT4));
-
         mEncoders.push_back(ui::EncoderWidget("DATA", encoderRect(0)));
-        mEncoders.push_back(ui::EncoderWidget("OUT", encoderRect(1)));
-        mEncoders.push_back(ui::EncoderWidget("STORE", encoderRect(2)));
-        mEncoders.push_back(ui::EncoderWidget("MODE", encoderRect(3)));
 
         mLeds.push_back(ui::LedWidget("fine", ui::Rect(kLedFineX, kLedFineY, kLedFineCoarseW, kLedDefaultH), "red", LED_DIAL1));
-        // mLeds.push_back(ui::LedWidget("coarse", ui::Rect(kLedFineX + kLedFineCoarseW + 4, kLedFineY, kLedFineCoarseW, kLedDefaultH), "red", LED_DIAL2));
-        // mLeds.push_back(ui::LedWidget("I/O", ui::Rect(kLedFineX, kLedFineY + 30, kLedFineCoarseW, kLedDefaultH), "red", LED_IO));
-        // mLeds.push_back(ui::LedWidget("safe", ui::Rect(kLedFineX, kLedFineY + 56, kLedFineCoarseW, kLedDefaultH), "red", LED_SAFE));
+
+        mToggles.push_back(ui::ToggleWidget("STORAGE", ui::Rect(kToggleStorageX, kToggleY, kToggleW, kToggleH), "user", "admin", "eject", TOGGLE_STORAGE_A, TOGGLE_STORAGE_B));
+        mToggles.push_back(ui::ToggleWidget("MODE", ui::Rect(kToggleModeX, kToggleY, kToggleW, kToggleH), "hold", "edit", "scope", TOGGLE_MODE_A, TOGGLE_MODE_B));
 
         mLeds.push_back(ui::LedWidget("1", ui::Rect(kLedOutColumnX, kLedOut1Y + 0 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT1));
         mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 1 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK12));
@@ -121,9 +112,6 @@ namespace percussa
         mLeds.push_back(ui::LedWidget("3", ui::Rect(kLedOutColumnX, kLedOut1Y + 4 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT3));
         mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 5 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK34));
         mLeds.push_back(ui::LedWidget("4", ui::Rect(kLedOutColumnX, kLedOut1Y + 6 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT4));
-
-        mToggles.push_back(ui::ToggleWidget("STORAGE", ui::Rect(kToggleStorageX, kToggleY, kToggleW, kToggleH), "user", "admin", "eject", TOGGLE_STORAGE_A, TOGGLE_STORAGE_B));
-        mToggles.push_back(ui::ToggleWidget("MODE", ui::Rect(kToggleModeX, kToggleY, kToggleW, kToggleH), "hold", "edit", "scope", TOGGLE_MODE_A, TOGGLE_MODE_B));
       }
 
       const char *SspPanel::name() const

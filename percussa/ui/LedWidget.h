@@ -16,11 +16,13 @@ namespace percussa
       LedWidget(const std::string &text,
                 const Rect &rect,
                 const std::string &colorName,
-                uint32_t gpio = NUM_GPIO_IDS) :
+                uint32_t gpio = NUM_GPIO_IDS,
+                int fontSize=16) :
         label(text),
         bounds(rect),
         color(colorName),
-        gpioId(gpio)
+        gpioId(gpio),
+        fontSize(fontSize)
       {
       }
 
@@ -28,6 +30,7 @@ namespace percussa
       Rect bounds;
       std::string color;
       uint32_t gpioId;
+      int fontSize;
 
       void render(Olivec_Canvas canvas) const;
       void render(Olivec_Canvas canvas, bool active) const;
