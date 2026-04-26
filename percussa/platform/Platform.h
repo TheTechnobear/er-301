@@ -19,9 +19,7 @@ namespace percussa
       {
       }
 
-      virtual const char *name() const = 0;
-      virtual void describe(std::ostream &out) const = 0;
       virtual int run(runtime::Runtime &runtime) const = 0;
     };
-  }
-}
+  } // namespace platform
+} // namespace percussa

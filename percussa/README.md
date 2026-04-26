@@ -38,17 +38,15 @@ The new design separates the product into four main layers:
 - `runtime/Runtime.*`
   Shared coordinator.
 - `panel/Panel.h`
-  Shared panel interface.
+  Shared panel interface and build-time panel factory.
 - `panel/Controller.h`
   Shared controller interface.
-- `panel/Family.*`
-  Product-family assembly for matching panel and controller pairs.
 - `panel/ssp/SspPanel.*`
-  SSP panel layout.
+  SSP panel layout and SSP controller factory.
 - `panel/ssp/SspController.*`
   SSP interaction policy.
 - `panel/xmx/XmxPanel.*`
-  XMX panel layout.
+  XMX panel layout and XMX controller factory.
 - `panel/xmx/XmxController.*`
   XMX interaction policy.
 - `platform/*.h|*.cpp`

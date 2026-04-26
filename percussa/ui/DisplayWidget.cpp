@@ -1,5 +1,6 @@
 #include <percussa/ui/DisplayWidget.h>
 
+#include <percussa/ui/style.h>
 #include <percussa/ui/WidgetDrawing.h>
 
 #include <cctype>
@@ -10,10 +11,6 @@ namespace percussa
   {
     namespace
     {
-      const uint32_t kDisplayFace = PERCUSSA_RGBA(9, 10, 12, 255);
-      const uint32_t kDisplayGlow = PERCUSSA_RGBA(24, 19, 8, 255);
-      const uint32_t kDisplayEdge = PERCUSSA_RGBA(106, 112, 126, 255);
-      const uint32_t kDisplayText = PERCUSSA_RGBA(245, 184, 40, 255);
       const int kSspBrightness = 15;
 
 
@@ -22,7 +19,7 @@ namespace percussa
         return PERCUSSA_RGBA(value, (int)(value * 0.85f), 0, 255);
       }
 
-    }
+    } // namespace
 
     void DisplayWidget::render(Olivec_Canvas canvas, const uint8_t *frame) const
     {
@@ -42,7 +39,7 @@ namespace percussa
       }
 
       const uint16_t *src = (const uint16_t *)frame;
-      int scale = bounds.w / sourceWidth();
+      int scale = bounds.w() / sourceWidth();
       for (int srcY = 0; srcY < sourceHeight(); ++srcY)
       {
         for (int srcX = 0; srcX < sourceWidth(); ++srcX)
@@ -53,7 +50,7 @@ namespace percussa
           {
             for (int dx = 0; dx < scale; ++dx)
             {
-              drawing::putPixel(canvas, bounds.x + srcX * scale + dx, bounds.y + srcY * scale + dy, color);
+              drawing::putPixel(canvas, bounds.x() + srcX * scale + dx, bounds.y() + srcY * scale + dy, color);
             }
           }
         }
@@ -77,5 +74,5 @@ namespace percussa
       (void)srcY;
       return 0;
     }
-  }
-}
+  } // namespace ui
+} // namespace percussa

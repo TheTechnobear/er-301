@@ -15,15 +15,10 @@ namespace percussa
       public:
         SspPanel();
 
-        const char *name() const;
         int width() const;
         int height() const;
         void render(Olivec_Canvas canvas) const;
-        const std::vector<std::shared_ptr<ui::DisplayWidget>> &displays() const;
-        const std::vector<ui::ButtonWidget> &buttons() const;
-        const std::vector<ui::EncoderWidget> &encoders() const;
-        const std::vector<ui::LedWidget> &leds() const;
-        const std::vector<ui::ToggleWidget> &toggles() const;
+        std::unique_ptr<Controller> createController();
 
       private:
         std::vector<std::shared_ptr<ui::DisplayWidget>> mDisplays;
@@ -32,6 +27,6 @@ namespace percussa
         std::vector<ui::LedWidget> mLeds;
         std::vector<ui::ToggleWidget> mToggles;
       };
-    }
-  }
-}
+    } // namespace ssp
+  } // namespace panel
+} // namespace percussa

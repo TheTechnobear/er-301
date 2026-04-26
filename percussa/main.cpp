@@ -1,4 +1,4 @@
-#include <percussa/panel/Family.h>
+#include <percussa/panel/Panel.h>
 #include <percussa/runtime/Runtime.h>
 
 #include <percussa/app/Bootstrap.h>
@@ -33,18 +33,18 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  percussa::panel::Family family = percussa::panel::createFamily();
+  std::unique_ptr<percussa::panel::Panel> panel = percussa::panel::createPanel();
 
   std::unique_ptr<percussa::platform::Platform> platform;
 #if defined(PERCUSSA_PLATFORM_HOST_SDL)
-  platform.reset(new percussa::platform::HostSdlPlatform());
+  platform.reset(new percussa::platform::HostSdlPlatform(once));
 #elif defined(PERCUSSA_PLATFORM_FBDEV)
   platform.reset(new percussa::platform::FbdevPlatform());
 #elif defined(PERCUSSA_PLATFORM_PLUGIN)
   platform.reset(new percussa::platform::PluginPlatform());
 #endif
 
-  percussa::runtime::Runtime runtime(std::move(family.panel), std::move(family.controller), std::move(platform), once);
+  percussa::runtime::Runtime runtime(std::move(panel), std::move(platform));
   int result = runtime.run();
   bootstrap.finalize();
   return result;

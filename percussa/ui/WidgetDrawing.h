@@ -2,6 +2,7 @@
 
 #include <percussa/ui/Geometry.h>
 #include <percussa/ui/olive_bridge.h>
+#include <percussa/ui/style.h>
 
 #include <algorithm>
 #include <cmath>
@@ -13,20 +14,14 @@ namespace percussa
   {
     namespace drawing
     {
-      static const uint32_t kAmberText = PERCUSSA_RGBA(225, 191, 0, 255);
-      static const uint32_t kLedOffShell = PERCUSSA_RGBA(48, 36, 30, 255);
-      static const uint32_t kLedOffCore = PERCUSSA_RGBA(18, 16, 14, 255);
-      static const uint32_t kRed = PERCUSSA_RGBA(255, 52, 44, 255);
-      static const uint32_t kAmberLed = PERCUSSA_RGBA(255, 176, 36, 255);
-      static const uint32_t kToggleLine = PERCUSSA_RGBA(110, 114, 126, 255);
-
-      inline void drawCenteredOdText(Olivec_Canvas canvas, const std::string &text, const Rect &rect, int size, uint32_t color)
+      inline void
+      drawCenteredOdText(Olivec_Canvas canvas, const std::string &text, const Rect &rect, int size, uint32_t color)
       {
         int textWidth = 0;
         int textHeight = 0;
         percussa_od_text_metrics(text.c_str(), size, &textWidth, &textHeight);
-        int x = rect.x + (rect.w - textWidth) / 2;
-        int y = rect.y + (rect.h - textHeight) / 2;
+        int x = rect.x() + (rect.w() - textWidth) / 2;
+        int y = rect.y() + (rect.h() - textHeight) / 2;
         percussa_od_text(canvas, text.c_str(), x, y, size, color);
       }
 
@@ -91,9 +86,9 @@ namespace percussa
 
       inline void drawIndicatorLight(Olivec_Canvas canvas, int cx, int cy, int radius, bool active, uint32_t onColor)
       {
-        olivec_circle(canvas, cx, cy, radius, kLedOffShell);
-        olivec_circle(canvas, cx, cy, std::max(1, radius - 2), active ? onColor : kLedOffCore);
+        olivec_circle(canvas, cx, cy, radius, style::kLedOffShell);
+        olivec_circle(canvas, cx, cy, std::max(1, radius - 2), active ? onColor : style::kLedOffCore);
       }
-    }
-  }
-}
+    } // namespace drawing
+  } // namespace ui
+} // namespace percussa

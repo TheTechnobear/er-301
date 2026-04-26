@@ -11,27 +11,26 @@ namespace percussa
 {
   namespace ui
   {
-    struct ToggleWidget
+    class ToggleWidget
     {
+    public:
       ToggleWidget(const std::string &text,
                    const Rect &rect,
                    const std::string &lowLabel,
                    const std::string &midLabel,
                    const std::string &highLabel,
                    uint32_t gpioLow = NUM_GPIO_IDS,
-                   uint32_t gpioHigh = NUM_GPIO_IDS, 
-                  int fontSize=16) :
-        label(text),
-        bounds(rect),
-        low(lowLabel),
-        mid(midLabel),
-        high(highLabel),
-        lowGpioId(gpioLow),
-        highGpioId(gpioHigh),
-        fontSize(fontSize)
+                   uint32_t gpioHigh = NUM_GPIO_IDS,
+                   int fontSize = 16)
+          : label(text), bounds(rect), low(lowLabel), mid(midLabel), high(highLabel), lowGpioId(gpioLow),
+            highGpioId(gpioHigh), fontSize(fontSize)
       {
       }
 
+      void render(Olivec_Canvas canvas) const;
+      void render(Olivec_Canvas canvas, int position) const;
+
+    private:
       std::string label;
       Rect bounds;
       std::string low;
@@ -39,10 +38,7 @@ namespace percussa
       std::string high;
       uint32_t lowGpioId;
       uint32_t highGpioId;
-      int fontSize=16;
-
-      void render(Olivec_Canvas canvas) const;
-      void render(Olivec_Canvas canvas, int position) const;
+      int fontSize = 16;
     };
-  }
-}
+  } // namespace ui
+} // namespace percussa

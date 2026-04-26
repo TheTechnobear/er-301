@@ -17,5 +17,5 @@ namespace percussa
     private:
       std::vector<std::string> tokens;
     };
-  }
-}
+  } // namespace support
+} // namespace percussa

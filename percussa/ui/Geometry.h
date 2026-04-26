@@ -4,24 +4,42 @@ namespace percussa
 {
   namespace ui
   {
-    struct Rect
+    class Rect
     {
-      Rect() : x(0), y(0), w(0), h(0)
+    public:
+      Rect() : mX(0), mY(0), mW(0), mH(0)
       {
       }
 
-      Rect(int xValue, int yValue, int wValue, int hValue) :
-        x(xValue),
-        y(yValue),
-        w(wValue),
-        h(hValue)
+      Rect(int xValue, int yValue, int wValue, int hValue) : mX(xValue), mY(yValue), mW(wValue), mH(hValue)
       {
       }
 
-      int x;
-      int y;
-      int w;
-      int h;
+      int x() const
+      {
+        return mX;
+      }
+
+      int y() const
+      {
+        return mY;
+      }
+
+      int w() const
+      {
+        return mW;
+      }
+
+      int h() const
+      {
+        return mH;
+      }
+
+    private:
+      int mX;
+      int mY;
+      int mW;
+      int mH;
     };
-  }
-}
+  } // namespace ui
+} // namespace percussa

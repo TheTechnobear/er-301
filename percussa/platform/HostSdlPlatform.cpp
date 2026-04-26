@@ -2,6 +2,7 @@
 
 #include <percussa/input/Action.h>
 #include <percussa/panel/Panel.h>
+#include <percussa/platform/TargetDimensions.h>
 #include <percussa/runtime/Runtime.h>
 #include <percussa/ui/PanelRenderer.h>
 
@@ -22,7 +23,7 @@ namespace percussa
   {
     namespace
     {
-  const auto kDisplayTickPeriod = std::chrono::milliseconds(14);
+      const auto kDisplayTickPeriod = std::chrono::milliseconds(14);
 
 #if defined(PERCUSSA_PLATFORM_HOST_SDL)
       bool mapScancodeToButton(SDL_Scancode scancode, input::HardwareButtonId &button)
@@ -200,23 +201,23 @@ namespace percussa
       }
 
 #endif
-    }
-
-    const char *HostSdlPlatform::name() const
-    {
-      return "host-sdl";
-    }
-
-    void HostSdlPlatform::describe(std::ostream &out) const
-    {
-      out << "host entrypoint with SDL-backed presentation and keyboard-driven test input";
-    }
+    } // namespace
 
     int HostSdlPlatform::run(runtime::Runtime &runtime) const
     {
 #if defined(PERCUSSA_PLATFORM_HOST_SDL)
+      const panel::Panel &panel = runtime.panel();
+      Size expected = target::panelSize();
+      if (panel.width() != expected.width || panel.height() != expected.height)
+      {
+        std::cerr << "HostSdlPlatform: panel size mismatch. Expected "
+                  << expected.width << "x" << expected.height
+                  << ", got " << panel.width() << "x" << panel.height() << std::endl;
+        return 1;
+      }
+
       ui::PanelRenderer renderer;
-      ui::RenderedPanel rendered = renderer.render(runtime.panel());
+      ui::RenderedPanel rendered = renderer.render(panel);
 
       if (SDL_Init(SDL_INIT_VIDEO) != 0)
       {
@@ -224,14 +225,13 @@ namespace percussa
         return 1;
       }
 
-      int scale = rendered.width > 1000 ? 1 : 2;
-      SDL_Window *window = SDL_CreateWindow(
-        "Percussa Host",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        rendered.width * scale,
-        rendered.height * scale,
-        SDL_WINDOW_SHOWN);
+      int scale = rendered.width() > 1000 ? 1 : 2;
+      SDL_Window *window = SDL_CreateWindow("Percussa Host",
+                                            SDL_WINDOWPOS_CENTERED,
+                                            SDL_WINDOWPOS_CENTERED,
+                    rendered.width() * scale,
+                    rendered.height() * scale,
+                                            SDL_WINDOW_SHOWN);
       if (!window)
       {
         std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << std::endl;
@@ -239,7 +239,8 @@ namespace percussa
         return 1;
       }
 
-      SDL_Renderer *rendererHandle = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+      SDL_Renderer *rendererHandle =
+        SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
       if (!rendererHandle)
       {
         std::cerr << "SDL_CreateRenderer failed: " << SDL_GetError() << std::endl;
@@ -249,11 +250,7 @@ namespace percussa
       }
 
       SDL_Texture *texture = SDL_CreateTexture(
-        rendererHandle,
-        SDL_PIXELFORMAT_ABGR8888,
-        SDL_TEXTUREACCESS_STREAMING,
-        rendered.width,
-        rendered.height);
+        rendererHandle, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, rendered.width(), rendered.height());
       if (!texture)
       {
         std::cerr << "SDL_CreateTexture failed: " << SDL_GetError() << std::endl;
@@ -263,9 +260,9 @@ namespace percussa
         return 1;
       }
 
-      SDL_UpdateTexture(texture, 0, &rendered.pixels[0], rendered.width * (int)sizeof(uint32_t));
+      SDL_UpdateTexture(texture, 0, rendered.data(), rendered.width() * (int)sizeof(uint32_t));
 
-      bool quit = runtime.options().once;
+      bool quit = mOnce;
       bool firstFrame = true;
       DisplayBuffer *lastPresentedBuffer = Display_getLastPutBuffer();
       std::chrono::steady_clock::time_point lastDisplayTick = std::chrono::steady_clock::now() - kDisplayTickPeriod;
@@ -299,8 +296,8 @@ namespace percussa
                 continue;
               }
               runtime.handleAction(action);
-              rendered = renderer.render(runtime.panel());
-              SDL_UpdateTexture(texture, 0, &rendered.pixels[0], rendered.width * (int)sizeof(uint32_t));
+              rendered = renderer.render(panel);
+              SDL_UpdateTexture(texture, 0, rendered.data(), rendered.width() * (int)sizeof(uint32_t));
             }
           }
           if (event.type == SDL_KEYUP)
@@ -309,8 +306,8 @@ namespace percussa
             if (mapKeyUpToAction(event.key.keysym.scancode, action))
             {
               runtime.handleAction(action);
-              rendered = renderer.render(runtime.panel());
-              SDL_UpdateTexture(texture, 0, &rendered.pixels[0], rendered.width * (int)sizeof(uint32_t));
+              rendered = renderer.render(panel);
+              SDL_UpdateTexture(texture, 0, rendered.data(), rendered.width() * (int)sizeof(uint32_t));
             }
           }
         }
@@ -318,8 +315,8 @@ namespace percussa
         DisplayBuffer *currentBuffer = Display_getLastPutBuffer();
         if (currentBuffer != lastPresentedBuffer)
         {
-          rendered = renderer.render(runtime.panel());
-          SDL_UpdateTexture(texture, 0, &rendered.pixels[0], rendered.width * (int)sizeof(uint32_t));
+          rendered = renderer.render(panel);
+          SDL_UpdateTexture(texture, 0, rendered.data(), rendered.width() * (int)sizeof(uint32_t));
           lastPresentedBuffer = currentBuffer;
         }
 
@@ -327,7 +324,7 @@ namespace percussa
 
         if (quit)
         {
-          if (runtime.options().once && firstFrame)
+          if (mOnce && firstFrame)
           {
             SDL_PumpEvents();
           }
@@ -342,10 +339,10 @@ namespace percussa
       SDL_Quit();
       return 0;
 #else
-  (void)runtime;
+      (void)runtime;
       std::cerr << "Host SDL platform is unavailable in this build." << std::endl;
       return 1;
 #endif
     }
-  }
-}
+  } // namespace platform
+} // namespace percussa

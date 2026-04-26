@@ -8,15 +8,9 @@ namespace percussa
 {
   namespace runtime
   {
-    Runtime::Runtime(std::unique_ptr<panel::Panel> panel,
-                     std::unique_ptr<panel::Controller> controller,
-                     std::unique_ptr<platform::Platform> platform,
-                     bool once) :
-      mPanel(std::move(panel)),
-      mController(std::move(controller)),
-      mPlatform(std::move(platform))
+    Runtime::Runtime(std::unique_ptr<panel::Panel> panel, std::unique_ptr<platform::Platform> platform)
+        : mPanel(std::move(panel)), mController(mPanel->createController()), mPlatform(std::move(platform))
     {
-      mOptions.once = once;
     }
 
     int Runtime::run()
@@ -33,15 +27,5 @@ namespace percussa
     {
       return *mPanel;
     }
-
-    const RunOptions &Runtime::options() const
-    {
-      return mOptions;
-    }
-
-    const std::string &Runtime::statusText() const
-    {
-      return mController->statusText();
-    }
-  }
-}
+  } // namespace runtime
+} // namespace percussa

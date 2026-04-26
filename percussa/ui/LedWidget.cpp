@@ -17,12 +17,12 @@ namespace percussa
 
     void LedWidget::render(Olivec_Canvas canvas, bool active) const
     {
-      int radius = std::max(4, std::min(bounds.h / 2 - 2, bounds.w / 6));
-      int cx = bounds.x + 2 + radius;
-      int cy = bounds.y + bounds.h / 2;
-      uint32_t color = colorName() == "amber" ? drawing::kAmberLed : drawing::kRed;
+      int radius = std::max(4, std::min(bounds.h() / 2 - 2, bounds.w() / 6));
+      int cx = bounds.x() + 2 + radius;
+      int cy = bounds.y() + bounds.h() / 2;
+      uint32_t c = color == Colour::Amber ? style::kAmberLed : style::kRed;
 
-      drawing::drawIndicatorLight(canvas, cx, cy, radius, active, color);
+      drawing::drawIndicatorLight(canvas, cx, cy, radius, active, c);
 
       if (!label.empty())
       {
@@ -30,14 +30,9 @@ namespace percussa
         int textH = 0;
         percussa_od_text_metrics(label.c_str(), fontSize, &textW, &textH);
         int tx = cx + radius + 6;
-        int ty = bounds.y + (bounds.h - textH) / 2;
-        percussa_od_text(canvas, label.c_str(), tx, ty, fontSize, drawing::kAmberText);
+        int ty = bounds.y() + (bounds.h() - textH) / 2;
+        percussa_od_text(canvas, label.c_str(), tx, ty, fontSize, style::kAmberText);
       }
     }
-
-    const std::string &LedWidget::colorName() const
-    {
-      return color;
-    }
-  }
-}
+  } // namespace ui
+} // namespace percussa

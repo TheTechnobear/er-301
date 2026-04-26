@@ -9,7 +9,7 @@ namespace percussa
     class MainDisplayWidget : public DisplayWidget
     {
     public:
-      MainDisplayWidget(const Rect &rect, int fontSize=16);
+      MainDisplayWidget(const Rect &rect, int fontSize = 16);
 
       void render(Olivec_Canvas canvas, const uint8_t *frame) const;
 
@@ -20,5 +20,5 @@ namespace percussa
       int pixelBrightness(const uint16_t *src, int srcX, int srcY) const;
       int fontSize;
     };
-  }
-}
+  } // namespace ui
+} // namespace percussa

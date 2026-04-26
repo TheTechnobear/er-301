@@ -12,35 +12,30 @@ namespace percussa
 {
   namespace ui
   {
-    struct BiButtonWidget
+    class BiButtonWidget
     {
+    public:
       BiButtonWidget(const std::string &textA,
-                    const std::string &textB,
-                   const Rect &rect,
-                   const std::string &groupName,
-                   bool isVisible = true,
-                   int fontSize=16) :
-        bounds(rect),
-        group(groupName),
-        visible(isVisible),
-        fontSize(fontSize),
-        state(false)
+                     const std::string &textB,
+                     const Rect &rect,
+                     bool isVisible = true,
+                     int fontSize = 16)
+          : bounds(rect), visible(isVisible), fontSize(fontSize), state(false)
       {
-          labels.push_back(textA);
-          labels.push_back(textB);
+        labels.push_back(textA);
+        labels.push_back(textB);
       }
-      void setState(bool s) { state=s;}
-      bool getState() {return state;}
 
+      void render(Olivec_Canvas canvas) const;
+      void render(Olivec_Canvas canvas, bool active) const;
+
+    private:
       std::vector<std::string> labels;
       Rect bounds;
       std::string group;
       bool visible;
       int fontSize;
       bool state;
-
-      void render(Olivec_Canvas canvas) const;
-      void render(Olivec_Canvas canvas, bool active) const;
     };
-  }
-}
+  } // namespace ui
+} // namespace percussa

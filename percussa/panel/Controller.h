@@ -16,7 +16,6 @@ namespace percussa
       }
 
       virtual void handleAction(const input::Action &action) = 0;
-      virtual const std::string &statusText() const = 0;
     };
-  }
-}
+  } // namespace panel
+} // namespace percussa

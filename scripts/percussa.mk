@@ -98,7 +98,7 @@ all_c_sources := $(filter-out \
 	$(od_dir)/config.c, \
 	$(all_c_sources))
 
-panel_cpp_sources := $(program_dir)/panel/Family.cpp
+panel_cpp_sources := $(program_dir)/panel/Panel.cpp
 panel_cpp_sources += $(program_dir)/od/glue/AppInterpreter.cpp
 panel_cpp_sources += $(program_dir)/hal/card.cpp
 panel_cpp_sources += $(program_dir)/hal/concurrency/Mutex.cpp
@@ -137,7 +137,7 @@ common_cpp_sources := $(filter-out \
 	$(program_dir)/hal/usb.cpp \
 	$(program_dir)/hal/pump/pump.cpp \
 	$(program_dir)/app/CardState.cpp \
-	$(program_dir)/panel/Family.cpp \
+	$(program_dir)/panel/Panel.cpp \
 	$(program_dir)/panel/ssp/SspController.cpp \
 	$(program_dir)/panel/ssp/SspPanel.cpp \
 	$(program_dir)/app/Bootstrap.cpp \

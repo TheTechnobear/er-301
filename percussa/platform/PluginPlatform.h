@@ -9,9 +9,7 @@ namespace percussa
     class PluginPlatform : public Platform
     {
     public:
-      const char *name() const;
-      void describe(std::ostream &out) const;
       int run(runtime::Runtime &runtime) const;
     };
-  }
-}
+  } // namespace platform
+} // namespace percussa

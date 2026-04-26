@@ -46,7 +46,7 @@ namespace percussa
         }
       } // namespace
 
-      SspController::SspController(SspPanel &panel) : mPanel(panel), mStatusText("ready")
+      SspController::SspController(SspPanel &panel) : mPanel(panel)
       {
         clearSelectButtons();
         setActiveOutput(1);
@@ -54,9 +54,6 @@ namespace percussa
 
       void SspController::handleAction(const input::Action &action)
       {
-        (void)mPanel;
-        mStatusText = input::describeAction(action);
-
         if (action.type == input::ActionType::Button)
         {
           uint32_t gpioId = mapButtonToGpio(action.hardwareButton);
@@ -101,8 +98,10 @@ namespace percussa
           case input::HardwareEncoderId::Encoder1:
             percussa_state_write(BUTTON_DIAL1, !action.pressed);
             break;
-          case input::HardwareEncoderId::Encoder2: break;
-          case input::HardwareEncoderId::Encoder3: break;
+          case input::HardwareEncoderId::Encoder2:
+            break;
+          case input::HardwareEncoderId::Encoder3:
+            break;
           case input::HardwareEncoderId::Encoder4:
           {
             if (mActiveOutput > 3)
@@ -117,11 +116,6 @@ namespace percussa
             break;
           }
         }
-      }
-
-      const std::string &SspController::statusText() const
-      {
-        return mStatusText;
       }
 
       uint32_t SspController::mapButtonToGpio(input::HardwareButtonId button) const

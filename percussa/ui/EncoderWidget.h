@@ -9,20 +9,19 @@ namespace percussa
 {
   namespace ui
   {
-    struct EncoderWidget
+    class EncoderWidget
     {
-      EncoderWidget(const std::string &text, const Rect &rect, bool isVisible = true) :
-        label(text),
-        bounds(rect),
-        visible(isVisible)
+    public:
+      EncoderWidget(const Rect &rect, bool isVisible = true) : bounds(rect), visible(isVisible)
       {
       }
 
+      void render(Olivec_Canvas canvas) const;
+
+    private:
       std::string label;
       Rect bounds;
       bool visible;
-
-      void render(Olivec_Canvas canvas) const;
     };
-  }
-}
+  } // namespace ui
+} // namespace percussa

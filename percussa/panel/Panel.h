@@ -14,6 +14,8 @@ namespace percussa
 {
   namespace panel
   {
+    class Controller;
+
     class Panel
     {
     public:
@@ -21,16 +23,12 @@ namespace percussa
       {
       }
 
-      virtual const char *name() const = 0;
       virtual int width() const = 0;
       virtual int height() const = 0;
       virtual void render(Olivec_Canvas canvas) const = 0;
-
-      virtual const std::vector<std::shared_ptr<ui::DisplayWidget>> &displays() const = 0;
-      virtual const std::vector<ui::ButtonWidget> &buttons() const = 0;
-      virtual const std::vector<ui::EncoderWidget> &encoders() const = 0;
-      virtual const std::vector<ui::LedWidget> &leds() const = 0;
-      virtual const std::vector<ui::ToggleWidget> &toggles() const = 0;
+      virtual std::unique_ptr<Controller> createController() = 0;
     };
+
+    std::unique_ptr<Panel> createPanel();
   }
 }

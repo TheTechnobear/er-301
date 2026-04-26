@@ -12,10 +12,7 @@ namespace percussa
     class DisplayWidget
     {
     public:
-      DisplayWidget(const std::string &text, const Rect &rect, const std::string &roleName) :
-        label(text),
-        bounds(rect),
-        role(roleName)
+      DisplayWidget(const Rect &rect) : bounds(rect)
       {
       }
 
@@ -37,5 +34,5 @@ namespace percussa
       virtual int sourceHeight() const;
       virtual int pixelBrightness(const uint16_t *src, int srcX, int srcY) const;
     };
-  }
-}
+  } // namespace ui
+} // namespace percussa

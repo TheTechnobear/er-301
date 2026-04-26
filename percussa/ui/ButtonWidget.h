@@ -11,32 +11,27 @@ namespace percussa
 {
   namespace ui
   {
-    struct ButtonWidget
+    class ButtonWidget
     {
+    public:
       ButtonWidget(const std::string &text,
                    const Rect &rect,
-                   const std::string &groupName,
                    bool isVisible = true,
                    uint32_t gpio = NUM_GPIO_IDS,
-                   int fontSize=16) :
-        label(text),
-        bounds(rect),
-        group(groupName),
-        visible(isVisible),
-        gpioId(gpio),
-        fontSize(fontSize)
+                   int fontSize = 16)
+          : label(text), bounds(rect), visible(isVisible), gpioId(gpio), fontSize(fontSize)
       {
       }
 
+      void render(Olivec_Canvas canvas) const;
+      void render(Olivec_Canvas canvas, bool active) const;
+
+    private:
       std::string label;
       Rect bounds;
-      std::string group;
       bool visible;
       uint32_t gpioId;
       int fontSize;
-
-      void render(Olivec_Canvas canvas) const;
-      void render(Olivec_Canvas canvas, bool active) const;
     };
-  }
-}
+  } // namespace ui
+} // namespace percussa

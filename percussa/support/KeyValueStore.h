@@ -19,5 +19,5 @@ namespace percussa
       void setInteger(const std::string &key, int value);
       void setFloat(const std::string &key, float value);
     };
-  }
-}
+  } // namespace support
+} // namespace percussa

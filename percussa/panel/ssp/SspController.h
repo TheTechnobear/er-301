@@ -20,11 +20,8 @@ namespace percussa
         explicit SspController(SspPanel &panel);
 
         void handleAction(const input::Action &action);
-        const std::string &statusText() const;
-
       private:
         SspPanel &mPanel;
-        std::string mStatusText;
         int mActiveOutput = 1;
 
         uint32_t mapButtonToGpio(input::HardwareButtonId button) const;
@@ -34,6 +31,6 @@ namespace percussa
         void switchToggle(uint32_t idA, uint32_t idB, int delta) const;
         int toggleState(uint32_t idA, uint32_t idB) const;
       };
-    }
-  }
-}
+    } // namespace ssp
+  } // namespace panel
+} // namespace percussa

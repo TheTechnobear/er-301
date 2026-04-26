@@ -53,7 +53,5 @@ namespace percussa
       bool pressed = false;
       int delta = 0;
     };
-
-    std::string describeAction(const Action &action);
   }
 }

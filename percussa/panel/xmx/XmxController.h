@@ -21,7 +21,6 @@ namespace percussa
 
       private:
         XmxPanel &mPanel;
-        std::string mStatusText;
         int mActiveOutput = 1;
 
         uint32_t mapButtonToGpio(input::HardwareButtonId button) const;
@@ -33,6 +32,6 @@ namespace percussa
 
         bool fnState = false;
       };
-    }
-  }
-}
+    } // namespace xmx
+  } // namespace panel
+} // namespace percussa

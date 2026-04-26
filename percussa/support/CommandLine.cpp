@@ -29,5 +29,5 @@ namespace percussa
     {
       return std::find(tokens.begin(), tokens.end(), option) != tokens.end();
     }
-  }
-}
+  } // namespace support
+} // namespace percussa

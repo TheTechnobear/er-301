@@ -46,7 +46,7 @@ namespace percussa
         }
       } // namespace
 
-      XmxController::XmxController(XmxPanel &panel) : mPanel(panel), mStatusText("ready")
+      XmxController::XmxController(XmxPanel &panel) : mPanel(panel)
       {
         clearSelectButtons();
         setActiveOutput(1);
@@ -54,21 +54,21 @@ namespace percussa
 
       void XmxController::handleAction(const input::Action &action)
       {
-        (void)mPanel;
-        mStatusText = input::describeAction(action);
-
         if (action.type == input::ActionType::Button)
         {
-            if(action.hardwareButton == input::HardwareButtonId::Button8) {
-              fnState = action.pressed;
-              mPanel.setFnShift(fnState);
-            } else {
-              uint32_t gpioId = mapButtonToGpio(action.hardwareButton);
-              if (gpioId < NUM_GPIO_IDS)
-              {
-                percussa_state_write(gpioId, !action.pressed);
-              }
+          if (action.hardwareButton == input::HardwareButtonId::Button8)
+          {
+            fnState = action.pressed;
+            mPanel.setFnShift(fnState);
+          }
+          else
+          {
+            uint32_t gpioId = mapButtonToGpio(action.hardwareButton);
+            if (gpioId < NUM_GPIO_IDS)
+            {
+              percussa_state_write(gpioId, !action.pressed);
             }
+          }
         }
 
 
@@ -107,16 +107,18 @@ namespace percussa
           case input::HardwareEncoderId::Encoder1:
             percussa_state_write(BUTTON_DIAL1, !action.pressed);
             break;
-          case input::HardwareEncoderId::Encoder2: 
+          case input::HardwareEncoderId::Encoder2:
             break;
-          case input::HardwareEncoderId::Encoder3: 
-          break;
-          case input::HardwareEncoderId::Encoder4: {
-              if(mActiveOutput> 3) return;
-              uint32_t first = activeSelectGpio(activeOutput());
-              uint32_t second = activeSelectGpio((activeOutput() + 1));
-              percussa_state_write(first, !action.pressed);
-              percussa_state_write(second, !action.pressed);
+          case input::HardwareEncoderId::Encoder3:
+            break;
+          case input::HardwareEncoderId::Encoder4:
+          {
+            if (mActiveOutput > 3)
+              return;
+            uint32_t first = activeSelectGpio(activeOutput());
+            uint32_t second = activeSelectGpio((activeOutput() + 1));
+            percussa_state_write(first, !action.pressed);
+            percussa_state_write(second, !action.pressed);
             break;
           }
           default:
@@ -125,14 +127,10 @@ namespace percussa
         }
       }
 
-      const std::string &XmxController::statusText() const
-      {
-        return mStatusText;
-      }
-
       uint32_t XmxController::mapButtonToGpio(input::HardwareButtonId button) const
       {
-        if(!fnState) {
+        if (!fnState)
+        {
           switch (button)
           {
           case input::HardwareButtonId::Button1:
@@ -150,28 +148,30 @@ namespace percussa
           case input::HardwareButtonId::Button7:
             return BUTTON_MAIN6;
           case input::HardwareButtonId::Button8:
-            return NUM_GPIO_IDS; //Fn
+            return NUM_GPIO_IDS; // Fn
           case input::HardwareButtonId::Up:
             return BUTTON_UP;
           case input::HardwareButtonId::Down:
             return BUTTON_SHIFT;
-            
+
           case input::HardwareButtonId::Right:
           case input::HardwareButtonId::Invalid:
           default:
             return NUM_GPIO_IDS;
           }
-        } else {
+        }
+        else
+        {
           switch (button)
           {
           case input::HardwareButtonId::Button1:
             return BUTTON_SUB1;
           case input::HardwareButtonId::Button2:
-           return BUTTON_SUB2;
+            return BUTTON_SUB2;
           case input::HardwareButtonId::Button3:
             return BUTTON_SUB3;
           case input::HardwareButtonId::Button4:
-            return BUTTON_DIAL2; //CAN
+            return BUTTON_DIAL2; // CAN
           case input::HardwareButtonId::Button5:
             return NUM_GPIO_IDS;
           case input::HardwareButtonId::Button6:
@@ -179,12 +179,12 @@ namespace percussa
           case input::HardwareButtonId::Button7:
             return NUM_GPIO_IDS;
           case input::HardwareButtonId::Button8:
-            return NUM_GPIO_IDS; //Fn
+            return NUM_GPIO_IDS; // Fn
           case input::HardwareButtonId::Up:
             return BUTTON_DIAL3; // HOME
           case input::HardwareButtonId::Down:
             return NUM_GPIO_IDS;
-            
+
           case input::HardwareButtonId::Right:
           case input::HardwareButtonId::Invalid:
           default:

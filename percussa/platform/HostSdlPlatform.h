@@ -9,9 +9,14 @@ namespace percussa
     class HostSdlPlatform : public Platform
     {
     public:
-      const char *name() const;
-      void describe(std::ostream &out) const;
+      explicit HostSdlPlatform(bool once = false) : mOnce(once)
+      {
+      }
+
       int run(runtime::Runtime &runtime) const;
+
+    private:
+      bool mOnce;
     };
-  }
-}
+  } // namespace platform
+} // namespace percussa

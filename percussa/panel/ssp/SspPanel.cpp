@@ -1,4 +1,7 @@
+#include "percussa/ui/LedWidget.h"
 #include <percussa/panel/ssp/SspPanel.h>
+
+#include <percussa/panel/ssp/SspController.h>
 
 #include <hal/display.h>
 
@@ -75,48 +78,100 @@ namespace percussa
           int cx = 90 + index * 200;
           return ui::Rect(cx - kEncoderRadius, kEncoderY - kEncoderRadius, 2 * kEncoderRadius, 2 * kEncoderRadius);
         }
-      }
+      } // namespace
 
       SspPanel::SspPanel()
       {
-        mDisplays.push_back(std::shared_ptr<ui::DisplayWidget>(new ui::MainDisplayWidget(ui::Rect(kMainX, kMainY, kMainWidth, kMainHeight))));
-        mDisplays.push_back(std::shared_ptr<ui::DisplayWidget>(new ui::SubDisplayWidget(ui::Rect(kSubX, kSubY, kSubWidth, kSubHeight))));
+        mDisplays.push_back(std::shared_ptr<ui::DisplayWidget>(
+          new ui::MainDisplayWidget(ui::Rect(kMainX, kMainY, kMainWidth, kMainHeight))));
+        mDisplays.push_back(
+          std::shared_ptr<ui::DisplayWidget>(new ui::SubDisplayWidget(ui::Rect(kSubX, kSubY, kSubWidth, kSubHeight))));
 
-        mButtons.push_back(ui::ButtonWidget("M1", ui::Rect(columnX(0), kGridTopY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN1));
-        mButtons.push_back(ui::ButtonWidget("M2", ui::Rect(columnX(1), kGridTopY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN2));
-        mButtons.push_back(ui::ButtonWidget("M3", ui::Rect(columnX(2), kGridTopY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN3));
-        mButtons.push_back(ui::ButtonWidget("HOME", ui::Rect(columnX(3), kGridTopY, kButtonWidth, kButtonHeight), "dial", true, BUTTON_DIAL3));
-        mButtons.push_back(ui::ButtonWidget("ENTER", ui::Rect(columnX(4), kGridTopY, kButtonWidth, kButtonHeight), "action", true, BUTTON_ENTER));
-        mButtons.push_back(ui::ButtonWidget("UP", ui::Rect(columnX(5), kGridTopY, kButtonWidth, kButtonHeight), "action", true, BUTTON_UP));
-        mButtons.push_back(ui::ButtonWidget("SHIFT", ui::Rect(columnX(6), kGridTopY, kButtonWidth, kButtonHeight), "action", true, BUTTON_SHIFT));
+        mButtons.push_back(ui::ButtonWidget(
+          "M1", ui::Rect(columnX(0), kGridTopY, kButtonWidth, kButtonHeight), true, BUTTON_MAIN1));
+        mButtons.push_back(ui::ButtonWidget(
+          "M2", ui::Rect(columnX(1), kGridTopY, kButtonWidth, kButtonHeight), true, BUTTON_MAIN2));
+        mButtons.push_back(ui::ButtonWidget(
+          "M3", ui::Rect(columnX(2), kGridTopY, kButtonWidth, kButtonHeight), true, BUTTON_MAIN3));
+        mButtons.push_back(ui::ButtonWidget(
+          "HOME", ui::Rect(columnX(3), kGridTopY, kButtonWidth, kButtonHeight), true, BUTTON_DIAL3));
+        mButtons.push_back(ui::ButtonWidget(
+          "ENTER", ui::Rect(columnX(4), kGridTopY, kButtonWidth, kButtonHeight), true, BUTTON_ENTER));
+        mButtons.push_back(ui::ButtonWidget(
+          "UP", ui::Rect(columnX(5), kGridTopY, kButtonWidth, kButtonHeight), true, BUTTON_UP));
+        mButtons.push_back(ui::ButtonWidget(
+          "SHIFT", ui::Rect(columnX(6), kGridTopY, kButtonWidth, kButtonHeight), true, BUTTON_SHIFT));
 
-        mButtons.push_back(ui::ButtonWidget("M4", ui::Rect(columnX(0), kGridBottomY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN4));
-        mButtons.push_back(ui::ButtonWidget("M5", ui::Rect(columnX(1), kGridBottomY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN5));
-        mButtons.push_back(ui::ButtonWidget("M6", ui::Rect(columnX(2), kGridBottomY, kButtonWidth, kButtonHeight), "main", true, BUTTON_MAIN6));
-        mButtons.push_back(ui::ButtonWidget("CAN", ui::Rect(columnX(3), kGridBottomY, kButtonWidth, kButtonHeight), "dial", true, BUTTON_DIAL2));
-        mButtons.push_back(ui::ButtonWidget("S1", ui::Rect(columnX(4), kGridBottomY, kButtonWidth, kButtonHeight), "sub", true, BUTTON_SUB1));
-        mButtons.push_back(ui::ButtonWidget("S2", ui::Rect(columnX(5), kGridBottomY, kButtonWidth, kButtonHeight), "sub", true, BUTTON_SUB2));
-        mButtons.push_back(ui::ButtonWidget("S3", ui::Rect(columnX(6), kGridBottomY, kButtonWidth, kButtonHeight), "sub", true, BUTTON_SUB3));
+        mButtons.push_back(ui::ButtonWidget(
+          "M4", ui::Rect(columnX(0), kGridBottomY, kButtonWidth, kButtonHeight), true, BUTTON_MAIN4));
+        mButtons.push_back(ui::ButtonWidget(
+          "M5", ui::Rect(columnX(1), kGridBottomY, kButtonWidth, kButtonHeight), true, BUTTON_MAIN5));
+        mButtons.push_back(ui::ButtonWidget(
+          "M6", ui::Rect(columnX(2), kGridBottomY, kButtonWidth, kButtonHeight), true, BUTTON_MAIN6));
+        mButtons.push_back(ui::ButtonWidget(
+          "CAN", ui::Rect(columnX(3), kGridBottomY, kButtonWidth, kButtonHeight), true, BUTTON_DIAL2));
+        mButtons.push_back(ui::ButtonWidget(
+          "S1", ui::Rect(columnX(4), kGridBottomY, kButtonWidth, kButtonHeight), true, BUTTON_SUB1));
+        mButtons.push_back(ui::ButtonWidget(
+          "S2", ui::Rect(columnX(5), kGridBottomY, kButtonWidth, kButtonHeight), true, BUTTON_SUB2));
+        mButtons.push_back(ui::ButtonWidget(
+          "S3", ui::Rect(columnX(6), kGridBottomY, kButtonWidth, kButtonHeight), true, BUTTON_SUB3));
 
-        mEncoders.push_back(ui::EncoderWidget("DATA", encoderRect(0)));
+        mEncoders.push_back(ui::EncoderWidget(encoderRect(0)));
 
-        mLeds.push_back(ui::LedWidget("fine", ui::Rect(kLedFineX, kLedFineY, kLedFineCoarseW, kLedDefaultH), "red", LED_DIAL1));
+        mLeds.push_back(ui::LedWidget(
+          "fine", ui::Rect(kLedFineX, kLedFineY, kLedFineCoarseW, kLedDefaultH), ui::LedWidget::Red, LED_DIAL1));
 
-        mToggles.push_back(ui::ToggleWidget("STORAGE", ui::Rect(kToggleStorageX, kToggleY, kToggleW, kToggleH), "user", "admin", "eject", TOGGLE_STORAGE_A, TOGGLE_STORAGE_B));
-        mToggles.push_back(ui::ToggleWidget("MODE", ui::Rect(kToggleModeX, kToggleY, kToggleW, kToggleH), "hold", "edit", "scope", TOGGLE_MODE_A, TOGGLE_MODE_B));
+        mToggles.push_back(ui::ToggleWidget("STORAGE",
+                                            ui::Rect(kToggleStorageX, kToggleY, kToggleW, kToggleH),
+                                            "user",
+                                            "admin",
+                                            "eject",
+                                            TOGGLE_STORAGE_A,
+                                            TOGGLE_STORAGE_B));
+        mToggles.push_back(ui::ToggleWidget("MODE",
+                                            ui::Rect(kToggleModeX, kToggleY, kToggleW, kToggleH),
+                                            "hold",
+                                            "edit",
+                                            "scope",
+                                            TOGGLE_MODE_A,
+                                            TOGGLE_MODE_B));
 
-        mLeds.push_back(ui::LedWidget("1", ui::Rect(kLedOutColumnX, kLedOut1Y + 0 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT1));
-        mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 1 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK12));
-        mLeds.push_back(ui::LedWidget("2", ui::Rect(kLedOutColumnX, kLedOut1Y + 2 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT2));
-        mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 3 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK23));
-        mLeds.push_back(ui::LedWidget("3", ui::Rect(kLedOutColumnX, kLedOut1Y + 4 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT3));
-        mLeds.push_back(ui::LedWidget("link", ui::Rect(kLedLinkColumnX, kLedOut1Y + 5 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH), "red", LED_LINK34));
-        mLeds.push_back(ui::LedWidget("4", ui::Rect(kLedOutColumnX, kLedOut1Y + 6 * kLedOutLinkStepY, kLedOutW, kLedDefaultH), "amber", LED_OUT4));
-      }
-
-      const char *SspPanel::name() const
-      {
-        return "ssp";
+        mLeds.push_back(
+          ui::LedWidget("1",
+                        ui::Rect(kLedOutColumnX, kLedOut1Y + 0 * kLedOutLinkStepY, kLedOutW, kLedDefaultH),
+                        ui::LedWidget::Amber,
+                        LED_OUT1));
+        mLeds.push_back(
+          ui::LedWidget("link",
+                        ui::Rect(kLedLinkColumnX, kLedOut1Y + 1 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH),
+                        ui::LedWidget::Red,
+                        LED_LINK12));
+        mLeds.push_back(
+          ui::LedWidget("2",
+                        ui::Rect(kLedOutColumnX, kLedOut1Y + 2 * kLedOutLinkStepY, kLedOutW, kLedDefaultH),
+                        ui::LedWidget::Amber,
+                        LED_OUT2));
+        mLeds.push_back(
+          ui::LedWidget("link",
+                        ui::Rect(kLedLinkColumnX, kLedOut1Y + 3 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH),
+                        ui::LedWidget::Red,
+                        LED_LINK23));
+        mLeds.push_back(
+          ui::LedWidget("3",
+                        ui::Rect(kLedOutColumnX, kLedOut1Y + 4 * kLedOutLinkStepY, kLedOutW, kLedDefaultH),
+                        ui::LedWidget::Amber,
+                        LED_OUT3));
+        mLeds.push_back(
+          ui::LedWidget("link",
+                        ui::Rect(kLedLinkColumnX, kLedOut1Y + 5 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH),
+                        ui::LedWidget::Red,
+                        LED_LINK34));
+        mLeds.push_back(
+          ui::LedWidget("4",
+                        ui::Rect(kLedOutColumnX, kLedOut1Y + 6 * kLedOutLinkStepY, kLedOutW, kLedDefaultH),
+                        ui::LedWidget::Amber,
+                        LED_OUT4));
       }
 
       int SspPanel::width() const
@@ -172,30 +227,10 @@ namespace percussa
         }
       }
 
-      const std::vector<std::shared_ptr<ui::DisplayWidget>> &SspPanel::displays() const
+      std::unique_ptr<Controller> SspPanel::createController()
       {
-        return mDisplays;
+        return std::unique_ptr<Controller>(new SspController(*this));
       }
-
-      const std::vector<ui::ButtonWidget> &SspPanel::buttons() const
-      {
-        return mButtons;
-      }
-
-      const std::vector<ui::EncoderWidget> &SspPanel::encoders() const
-      {
-        return mEncoders;
-      }
-
-      const std::vector<ui::LedWidget> &SspPanel::leds() const
-      {
-        return mLeds;
-      }
-
-      const std::vector<ui::ToggleWidget> &SspPanel::toggles() const
-      {
-        return mToggles;
-      }
-    }
-  }
-}
+    } // namespace ssp
+  } // namespace panel
+} // namespace percussa

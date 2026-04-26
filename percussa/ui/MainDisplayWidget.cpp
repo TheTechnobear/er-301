@@ -8,8 +8,7 @@ namespace percussa
 {
   namespace ui
   {
-    MainDisplayWidget::MainDisplayWidget(const Rect &rect, int fontSize) :
-      DisplayWidget("main", rect, "main"), fontSize(fontSize)
+    MainDisplayWidget::MainDisplayWidget(const Rect &rect, int fontSize) : DisplayWidget(rect), fontSize(fontSize)
     {
     }
 
@@ -17,21 +16,22 @@ namespace percussa
     {
       const char *topLabels[3] = { "M1", "M2", "M3" };
       const char *bottomLabels[3] = { "M4", "M5", "M6" };
-      int scale = bounds.w / MAIN_HORIZONTAL_PIXELS;
-      int vertSpace = scale < 2  ? 14 : 22;
+      int scale = bounds.w() / MAIN_HORIZONTAL_PIXELS;
+      int vertSpace = scale < 2 ? 14 : 22;
 
-      int columnW = bounds.w / 6;
+      int columnW = bounds.w() / 6;
       for (int i = 0; i < 3; ++i)
       {
         int textW = 0;
         int textH = 0;
         percussa_od_text_metrics(topLabels[i], fontSize, &textW, &textH);
-        int cx = bounds.x + i * columnW + columnW / 2;
-        percussa_od_text(canvas, topLabels[i], cx - textW / 2, bounds.y - vertSpace, fontSize, drawing::kAmberText);
+        int cx = bounds.x() + i * columnW + columnW / 2;
+        percussa_od_text(canvas, topLabels[i], cx - textW / 2, bounds.y() - vertSpace, fontSize, style::kAmberText);
 
         percussa_od_text_metrics(bottomLabels[i], fontSize, &textW, &textH);
-        cx = bounds.x + (i + 3) * columnW + columnW / 2;
-        percussa_od_text(canvas, bottomLabels[i], cx - textW / 2, bounds.y + bounds.h + 6, fontSize, drawing::kAmberText);
+        cx = bounds.x() + (i + 3) * columnW + columnW / 2;
+        percussa_od_text(
+          canvas, bottomLabels[i], cx - textW / 2, bounds.y() + bounds.h() + 6, fontSize, style::kAmberText);
       }
     }
 
@@ -62,5 +62,5 @@ namespace percussa
       int shift = (((~xx) & 0b1) << 2);
       return (cell >> shift) & 0xF;
     }
-  }
-}
+  } // namespace ui
+} // namespace percussa

@@ -27,7 +27,7 @@ namespace percussa
       {
         return text.compare(0, token.length(), token) == 0;
       }
-    }
+    } // namespace
 
     bool KeyValueStore::load(const std::string &fname)
     {
@@ -135,5 +135,5 @@ namespace percussa
       snprintf(buffer, sizeof(buffer), "%f", value);
       (*this)[key] = buffer;
     }
-  }
-}
+  } // namespace support
+} // namespace percussa
