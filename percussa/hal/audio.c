@@ -7,6 +7,10 @@
 #include <rtaudio_c.h>
 #include <string.h>
 
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#include <arm_neon.h>
+#endif
+
 #if defined(__linux__)
 #include <pthread.h>
 #include <sched.h>
@@ -15,6 +19,7 @@
 #define MAX_CAPTURE_CHANNELS 32
 #define MAX_PLAYBACK_CHANNELS 32
 
+
 void SspModulation_ingestInterleavedS32(const int *samples, uint32_t frames, uint32_t channels);
 void SspModulation_copyFrame(float *dst, uint32_t frames);
 
@@ -22,6 +27,7 @@ static struct AudioLocals {
   int captureMapped[MAX_AUDIO_FRAME_LENGTH * NUM_INPUT_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
   float inFrame[MAX_AUDIO_FRAME_LENGTH * NUM_INPUT_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
   float outFrame[MAX_AUDIO_FRAME_LENGTH * NUM_OUTPUT_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
+  float inputChannelGain[NUM_INPUT_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
   int inputRoutingMap[MAX_CAPTURE_CHANNELS] __attribute__((aligned(CACHELINE_SIZE_MAX)));
 
   rtaudio_t audio;
@@ -43,6 +49,51 @@ void Mod1_callback(int *samples) { (void)samples; }
 static unsigned int currentSampleRate(void) { return (unsigned int)globalConfig.sampleRate; }
 
 static unsigned int currentFrameLength(void) { return (unsigned int)globalConfig.frameLength; }
+
+static inline void Audio_applyOutputGainOffset(float *buffer, uint32_t count, float gain, float offset) {
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  uint32_t i = 0;
+  float32x4_t vGain = vdupq_n_f32(gain);
+  float32x4_t vOffset = vdupq_n_f32(offset);
+  for (; i + 4 <= count; i += 4) {
+    float32x4_t x = vld1q_f32(buffer + i);
+    x = vmlaq_f32(vOffset, x, vGain);
+    vst1q_f32(buffer + i, x);
+  }
+  for (; i < count; i++) {
+    buffer[i] = buffer[i] * gain + offset;
+  }
+#else
+  for (uint32_t i = 0; i < count; i++) {
+    buffer[i] = buffer[i] * gain + offset;
+  }
+#endif
+}
+
+static inline void Audio_applyInputGainOffset(float *buffer, uint32_t frames, float offset) {
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  float32x4_t vOffset = vdupq_n_f32(offset);
+  for (uint32_t i = 0; i < frames; i++) {
+    float *frame = buffer + i * NUM_INPUT_CHANNELS;
+    uint32_t ch = 0;
+    for (; ch + 4 <= NUM_INPUT_CHANNELS; ch += 4) {
+      float32x4_t x = vld1q_f32(frame + ch);
+      float32x4_t g = vld1q_f32(local.inputChannelGain + ch);
+      vst1q_f32(frame + ch, vmlaq_f32(vOffset, x, g));
+    }
+    for (; ch < NUM_INPUT_CHANNELS; ch++) {
+      frame[ch] = frame[ch] * local.inputChannelGain[ch] + offset;
+    }
+  }
+#else
+  for (uint32_t i = 0; i < frames; i++) {
+    float *frame = buffer + i * NUM_INPUT_CHANNELS;
+    for (uint32_t ch = 0; ch < NUM_INPUT_CHANNELS; ch++) {
+      frame[ch] = frame[ch] * local.inputChannelGain[ch] + offset;
+    }
+  }
+#endif
+}
 
 #if defined(__linux__)
 static void Audio_pinCurrentThreadToCore(int core, const char *label) {
@@ -67,6 +118,13 @@ static void Audio_pinCurrentThreadToCore(int core, const char *label) {
 #else
 #error "No audio hardware configuration selected."
 #endif
+
+static void Audio_buildInputChannelGainMap(void) {
+  for (uint32_t ch = 0; ch < NUM_INPUT_CHANNELS; ch++) {
+    float channelGain = IS_AUDIO_INPUT(ch) ? 1.0f : kNonAudioInGain;
+    local.inputChannelGain[ch] = channelGain * kInGain;
+  }
+}
 
 // logical mapping
 static int inputChannelMap[NUM_INPUT_CHANNELS] = {
@@ -190,9 +248,11 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nFr
   }
 
   SspModulation_copyFrame(local.inFrame, frameLength);
+  Audio_applyInputGainOffset(local.inFrame, frameLength, kInOffset);
 
   memset(local.outFrame, 0, sizeof(float) * frameLength * NUM_OUTPUT_CHANNELS);
   Pump_callback(local.inFrame, local.outFrame);
+  Audio_applyOutputGainOffset(local.outFrame, frameLength * NUM_OUTPUT_CHANNELS, kOutGain, kOutOffset);
 
   if (outputBuffer) {
     int *out = (int *)outputBuffer;
@@ -222,6 +282,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nFr
 
 void Audio_init() {
   memset(&local, 0, sizeof(local));
+  Audio_buildInputChannelGainMap();
+
   local.audio = rtaudio_create(RTAUDIO_API_UNSPECIFIED);
   if (!local.audio) {
     logError("Audio: failed to create RtAudio instance.");

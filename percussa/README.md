@@ -1,12 +1,96 @@
-# Percussa Scaffold
+# Percussa 
 
-This directory is a clean refactor target for the current `ssp` subproject.
-It is intentionally separate so the new architecture can be exercised without
-forcing early changes into `ssp`.
+# Functional Notes
+
+er301 hardware is not identical to the SSP or XMX,
+these are some notes on the SSP and XMX hardware has been mapped on to the er301 hardware,
+
+## Relevant ER301 specs
+
+4 x audio output OUT1-4, +-10v AC 48/96khz, 24bit, AC coupled
+
+4 x audio input IN1-4, +-10v, 60kHz, 16-bit DC
+12x CV input A-Dx1-3, +-10v 60kHz, 16-bit DC
+4 x gate input G1-4, +-10v. 96kHz, 12-bit DC
+
+Inputs are resampled to output sample rate.
+
+1GHz ARM Cortex-A8 processor (single core), likely has another chip to help IO 
+512MB Ram (~480MB for samples)
+
+## SSP 
+the 2 displays from the er301 are scaled up x 3.
+all other controls are native renders.
+encoder 1 = data wheel, encoder 2-4, are emulating toggles/other controls
+push encoder 4 to link the next output with current
+some menu items, may not be relevant.
+
+USB mass storage is mapped to front sdcard of er301, but performance is not guaranteed.
+when not present it uses the internal sdcard.
+
+
+inputs:
+IN1,IN2,IN3,IN4
+A1,B1,C1,D1
+A2,B2,C2,D2
+A3,B3,C3,D3
+
+outputs:
+OUT1, OUT2, OUT3,OUT4
+
+missing: G1-G1
+unused: OUT5-8
+
+spec differences:
+IN1-4, OUT1-4, 1:1 mapping
+A1-D3 are mapping 5v to 10v, to allow for v/oct mapping.
+all are 32bit / 48khz and DC coupled.
+core 0 dedicated to OS / UI 
+core 1 dedicated to DSP
+(core 2-3 not used at this time)
+
+unsupported at this time:
+usb audio, this would have all input / output, including "missing"
+
+## XMX 
+all control / display are at native resolutioin.
+all other controls are native renders.
+encoder 1 = data wheel, encoder 2-4, are emulating toggles/other controls
+push encoder 4 to link the next output with current
+some menu items, may not be relevant.
+
+USB mass storage is mapped to front sdcard of er301, but performance is not guaranteed. (*)
+when not present it uses the internal sdcard.
+
+inputs:
+IN1,IN2,IN3,IN4
+A1,B1,C1,D1
+
+outputs:
+OUT1, OUT 2
+
+missing:  A2-D3,G1-G1, OUT3,OUT4
+
+headphone jack is mirror of OUT1-2 (in hardware, cannot be changed)
+
+spec differences:
+IN1-4, OUT1-4, 1:1 mapping
+A1-D3 are mapping 5v to 10v, to allow for v/oct mapping.
+all are 32bit / 48khz and DC coupled.
+core 0 dedicated to OS / UI 
+core 1 dedicated to DSP
+(core 2-3 not used at this time)
+
+unsupported at this time:
+usb mass storage
+usb audio, this would have all input / output, including "missing".
+
+both these items are OS limitations on xmx at the moment
+
 
 ## Design
 
-The new design separates the product into four main layers:
+The  design separates the product into four main layers:
 
 1. `runtime`
    Owns shared application coordination, boot policy, and the stable handoff

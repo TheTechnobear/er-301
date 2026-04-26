@@ -12,3 +12,9 @@ static int kOutChMap[kAudioOutCh] = {0, 1, 2, 3};
 
 static const char *const kAudioOutputDevicePrefix = "Virtual-SSP-Out";
 static const char *const kAudioInputDevicePrefix  = "Virtual-SSP-In";
+
+static float kInGain = 1.0f; 
+static float kOutGain = 1.0f;
+static float kInOffset = 0.f;
+static float kOutOffset = 0.f;
+static float kNonAudioInGain = 0.5f;
