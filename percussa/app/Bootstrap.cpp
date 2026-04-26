@@ -110,7 +110,6 @@ namespace percussa
       Gpio_init();
       std::string firmwareCfg = mRearRoot + "/firmware.cfg";
       Config_init(firmwareCfg.c_str(), mXRoot.c_str(), mRearRoot.c_str(), mFrontRoot.c_str());
-      Pump_init();
       Encoder_init();
       Events_init();
       Rng_init();

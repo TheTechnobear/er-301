@@ -81,6 +81,7 @@ all_c_sources := $(foreach D,$(src_dirs),$(call rwildcard,$D,*.c))
 legacy_cpp_excludes :=
 legacy_cpp_excludes += $(hal_dir)/events.cpp
 legacy_cpp_excludes += $(hal_dir)/pump/pump.cpp
+legacy_cpp_excludes += $(program_dir)/hal/pump/pump.cpp
 legacy_cpp_excludes += $(od_dir)/glue/AppInterpreter.cpp
 legacy_cpp_excludes += $(od_dir)/glue/Interpreter.cpp
 
@@ -90,6 +91,9 @@ legacy_c_excludes += $(hal_dir)/simd.c
 legacy_c_excludes += $(hal_dir)/pump/pidcontrol.c
 legacy_c_excludes += $(hal_dir)/pump/rfifo4.c
 legacy_c_excludes += $(hal_dir)/pump/resample4.c
+legacy_c_excludes += $(program_dir)/hal/pump/pidcontrol.c
+legacy_c_excludes += $(program_dir)/hal/pump/rfifo4.c
+legacy_c_excludes += $(program_dir)/hal/pump/resample4.c
 legacy_c_excludes += $(od_dir)/config.c
 
 # Compile the same broad surface as ssp.mk, but prefer percussa-local files
@@ -113,7 +117,6 @@ panel_cpp_common_sources += $(program_dir)/hal/card_macos.cpp
 endif
 panel_cpp_common_sources += $(program_dir)/hal/concurrency/Mutex.cpp
 panel_cpp_common_sources += $(program_dir)/hal/usb.cpp
-panel_cpp_common_sources += $(program_dir)/hal/pump/pump.cpp
 panel_cpp_common_sources += $(program_dir)/app/Bootstrap.cpp
 panel_cpp_common_sources += $(program_dir)/app/CardState.cpp
 panel_cpp_common_sources += $(program_dir)/support/CommandLine.cpp
@@ -122,9 +125,6 @@ panel_cpp_common_sources += $(program_dir)/support/KeyValueStore.cpp
 panel_c_common_sources :=
 panel_c_common_sources += $(program_dir)/od/config.c
 panel_c_common_sources += $(program_dir)/hal/simd.c
-panel_c_common_sources += $(program_dir)/hal/pump/pidcontrol.c
-panel_c_common_sources += $(program_dir)/hal/pump/rfifo4.c
-panel_c_common_sources += $(program_dir)/hal/pump/resample4.c
 
 panel_cpp_all_variant_sources :=
 panel_cpp_all_variant_sources += $(program_dir)/panel/ssp/SspController.cpp
