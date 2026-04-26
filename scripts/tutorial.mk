@@ -27,7 +27,7 @@ endif
 CROSS_BUILD_ARCH = $(if $(TRIPLE),$(firstword $(subst -, ,$(TRIPLE))))
 BUILD_OUTPUT_SUFFIX_DEFAULT = $(if $(filter 1,$(CROSS_COMPILE)),-$(CROSS_BUILD_ARCH))
 BUILD_OUTPUT_SUFFIX ?= $(BUILD_OUTPUT_SUFFIX_DEFAULT)
-package_stem = $(PKGNAME)-$(PKGVERSION)$(BUILD_OUTPUT_SUFFIX)
+package_stem = $(PKGNAME)-$(PKGVERSION)
 out_dir = $(PROFILE)/$(ARCH)$(BUILD_OUTPUT_SUFFIX)
 lib_file = $(out_dir)/$(LIBNAME).so
 package_file = $(out_dir)/$(package_stem).pkg

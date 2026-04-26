@@ -16,7 +16,7 @@ include scripts/utils.mk
 
 LIBNAME := lib$(MODNAME)
 MODVERSION ?= $(FIRMWARE_VERSION)
-package_stem = $(MODNAME)-$(MODVERSION)$(BUILD_OUTPUT_SUFFIX)
+package_stem = $(MODNAME)-$(MODVERSION)
 out_dir = $(build_dir)/mods$(BUILD_OUTPUT_SUFFIX)
 asset_dir ?= $(src_dir)/assets
 lib_file = $(out_dir)/$(MODNAME)/$(LIBNAME).so
