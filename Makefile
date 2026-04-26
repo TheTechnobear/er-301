@@ -108,18 +108,6 @@ percussa:
 percussa-clean:
 	+$(MAKE) -f scripts/percussa.mk clean
 
-ssp: 
-	+$(MAKE) -f scripts/lua.mk
-	+$(MAKE) -f scripts/miniz.mk
-	+$(MAKE) -f scripts/lodepng.mk
-	+$(MAKE) -f scripts/ssp.mk
-
-ssp-clean: 
-	+$(MAKE) -f scripts/lua.mk clean
-	+$(MAKE) -f scripts/miniz.mk clean
-	+$(MAKE) -f scripts/lodepng.mk clean
-	+$(MAKE) -f scripts/ssp.mk clean
-
 dist-clean:
 	rm -rf testing debug release
 	+$(MAKE) -C tutorial/step1 clean
