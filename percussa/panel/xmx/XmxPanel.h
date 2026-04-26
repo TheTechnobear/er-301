@@ -24,8 +24,6 @@ namespace percussa
 
       private:
         std::vector<std::shared_ptr<ui::DisplayWidget>> mDisplays;
-        std::vector<ui::ButtonWidget> mButtons;
-        std::vector<ui::EncoderWidget> mEncoders;
         std::vector<ui::LedWidget> mLeds;
         std::vector<ui::ToggleWidget> mToggles;
         std::vector<ui::BiButtonWidget> mBiButtons;

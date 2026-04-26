@@ -25,177 +25,215 @@ namespace percussa
         const int kScreenHeight = 240;
 
         const int kMargin = 8;
-        const int kMainX = kMargin;
         const int kMainY = kMargin * 2;
-        const int kMainScale = 1;
-        const int kMainWidth = 256 * kMainScale;
-        const int kMainHeight = 64 * kMainScale;
+        const int kMainWidth = 256;
+        const int kMainHeight = 64;
 
-        const int kSubX = kMargin;
         const int kSubY = kMainY + kMainHeight + kMargin;
-        const int kSubScale = 1;
-        const int kSubWidth = 128 * kSubScale;
-        const int kSubHeight = 64 * kSubScale;
+        const int kSubWidth = 128;
+        const int kSubHeight = 64;
 
         const int kEncoderRadius = (kScreenWidth - (5 * kMargin)) / 4;
-        const int kEncoderY = kScreenHeight - kEncoderRadius - kMargin;
 
         const int kButtonWidth = 45;
         const int kButtonHeight = 25;
         const int kButtonGapX = 4;
         const int kButtonGapY = 4;
-        const int kGridTopY = kScreenHeight - kMargin - (2 * kButtonHeight) + kButtonGapY;
-        const int kGridBottomY = kGridTopY + kButtonHeight + kButtonGapY;
 
         const int kRightColumnX = kScreenWidth - kButtonWidth - kMargin;
-        const int kRightColumnTopY = 0 + kMargin;
-        const int kRightColumnStepY = kButtonHeight + kButtonGapY;
+        const int kFontSize = 12;
 
-
-        int fontSize = 12;
-
-        ui::Rect encoderRect(int index)
+        int encoderX(int index)
         {
-          int cx = ((kEncoderRadius + kMargin) * index) + kMargin;
-          return ui::Rect(cx, kEncoderY, kEncoderRadius, kEncoderRadius);
+          return ((kEncoderRadius + kMargin) * index) + kMargin;
         }
 
-        const int kLedDefaultH = 10;
-
-        auto outRect = encoderRect(3);
-        const int kLedOutW = outRect.w() / 2;
-        const int kLedOutColumnX = outRect.x();
-        const int kLedLinkColumnX = kLedOutColumnX + kLedOutW - 5;
-
-        const int kLedLinkW = outRect.w() / 2;
-        const int kLedOutLinkStepY = 8; // text h
-        const int kLedOut1Y = kScreenHeight - outRect.h() + kMargin;
-
-        auto toggleStorage = encoderRect(2);
-        auto toggleMode = encoderRect(3);
-
-        const int kToggleY = kSubY + (kMargin * 2);
-        const int kToggleW = toggleStorage.w();
-        const int kToggleH = toggleStorage.h();
-        const int kToggleStorageX = toggleStorage.x();
-        const int kToggleModeX = toggleMode.x();
-
-        int columnX(int index)
+        int buttonColumnX(int index)
         {
           return kMargin + index * (kButtonWidth + kButtonGapX);
         }
 
-        auto ledFine = encoderRect(0);
-        const int kLedFineCoarseW = ledFine.w();
-        const int kLedFineX = ledFine.x();
-        const int kLedFineY = kScreenHeight - ledFine.h();
-        // const int kLedFineY = kScreenHeight - kMargin;
+        int buttonRowY(int index)
+        {
+          const int top = kScreenHeight - kMargin - (2 * kButtonHeight) + kButtonGapY;
+          return top + index * (kButtonHeight + kButtonGapY);
+        }
+
+        int rightColumnY(int index)
+        {
+          return kMargin + index * (kButtonHeight + kButtonGapY);
+        }
+
+        ui::Rect mainDisplayRect()
+        {
+          return ui::Rect(kMargin, kMainY, kMainWidth, kMainHeight);
+        }
+
+        ui::Rect subDisplayRect()
+        {
+          return ui::Rect(kMargin, kSubY, kSubWidth, kSubHeight);
+        }
+
+        ui::Rect gridButtonRect(int column, int row)
+        {
+          return ui::Rect(buttonColumnX(column), buttonRowY(row), kButtonWidth, kButtonHeight);
+        }
+
+        ui::Rect rightButtonRect(int row)
+        {
+          return ui::Rect(kRightColumnX, rightColumnY(row), kButtonWidth, kButtonHeight);
+        }
+
+        const int kLedDefaultH = 10;
+        const int kLedBlockW = 12;
+
+        const int kLedRowSpacing = 16;
+        const int kLedLinkOffsetY = 8;
+        const int kLedAnchorOffset = 2 + 4;
+        const int kLedCenterX = encoderX(3) + kEncoderRadius / 2;
+        const int kLedGapX = 8;
+        const int kLedBaseY = kScreenHeight - kEncoderRadius + kMargin;
+
+        const int kToggleY = kSubY + (kMargin * 2);
+
+        ui::Rect toggleRect(int index)
+        {
+          return ui::Rect(encoderX(index), kToggleY, kEncoderRadius, kEncoderRadius);
+        }
+
+        ui::Rect fineLedRect()
+        {
+          return ui::Rect(encoderX(0), kScreenHeight - kEncoderRadius, kEncoderRadius, kLedDefaultH);
+        }
+
+        ui::Rect outputLedRect(int outputIndex)
+        {
+          return ui::Rect(kLedCenterX - kLedGapX / 2 - kLedBlockW + kLedAnchorOffset,
+                          kLedBaseY + outputIndex * kLedRowSpacing,
+                          kLedBlockW,
+                          kLedDefaultH);
+        }
+
+        ui::Rect linkLedRect(int linkIndex)
+        {
+          return ui::Rect(kLedCenterX + kLedGapX / 2 - kLedAnchorOffset,
+                          kLedBaseY + kLedLinkOffsetY + linkIndex * kLedRowSpacing,
+                          kLedBlockW,
+                          kLedDefaultH);
+        }
       } // namespace
 
       XmxPanel::XmxPanel()
       {
         mDisplays.push_back(std::shared_ptr<ui::DisplayWidget>(
-          new ui::MainDisplayWidget(ui::Rect(kMainX, kMainY, kMainWidth, kMainHeight), fontSize)));
+          new ui::MainDisplayWidget(mainDisplayRect(), kFontSize)));
         mDisplays.push_back(std::shared_ptr<ui::DisplayWidget>(
-          new ui::SubDisplayWidget(ui::Rect(kSubX, kSubY, kSubWidth, kSubHeight), fontSize)));
+          new ui::SubDisplayWidget(subDisplayRect(), kFontSize)));
 
         mBiButtons.push_back(
-          ui::BiButtonWidget("M1", "S1", ui::Rect(columnX(0), kGridTopY, kButtonWidth, kButtonHeight), true, fontSize));
+          ui::BiButtonWidget("M1", "S1", gridButtonRect(0, 0), true, kFontSize));
         mBiButtons.push_back(
-          ui::BiButtonWidget("M2", "S2", ui::Rect(columnX(1), kGridTopY, kButtonWidth, kButtonHeight), true, fontSize));
+          ui::BiButtonWidget("M2", "S2", gridButtonRect(1, 0), true, kFontSize));
         mBiButtons.push_back(
-          ui::BiButtonWidget("M3", "S3", ui::Rect(columnX(2), kGridTopY, kButtonWidth, kButtonHeight), true, fontSize));
+          ui::BiButtonWidget("M3", "S3", gridButtonRect(2, 0), true, kFontSize));
         mBiButtons.push_back(ui::BiButtonWidget(
-          "Ent", "Can", ui::Rect(columnX(3), kGridTopY, kButtonWidth, kButtonHeight), true, fontSize));
+          "Ent", "Can", gridButtonRect(3, 0), true, kFontSize));
 
         mBiButtons.push_back(ui::BiButtonWidget(
-          "M4", "", ui::Rect(columnX(0), kGridBottomY, kButtonWidth, kButtonHeight), true, fontSize));
+          "M4", "", gridButtonRect(0, 1), true, kFontSize));
         mBiButtons.push_back(ui::BiButtonWidget(
-          "M5", "", ui::Rect(columnX(1), kGridBottomY, kButtonWidth, kButtonHeight), true, fontSize));
+          "M5", "", gridButtonRect(1, 1), true, kFontSize));
         mBiButtons.push_back(ui::BiButtonWidget(
-          "M6", "", ui::Rect(columnX(2), kGridBottomY, kButtonWidth, kButtonHeight), true, fontSize));
+          "M6", "", gridButtonRect(2, 1), true, kFontSize));
         mBiButtons.push_back(ui::BiButtonWidget(
-          "Fn", "Fn", ui::Rect(columnX(3), kGridBottomY, kButtonWidth, kButtonHeight), true, fontSize));
+          "Fn", "Fn", gridButtonRect(3, 1), true, kFontSize));
 
         mBiButtons.push_back(ui::BiButtonWidget(
           "Up",
           "Home",
-          ui::Rect(kRightColumnX, kRightColumnTopY + 0 * kRightColumnStepY, kButtonWidth, kButtonHeight),
+          rightButtonRect(0),
           true,
-          fontSize));
+          kFontSize));
         mBiButtons.push_back(ui::BiButtonWidget(
           "Shft",
           "",
-          ui::Rect(kRightColumnX, kRightColumnTopY + 1 * kRightColumnStepY, kButtonWidth, kButtonHeight),
+          rightButtonRect(1),
           true,
-          fontSize));
+          kFontSize));
 
 
         mLeds.push_back(ui::LedWidget("fine",
-                                      ui::Rect(kLedFineX, kLedFineY, kLedFineCoarseW, kLedDefaultH),
+                                      fineLedRect(),
                                       ui::LedWidget::Red,
                                       LED_DIAL1,
-                                      fontSize));
+                                      kFontSize));
 
         mLeds.push_back(
           ui::LedWidget("1",
-                        ui::Rect(kLedOutColumnX, kLedOut1Y + 0 * kLedOutLinkStepY, kLedOutW, kLedDefaultH),
+                        outputLedRect(0),
                         ui::LedWidget::Amber,
                         LED_OUT1,
-                        fontSize));
+                        kFontSize,
+                        ui::LedWidget::LabelLeft));
         mLeds.push_back(
           ui::LedWidget("link",
-                        ui::Rect(kLedLinkColumnX, kLedOut1Y + 1 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH),
+                        linkLedRect(0),
                         ui::LedWidget::Red,
                         LED_LINK12,
-                        fontSize));
+                        kFontSize,
+                        ui::LedWidget::LabelRight));
         mLeds.push_back(
           ui::LedWidget("2",
-                        ui::Rect(kLedOutColumnX, kLedOut1Y + 2 * kLedOutLinkStepY, kLedOutW, kLedDefaultH),
+                        outputLedRect(1),
                         ui::LedWidget::Amber,
                         LED_OUT2,
-                        fontSize));
+                        kFontSize,
+                        ui::LedWidget::LabelLeft));
         mLeds.push_back(
           ui::LedWidget("link",
-                        ui::Rect(kLedLinkColumnX, kLedOut1Y + 3 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH),
+                        linkLedRect(1),
                         ui::LedWidget::Red,
                         LED_LINK23,
-                        fontSize));
+                        kFontSize,
+                        ui::LedWidget::LabelRight));
         mLeds.push_back(
           ui::LedWidget("3",
-                        ui::Rect(kLedOutColumnX, kLedOut1Y + 4 * kLedOutLinkStepY, kLedOutW, kLedDefaultH),
+                        outputLedRect(2),
                         ui::LedWidget::Amber,
                         LED_OUT3,
-                        fontSize));
+                        kFontSize,
+                        ui::LedWidget::LabelLeft));
         mLeds.push_back(
           ui::LedWidget("link",
-                        ui::Rect(kLedLinkColumnX, kLedOut1Y + 5 * kLedOutLinkStepY, kLedLinkW, kLedDefaultH),
+                        linkLedRect(2),
                         ui::LedWidget::Red,
                         LED_LINK34,
-                        fontSize));
+                        kFontSize,
+                        ui::LedWidget::LabelRight));
         mLeds.push_back(
           ui::LedWidget("4",
-                        ui::Rect(kLedOutColumnX, kLedOut1Y + 6 * kLedOutLinkStepY, kLedOutW, kLedDefaultH),
+                        outputLedRect(3),
                         ui::LedWidget::Amber,
                         LED_OUT4,
-                        fontSize));
+                        kFontSize,
+                        ui::LedWidget::LabelLeft));
 
         mToggles.push_back(ui::ToggleWidget("STORAGE",
-                                            ui::Rect(kToggleStorageX, kToggleY, kToggleW, kToggleH),
+                                            toggleRect(2),
                                             "user",
                                             "admin",
                                             "eject",
                                             TOGGLE_STORAGE_A,
                                             TOGGLE_STORAGE_B,
-                                            fontSize));
+                                            kFontSize));
         mToggles.push_back(ui::ToggleWidget("MODE",
-                                            ui::Rect(kToggleModeX, kToggleY, kToggleW, kToggleH),
+                                            toggleRect(3),
                                             "hold",
                                             "edit",
                                             "scope",
                                             TOGGLE_MODE_A,
                                             TOGGLE_MODE_B,
-                                            fontSize));
+                                            kFontSize));
       }
 
       void XmxPanel::setFnShift(bool s)
@@ -216,48 +254,26 @@ namespace percussa
       void XmxPanel::render(Olivec_Canvas canvas) const
       {
         olivec_fill(canvas, kBackground);
-
         const DisplayBuffer *buffer = Display_getLastPutBuffer();
-        for (size_t i = 0; i < mDisplays.size(); ++i)
+
+        if (buffer)
         {
-          const uint8_t *frame = 0;
-          if (buffer)
-          {
-            if (i == 0)
-            {
-              frame = buffer->main;
-            }
-            else if (i == 1)
-            {
-              frame = buffer->sub;
-            }
-          }
-          mDisplays[i]->render(canvas, frame);
+          mDisplays[0]->render(canvas, buffer->main);
+          mDisplays[1]->render(canvas, buffer->sub);
         }
 
-        for (size_t i = 0; i < mEncoders.size(); ++i)
+        for (auto &w : mToggles)
         {
-          mEncoders[i].render(canvas);
+          w.render(canvas);
         }
 
-        for (size_t i = 0; i < mButtons.size(); ++i)
+        for (auto &w : mLeds)
         {
-          mButtons[i].render(canvas);
+          w.render(canvas);
         }
-
-        for (size_t i = 0; i < mBiButtons.size(); ++i)
+        for (auto &w : mBiButtons)
         {
-          mBiButtons[i].render(canvas, mFnShift);
-        }
-
-        for (size_t i = 0; i < mToggles.size(); ++i)
-        {
-          mToggles[i].render(canvas);
-        }
-
-        for (size_t i = 0; i < mLeds.size(); ++i)
-        {
-          mLeds[i].render(canvas);
+          w.render(canvas, mFnShift);
         }
       }
 

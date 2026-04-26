@@ -4,10 +4,8 @@
 #include <hal/gpio.h>
 
 #include <percussa/hw/PercussaState.h>
-#include <percussa/panel/Panel.h>
 #include <percussa/app/EncoderProxy.h>
 
-#include <string>
 
 namespace percussa
 {
@@ -88,11 +86,11 @@ namespace percussa
           case input::HardwareEncoderId::Encoder4:
             if (action.delta > 0)
             {
-              setActiveOutput(activeOutput() + 1);
+              setActiveOutput(mActiveOutput + 1);
             }
             else if (action.delta < 0)
             {
-              setActiveOutput(activeOutput() - 1);
+              setActiveOutput(mActiveOutput - 1);
             }
             break;
           default:
@@ -115,8 +113,8 @@ namespace percussa
           {
             if (mActiveOutput > 3)
               return;
-            uint32_t first = activeSelectGpio(activeOutput());
-            uint32_t second = activeSelectGpio((activeOutput() + 1));
+            uint32_t first = activeSelectGpio(mActiveOutput);
+            uint32_t second = activeSelectGpio(mActiveOutput + 1);
             percussa_state_write(first, !action.pressed);
             percussa_state_write(second, !action.pressed);
             break;
@@ -193,11 +191,6 @@ namespace percussa
         }
       }
 
-      int XmxController::activeOutput() const
-      {
-        return mActiveOutput;
-      }
-
       void XmxController::clearSelectButtons() const
       {
         percussa_state_write(BUTTON_SELECT1, true);
@@ -238,19 +231,6 @@ namespace percussa
             percussa_state_write(idA, true);
           }
         }
-      }
-
-      int XmxController::toggleState(uint32_t idA, uint32_t idB) const
-      {
-        if (percussa_state_read(idA))
-        {
-          return 0;
-        }
-        if (percussa_state_read(idB))
-        {
-          return 2;
-        }
-        return 1;
       }
     } // namespace xmx
   } // namespace panel

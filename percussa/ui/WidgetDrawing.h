@@ -84,8 +84,15 @@ namespace percussa
         }
       }
 
+      inline void drawRectShadow(
+        Olivec_Canvas canvas, const Rect &rect, int offsetX, int offsetY, uint32_t color)
+      {
+        olivec_rect(canvas, rect.x() + offsetX, rect.y() + offsetY, rect.w(), rect.h(), color);
+      }
+
       inline void drawIndicatorLight(Olivec_Canvas canvas, int cx, int cy, int radius, bool active, uint32_t onColor)
       {
+        drawFilledCircle(canvas, cx + 1, cy + 2, radius, style::kLedShadow);
         olivec_circle(canvas, cx, cy, radius, style::kLedOffShell);
         olivec_circle(canvas, cx, cy, std::max(1, radius - 2), active ? onColor : style::kLedOffCore);
       }

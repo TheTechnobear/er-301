@@ -3,11 +3,16 @@
 # Not needed for cross-compile targets (firmware, etc.)
 
 CompileFlags:
+  CompilationDatabase: None
   Add:
     - "-march=armv8.2-a"
     - "-rdynamic"
     - "-DFIRMWARE_VERSION=\"dev\""
     - "-DBUILD_PROFILE=debug"
+    # macOS editor fallback when no compile_commands.json is present
+    - "-DPERCUSSA_PLATFORM_HOST_SDL"
+    - "-DPERCUSSA_PANEL_SSP"
+    - "-DTARGET_SSP"
     # Project includes (absolute - prioritized for full definitions)
     - "-I/Users/kodiak/projects/er-301"
     - "-I/Users/kodiak/projects/er-301/od"

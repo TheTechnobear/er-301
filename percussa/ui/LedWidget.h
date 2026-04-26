@@ -19,12 +19,18 @@ namespace percussa
         Amber
       };
 
+      enum LabelSide {
+        LabelLeft,
+        LabelRight
+      };
+
       LedWidget(const std::string &text,
                 const Rect &rect,
                 Colour color,
                 uint32_t gpio = NUM_GPIO_IDS,
-                int fontSize = 16)
-          : label(text), bounds(rect), color(color), gpioId(gpio), fontSize(fontSize)
+                int fontSize = 16,
+                LabelSide side = LabelRight)
+          : label(text), bounds(rect), color(color), gpioId(gpio), fontSize(fontSize), labelSide(side)
       {
       }
 
@@ -37,6 +43,7 @@ namespace percussa
       Colour color;
       uint32_t gpioId;
       int fontSize;
+      LabelSide labelSide;
     };
   } // namespace ui
 } // namespace percussa

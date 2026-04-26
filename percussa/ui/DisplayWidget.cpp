@@ -29,6 +29,8 @@ namespace percussa
 
     void DisplayWidget::renderGeneric(Olivec_Canvas canvas) const
     {
+      drawing::drawRectShadow(canvas, bounds, 3, 4, style::kDisplayShadow);
+      olivec_rect(canvas, bounds.x(), bounds.y(), bounds.w(), bounds.h(), style::kDisplayFace);
     }
 
     void DisplayWidget::renderFrame(Olivec_Canvas canvas, const uint8_t *frame) const
