@@ -1,6 +1,6 @@
 #include <percussa/platform/HostSdlPlatform.h>
 
-#include <percussa/input/Action.h>
+#include <percussa/panel/Action.h>
 #include <percussa/panel/Panel.h>
 #include <percussa/platform/TargetDimensions.h>
 #include <percussa/runtime/Runtime.h>

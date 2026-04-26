@@ -1,7 +1,7 @@
 #include <percussa/platform/FbdevPlatform.h>
 
-#include <percussa/hw/Framebuffer.h>
-#include <percussa/input/LinuxInput.h>
+#include <percussa/platform/fbdev/Framebuffer.h>
+#include <percussa/platform/fbdev/HardwareInput.h>
 #include <percussa/panel/Panel.h>
 #include <percussa/platform/TargetDimensions.h>
 #include <percussa/runtime/Runtime.h>
@@ -71,7 +71,7 @@ namespace percussa
         return 1;
       }
 
-      input::LinuxInput input;
+      input::HardwareInput input;
       input.init();
 
       blitPanelToFramebuffer(rendered, framebufferSize, framebufferPixels);

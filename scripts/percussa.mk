@@ -106,6 +106,11 @@ panel_cpp_common_sources :=
 panel_cpp_common_sources += $(program_dir)/panel/Panel.cpp
 panel_cpp_common_sources += $(program_dir)/od/glue/AppInterpreter.cpp
 panel_cpp_common_sources += $(program_dir)/hal/card.cpp
+ifeq ($(ARCH),linux)
+panel_cpp_common_sources += $(program_dir)/hal/card_linux.cpp
+else ifeq ($(ARCH),darwin)
+panel_cpp_common_sources += $(program_dir)/hal/card_macos.cpp
+endif
 panel_cpp_common_sources += $(program_dir)/hal/concurrency/Mutex.cpp
 panel_cpp_common_sources += $(program_dir)/hal/usb.cpp
 panel_cpp_common_sources += $(program_dir)/hal/pump/pump.cpp
@@ -141,6 +146,13 @@ ifeq ($(PERCUSSA_PLATFORM),host-sdl)
 platform_cpp_sources += $(program_dir)/platform/HostSdlPlatform.cpp
 else ifeq ($(PERCUSSA_PLATFORM),fbdev)
 platform_cpp_sources += $(program_dir)/platform/FbdevPlatform.cpp
+platform_cpp_sources += $(program_dir)/platform/fbdev/Framebuffer.cpp
+platform_cpp_sources += $(program_dir)/platform/fbdev/HardwareInput.cpp
+ifeq ($(PERCUSSA_PANEL),ssp)
+platform_cpp_sources += $(program_dir)/platform/fbdev/ButtonMap_SSP.cpp
+else ifeq ($(PERCUSSA_PANEL),xmx)
+platform_cpp_sources += $(program_dir)/platform/fbdev/ButtonMap_XMX.cpp
+endif
 else ifeq ($(PERCUSSA_PLATFORM),plugin)
 platform_cpp_sources += $(program_dir)/platform/PluginPlatform.cpp
 endif
@@ -148,6 +160,10 @@ endif
 platform_cpp_all_sources :=
 platform_cpp_all_sources += $(program_dir)/platform/HostSdlPlatform.cpp
 platform_cpp_all_sources += $(program_dir)/platform/FbdevPlatform.cpp
+platform_cpp_all_sources += $(program_dir)/platform/fbdev/Framebuffer.cpp
+platform_cpp_all_sources += $(program_dir)/platform/fbdev/HardwareInput.cpp
+platform_cpp_all_sources += $(program_dir)/platform/fbdev/ButtonMap_SSP.cpp
+platform_cpp_all_sources += $(program_dir)/platform/fbdev/ButtonMap_XMX.cpp
 platform_cpp_all_sources += $(program_dir)/platform/PluginPlatform.cpp
 
 panel_cpp_sources := $(panel_cpp_common_sources) $(panel_cpp_variant_sources)
@@ -157,6 +173,9 @@ common_cpp_excludes :=
 common_cpp_excludes += $(panel_cpp_common_sources)
 common_cpp_excludes += $(panel_cpp_all_variant_sources)
 common_cpp_excludes += $(platform_cpp_all_sources)
+# Always exclude both card platform files; the correct one is added via ARCH above.
+common_cpp_excludes += $(program_dir)/hal/card_linux.cpp
+common_cpp_excludes += $(program_dir)/hal/card_macos.cpp
 
 common_cpp_sources := $(filter-out \
 	$(common_cpp_excludes), \

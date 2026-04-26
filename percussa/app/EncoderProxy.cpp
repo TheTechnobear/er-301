@@ -35,15 +35,6 @@ namespace percussa
 
 extern "C"
 {
-  void PercussaEncoder_setValue(int value)
-  {
-    int previous = gEncoderValue.exchange(value, std::memory_order_relaxed);
-    if (previous != value)
-    {
-      Events_push(EVENT_KNOB);
-    }
-  }
-
   void PercussaEncoder_adjustValue(int delta)
   {
     if (delta == 0)

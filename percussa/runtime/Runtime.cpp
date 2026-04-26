@@ -1,6 +1,6 @@
 #include <percussa/runtime/Runtime.h>
 
-#include <percussa/input/Action.h>
+#include <percussa/panel/Action.h>
 #include <percussa/panel/Panel.h>
 #include <percussa/platform/Platform.h>
 

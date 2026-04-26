@@ -60,31 +60,15 @@ static void Audio_pinCurrentThreadToCore(int core, const char *label)
 }
 #endif
 
-#if defined(__linux__)
 #if defined(TARGET_SSP)
-#define kAudioInCh 16
-#define kAudioOutCh 8
-static int kInChMap[kAudioInCh] = {11, 10, 9, 8, 15, 14, 13, 12, 3, 2, 1, 0, 7, 6, 5, 4};
-static int kOutChMap[kAudioOutCh] = { 3, 2, 1, 0, 7, 6, 5, 4 };
-// static constexpr float inGain = 0.2f / 0.18795f;
-// static constexpr float outGain = 5.0f / 5.248f;
-// static constexpr float inOffset = 0.02300f;
-// static constexpr float outOffset = 0.f;
-
-#elif defined(TARGET_XMX) 
-#define kAudioInCh 8
-#define kAudioOutCh 2
-
-static int kInChMap[kAudioInCh] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-static int kOutChMap[kAudioOutCh] = { 0, 1 };
-// // static constexpr float inGain = -1.0f;
-// // static constexpr float outGain = -5.0f / 2.36f;
-// static constexpr float inGain = -0.8f;
-// static constexpr float outGain = -5.0f / 2.7f;
-// static constexpr float inOffset = 0.f;
-// static constexpr float outOffset = 0.f;
-#endif  // xmx
-#endif  // linux
+#include <percussa/hal/audio_config_ssp.h>
+#elif defined(TARGET_XMX)
+#include <percussa/hal/audio_config_xmx.h>
+#elif defined(__APPLE__)
+#include <percussa/hal/audio_config_macos.h>
+#else
+#error "No audio hardware configuration selected."
+#endif
 
 // logical mapping
 static int inputChannelMap[NUM_INPUT_CHANNELS] = {
@@ -105,7 +89,6 @@ static int Audio_mapOutputChannel(uint32_t logicalChannel, uint32_t playbackChan
     return -1;
   }
 
-#if (defined(TARGET_SSP) || defined(TARGET_XMX)) && defined(__linux__)
   if ((uint32_t)routedChannel >= (uint32_t)kAudioOutCh)
   {
     return -1;
@@ -118,14 +101,6 @@ static int Audio_mapOutputChannel(uint32_t logicalChannel, uint32_t playbackChan
   }
 
   return hwChannel;
-#else
-  if ((uint32_t)routedChannel >= playbackChannels)
-  {
-    return -1;
-  }
-
-  return routedChannel;
-#endif
 }
 
 static void Audio_buildInputRoutingMap(void)
@@ -135,7 +110,6 @@ static void Audio_buildInputRoutingMap(void)
     local.inputRoutingMap[i] = -1;
   }
 
-#if (defined(TARGET_SSP) || defined(TARGET_XMX)) && defined(__linux__)
   uint32_t logicalCount = kAudioInCh;
   if (logicalCount > (uint32_t)NUM_INPUT_CHANNELS)
   {
@@ -152,22 +126,6 @@ static void Audio_buildInputRoutingMap(void)
       local.inputRoutingMap[(uint32_t)hwCh] = destCh;
     }
   }
-#else
-  uint32_t hwCount = (uint32_t)NUM_INPUT_CHANNELS;
-  if (hwCount > MAX_CAPTURE_CHANNELS)
-  {
-    hwCount = MAX_CAPTURE_CHANNELS;
-  }
-
-  for (uint32_t hwCh = 0; hwCh < hwCount; hwCh++)
-  {
-    int destCh = inputChannelMap[hwCh];
-    if (destCh >= 0 && (uint32_t)destCh < NUM_INPUT_CHANNELS)
-    {
-      local.inputRoutingMap[hwCh] = destCh;
-    }
-  }
-#endif
 }
 
 static bool hasSubstring(const char *text, const char *needle)
@@ -349,18 +307,8 @@ void Audio_start(void)
   const char *outputPrefix = NULL;
   const char *inputPrefix = NULL;
 
-#if defined(__APPLE__)
-  outputPrefix = "Virtual-SSP-Out";
-  inputPrefix = "Virtual-SSP-In";
-#elif defined(__linux__) 
-#if defined(TARGET_SSP)
-  outputPrefix = "ak4458";
-  inputPrefix = "ak4458";
-#elif defined(TARGET_XMX)
-  outputPrefix = "rockchip";
-  inputPrefix = "rockchip";
-#endif
-#endif
+  outputPrefix = kAudioOutputDevicePrefix;
+  inputPrefix = kAudioInputDevicePrefix;
 
   if (outputPrefix)
   {

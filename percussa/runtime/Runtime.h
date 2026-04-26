@@ -1,6 +1,6 @@
 #pragma once
 
-#include <percussa/input/Action.h>
+#include <percussa/panel/Action.h>
 #include <percussa/panel/Controller.h>
 
 #include <memory>

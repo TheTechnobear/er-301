@@ -1,11 +1,9 @@
-#include <percussa/hw/Framebuffer.h>
+#include <percussa/platform/fbdev/Framebuffer.h>
 
 #include <hal/log.h>
 
 #include <cstring>
 #include <cstdio>
-
-#if defined(__linux__)
 
 #include <fcntl.h>
 #include <linux/fb.h>
@@ -196,34 +194,3 @@ namespace percussa
     }
   }
 }
-
-#else
-
-namespace percussa
-{
-  namespace hw
-  {
-    Framebuffer::Framebuffer(int width, int height) :
-      width_(width),
-      height_(height)
-    {
-    }
-
-    Framebuffer::~Framebuffer()
-    {
-    }
-
-    bool Framebuffer::init()
-    {
-      std::fprintf(stderr, "Framebuffer is unavailable on this platform.\n");
-      return false;
-    }
-
-    void Framebuffer::present(const uint32_t *frame)
-    {
-      (void)frame;
-    }
-  }
-}
-
-#endif

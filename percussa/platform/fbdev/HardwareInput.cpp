@@ -1,6 +1,5 @@
-#include <percussa/input/LinuxInput.h>
-
-#if defined(__linux__)
+#include <percussa/platform/fbdev/HardwareInput.h>
+#include <percussa/platform/fbdev/ButtonMap.h>
 
 #include <fcntl.h>
 #include <linux/input.h>
@@ -12,20 +11,11 @@ namespace percussa
 {
   namespace input
   {
-    namespace
-    {
-#if defined(TARGET_SSP)
-      static constexpr int kEncoderMultiplier = 1;
-#else
-      static constexpr int kEncoderMultiplier = -1;
-#endif
-    }
-
-    LinuxInput::LinuxInput()
+    HardwareInput::HardwareInput()
     {
     }
 
-    LinuxInput::~LinuxInput()
+    HardwareInput::~HardwareInput()
     {
       for (int i = 0; i < (int)kEncoderCount; i++)
       {
@@ -46,7 +36,7 @@ namespace percussa
       }
     }
 
-    bool LinuxInput::init()
+    bool HardwareInput::init()
     {
       for (int i = 0; i < (int)kEncoderCount; i++)
       {
@@ -76,87 +66,12 @@ namespace percussa
       return true;
     }
 
-    bool LinuxInput::isAvailable() const
+    bool HardwareInput::isAvailable() const
     {
       return mInitialized;
     }
 
-    HardwareButtonId LinuxInput::mapButtonCode(int code) const
-    {
-#if defined(TARGET_SSP)
-      switch (code)
-      {
-      case 88:
-        return HardwareButtonId::Button1;
-      case 87:
-        return HardwareButtonId::Button2;
-      case 68:
-        return HardwareButtonId::Button3;
-      case 67:
-        return HardwareButtonId::Button4;
-      case 64:
-        return HardwareButtonId::Button5;
-      case 63:
-        return HardwareButtonId::Button6;
-      case 62:
-        return HardwareButtonId::Button7;
-      case 61:
-        return HardwareButtonId::Button8;
-      case 65:
-        return HardwareButtonId::Up;
-      case 59:
-        return HardwareButtonId::Down;
-      case 66:
-        return HardwareButtonId::ShiftL;
-      case 187:
-        return HardwareButtonId::ShiftR;
-      case 60:
-        return HardwareButtonId::Left;
-      case 188:
-        return HardwareButtonId::Right;
-      case 183:
-        return HardwareButtonId::P1;
-      case 184:
-        return HardwareButtonId::P2;
-      case 185:
-        return HardwareButtonId::P3;
-      case 186:
-        return HardwareButtonId::P4;
-      default:
-        return HardwareButtonId::Invalid;
-      }
-#elif defined(TARGET_XMX)
-      switch (code)
-      {
-      case 59:
-        return HardwareButtonId::Button1;
-      case 60:
-        return HardwareButtonId::Button2;
-      case 61:
-        return HardwareButtonId::Button3;
-      case 62:
-        return HardwareButtonId::Button4;
-      case 64:
-        return HardwareButtonId::Button5;
-      case 65:
-        return HardwareButtonId::Button6;
-      case 66:
-        return HardwareButtonId::Button7;
-      case 67:
-        return HardwareButtonId::Button8;
-      case 68:
-        return HardwareButtonId::Up;
-      case 63:
-        return HardwareButtonId::Down;
-      default:
-        return HardwareButtonId::Invalid;
-      }
-#else
-#error "No percussa panel selected at build time."
-#endif
-    }
-
-    void LinuxInput::poll(const std::function<void(const Action &)> &onAction)
+    void HardwareInput::poll(const std::function<void(const Action &)> &onAction)
     {
       if (!mInitialized)
       {
@@ -231,43 +146,3 @@ namespace percussa
     }
   }
 }
-
-#else
-
-namespace percussa
-{
-  namespace input
-  {
-    LinuxInput::LinuxInput()
-    {
-    }
-
-    LinuxInput::~LinuxInput()
-    {
-    }
-
-    bool LinuxInput::init()
-    {
-      mInitialized = false;
-      return false;
-    }
-
-    bool LinuxInput::isAvailable() const
-    {
-      return false;
-    }
-
-    HardwareButtonId LinuxInput::mapButtonCode(int code) const
-    {
-      (void)code;
-      return HardwareButtonId::Invalid;
-    }
-
-    void LinuxInput::poll(const std::function<void(const Action &)> &onAction)
-    {
-      (void)onAction;
-    }
-  }
-}
-
-#endif
