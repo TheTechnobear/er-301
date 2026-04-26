@@ -86,14 +86,23 @@ Panel and platform are selected at build time.
 - `PERCUSSA_PANEL=ssp|xmx`
 - `PERCUSSA_PLATFORM=host-sdl|fbdev|plugin`
 
+Panel defaults:
+
+- macOS host: defaults to `PERCUSSA_PANEL=ssp`
+- Linux aarch64 host: defaults to `PERCUSSA_PANEL=xmx`
+- Other Linux hosts: defaults to `PERCUSSA_PANEL=ssp`
+
+You can always override with `PERCUSSA_PANEL=...` on the make command line.
+
 ## Build
 
 Briefly:
 
-- macOS SSP: `make percussa-ssp`
-- macOS XMX: `make percussa-xmx`
-- linux SSP cross-build: `make percussa-ssp TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
-- linux XMX cross-build: `make percussa-xmx TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
+- macOS default (SSP): `make percussa`
+- macOS XMX override: `make percussa PERCUSSA_PANEL=xmx`
+- Linux SSP cross-build: `make percussa TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
+- Linux XMX cross-build: `make percussa TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
+- percussa clean: `make percussa-clean`
 
 If the staged FFTW dependency needs rebuilding:
 

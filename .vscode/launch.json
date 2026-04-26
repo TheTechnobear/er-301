@@ -10,7 +10,7 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "Make: build percussa-ssp"
+      "preLaunchTask": "Make percussa ssp"
     },
     {
       "name": "Debug XMX (build)",
@@ -21,7 +21,7 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "Make: build percussa-xmx"
+      "preLaunchTask": "Make percussa xmx"
     },
     {
       "name": "Debug EMU (build)",
@@ -32,7 +32,7 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "Make: build emu"
+      "preLaunchTask": "Make emu"
     }
   ]
 }

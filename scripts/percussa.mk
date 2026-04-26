@@ -46,9 +46,9 @@ out_dir := $(build_dir)/$(program_variant)
 symbols += BUILDOPT_LUA_USE_REALLOC
 
 ifeq ($(PERCUSSA_PANEL),ssp)
-symbols += PERCUSSA_PANEL_SSP TARGET_SSP
+symbols += TARGET_SSP
 else ifeq ($(PERCUSSA_PANEL),xmx)
-symbols += PERCUSSA_PANEL_XMX TARGET_XMX
+symbols += TARGET_XMX
 else
 $(error Unsupported PERCUSSA_PANEL '$(PERCUSSA_PANEL)'. Use ssp or xmx.)
 endif

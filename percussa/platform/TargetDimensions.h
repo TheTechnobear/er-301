@@ -14,11 +14,7 @@ namespace percussa
     {
       inline Size panelSize()
       {
-#if defined(PERCUSSA_PANEL_XMX)
-        return { 320, 240 };
-#elif defined(PERCUSSA_PANEL_SSP)
-        return { 1600, 480 };
-#elif defined(TARGET_XMX)
+#if defined(TARGET_XMX)
         return { 320, 240 };
 #elif defined(TARGET_SSP)
         return { 1600, 480 };

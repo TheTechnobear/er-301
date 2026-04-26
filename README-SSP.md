@@ -159,7 +159,7 @@ scp -O libSDL2-2.0.so.0 libSDL2_ttf-2.0.so.0 root@192.168.0.150:/media/BOOT/er30
 Copy the core package to rear for auto-install on next boot:
 
 ```bash
-scp -O testing/linux/mods/core-*.pkg root@192.168.0.150:/media/BOOT/er301/rear
+scp -O testing/linux/mods-arm/core-*.pkg root@192.168.0.150:/media/BOOT/er301/rear
 ```
 
 Create `/media/BOOT/er301/emu.config` on target:
@@ -205,16 +205,20 @@ make emu-clean
 Alternative low-level invocation:
 
 ```bash
-make ARCH=linux CROSS_COMPILE=1 -f scripts/lua.mk
-make ARCH=linux CROSS_COMPILE=1 -f scripts/miniz.mk
-make ARCH=linux CROSS_COMPILE=1 -f scripts/lodepng.mk
-make ARCH=linux CROSS_COMPILE=1 -f scripts/emu.mk
+make -f scripts/lua.mk TOOLCHAIN_FILE=scripts/toolchains/ssp.mk
+make -f scripts/miniz.mk TOOLCHAIN_FILE=scripts/toolchains/ssp.mk
+make -f scripts/lodepng.mk TOOLCHAIN_FILE=scripts/toolchains/ssp.mk
+make -f scripts/emu.mk TOOLCHAIN_FILE=scripts/toolchains/ssp.mk
 ```
 
 Output layout:
 
 - `testing/linux/emu/emu.elf` (default profile: `testing`)
-- `testing/linux/libs/` (cross-built static libs)
+- `testing/linux/libs-arm/` (cross-built static libs)
+- `testing/linux/mods-arm/` (cross-built packages)
+
+Note: output directories now use an architecture suffix (`-arm`, `-aarch64`) by default.
+You can override the suffix with `BUILD_OUTPUT_SUFFIX=...` when needed.
 
 For other profiles (`debug`, `release`), the first path segment changes accordingly.
 

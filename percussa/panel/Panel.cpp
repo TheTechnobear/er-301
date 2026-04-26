@@ -1,8 +1,8 @@
 #include <percussa/panel/Panel.h>
 
-#if defined(PERCUSSA_PANEL_SSP)
+#if defined(TARGET_SSP)
 #include <percussa/panel/ssp/SspPanel.h>
-#elif defined(PERCUSSA_PANEL_XMX)
+#elif defined(TARGET_XMX)
 #include <percussa/panel/xmx/XmxPanel.h>
 #else
 #error "No percussa panel selected at build time."
@@ -14,9 +14,9 @@ namespace percussa
   {
     std::unique_ptr<Panel> createPanel()
     {
-#if defined(PERCUSSA_PANEL_SSP)
+#if defined(TARGET_SSP)
       return std::unique_ptr<Panel>(new ssp::SspPanel());
-#elif defined(PERCUSSA_PANEL_XMX)
+#elif defined(TARGET_XMX)
       return std::unique_ptr<Panel>(new xmx::XmxPanel());
 #endif
     }

@@ -2,11 +2,12 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Make: build percussa-ssp",
+			"label": "Make percussa ssp",
 			"type": "shell",
 			"command": "make",
 			"args": [
-				"percussa-ssp"
+				"percussa",
+				"PERCUSSA_PANEL=ssp"
 			],
 			"isBackground": false,
 			"problemMatcher": [],
@@ -16,11 +17,12 @@
 			}
 		},
 		{
-			"label": "Make: build percussa-ssp-clean",
+			"label": "Make percussa xmx",
 			"type": "shell",
 			"command": "make",
 			"args": [
-				"percussa-ssp-clean"
+				"percussa",
+				"PERCUSSA_PANEL=xmx"
 			],
 			"isBackground": false,
 			"problemMatcher": [],
@@ -30,11 +32,13 @@
 			}
 		},
 		{
-			"label": "Make: build percussa-xmx",
+			"label": "Make percussa ssp cross",
 			"type": "shell",
 			"command": "make",
 			"args": [
-				"percussa-xmx"
+				"percussa",
+				"PERCUSSA_PANEL=ssp",
+				"TOOLCHAIN_FILE=scripts/toolchains/ssp.mk"
 			],
 			"isBackground": false,
 			"problemMatcher": [],
@@ -44,11 +48,13 @@
 			}
 		},
 		{
-			"label": "Make: build percussa-xmx-clean",
+			"label": "Make percussa xmx cross",
 			"type": "shell",
 			"command": "make",
 			"args": [
-				"percussa-xmx-clean"
+				"percussa",
+				"PERCUSSA_PANEL=xmx",
+				"TOOLCHAIN_FILE=scripts/toolchains/xmx.mk"
 			],
 			"isBackground": false,
 			"problemMatcher": [],
@@ -58,7 +64,7 @@
 			}
 		},
 		{
-			"label": "Make: build emu",
+			"label": "Make emu",
 			"type": "shell",
 			"command": "make",
 			"args": [
@@ -72,7 +78,37 @@
 			}
 		},
 		{
-			"label": "Make: build emu-clean",
+			"label": "Clean percussa ssp",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"percussa-clean",
+				"PERCUSSA_PANEL=ssp"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "Clean percussa xmx",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"percussa-clean",
+				"PERCUSSA_PANEL=xmx"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "Clean emu",
 			"type": "shell",
 			"command": "make",
 			"args": [

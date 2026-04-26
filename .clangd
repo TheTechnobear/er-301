@@ -11,7 +11,6 @@ CompileFlags:
     - "-DBUILD_PROFILE=debug"
     # macOS editor fallback when no compile_commands.json is present
     - "-DPERCUSSA_PLATFORM_HOST_SDL"
-    - "-DPERCUSSA_PANEL_SSP"
     - "-DTARGET_SSP"
     # Project includes (absolute - prioritized for full definitions)
     - "-I/Users/kodiak/projects/er-301"
