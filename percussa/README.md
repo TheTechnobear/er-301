@@ -92,8 +92,8 @@ Briefly:
 
 - macOS SSP: `make percussa-ssp`
 - macOS XMX: `make percussa-xmx`
-- linux SSP cross-build: `make percussa-ssp PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
-- linux XMX cross-build: `make percussa-xmx PERCUSSA_TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
+- linux SSP cross-build: `make percussa-ssp TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
+- linux XMX cross-build: `make percussa-xmx TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
 
 If the staged FFTW dependency needs rebuilding:
 

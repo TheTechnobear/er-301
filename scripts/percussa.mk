@@ -1,19 +1,4 @@
-PERCUSSA_TOOLCHAIN_FILE ?=
-TOOLCHAIN_FILE ?= $(PERCUSSA_TOOLCHAIN_FILE)
-
-ifeq ($(strip $(PERCUSSA_TOOLCHAIN_FILE)),)
-ifneq ($(strip $(BUILDROOT)),)
-ifeq ($(origin BUILDROOT),command line)
-$(error Percussa cross-builds require PERCUSSA_TOOLCHAIN_FILE. Use scripts/toolchains/ssp.mk or scripts/toolchains/xmx.mk.)
-endif
-endif
-ifeq ($(origin CROSS_COMPILE),command line)
-ifeq ($(strip $(CROSS_COMPILE)),1)
-$(error Percussa cross-builds require PERCUSSA_TOOLCHAIN_FILE. Use scripts/toolchains/ssp.mk or scripts/toolchains/xmx.mk.)
-endif
-endif
-override BUILDROOT :=
-endif
+TOOLCHAIN_FILE ?=
 
 include scripts/env.mk
 include scripts/utils.mk
@@ -34,7 +19,20 @@ else
 PERCUSSA_PLATFORM ?= fbdev
 endif
 
-PERCUSSA_PANEL ?= ssp
+# Default panel selection can always be overridden with PERCUSSA_PANEL=<ssp|xmx>.
+ifeq ($(origin PERCUSSA_PANEL),undefined)
+ifeq ($(shell uname -s),Darwin)
+PERCUSSA_PANEL := ssp
+else ifeq ($(shell uname -s),Linux)
+ifeq ($(shell uname -m),aarch64)
+PERCUSSA_PANEL := xmx
+else
+PERCUSSA_PANEL := ssp
+endif
+else
+PERCUSSA_PANEL := ssp
+endif
+endif
 
 ifneq ($(strip $(PERCUSSA_TOOLCHAIN_PANEL)),)
 ifneq ($(PERCUSSA_PANEL),$(PERCUSSA_TOOLCHAIN_PANEL))
@@ -80,45 +78,62 @@ libraries += $(libs_build_dir)/libminiz.a
 all_cpp_sources := $(foreach D,$(src_dirs),$(call rwildcard,$D,*.cpp))
 all_c_sources := $(foreach D,$(src_dirs),$(call rwildcard,$D,*.c))
 
+legacy_cpp_excludes :=
+legacy_cpp_excludes += $(hal_dir)/events.cpp
+legacy_cpp_excludes += $(hal_dir)/pump/pump.cpp
+legacy_cpp_excludes += $(od_dir)/glue/AppInterpreter.cpp
+legacy_cpp_excludes += $(od_dir)/glue/Interpreter.cpp
+
+legacy_c_excludes :=
+legacy_c_excludes += $(arch_dir)/$(ARCH)/hal/fileops.c
+legacy_c_excludes += $(hal_dir)/simd.c
+legacy_c_excludes += $(hal_dir)/pump/pidcontrol.c
+legacy_c_excludes += $(hal_dir)/pump/rfifo4.c
+legacy_c_excludes += $(hal_dir)/pump/resample4.c
+legacy_c_excludes += $(od_dir)/config.c
+
 # Compile the same broad surface as ssp.mk, but prefer percussa-local files
 # where that migration already exists.
 all_cpp_sources := $(filter-out \
-	$(hal_dir)/events.cpp \
-	$(hal_dir)/pump/pump.cpp \
-	$(od_dir)/glue/AppInterpreter.cpp \
-	$(od_dir)/glue/Interpreter.cpp, \
+	$(legacy_cpp_excludes), \
 	$(all_cpp_sources))
 
 all_c_sources := $(filter-out \
-	$(arch_dir)/$(ARCH)/hal/fileops.c \
-	$(hal_dir)/simd.c \
-	$(hal_dir)/pump/pidcontrol.c \
-	$(hal_dir)/pump/rfifo4.c \
-	$(hal_dir)/pump/resample4.c \
-	$(od_dir)/config.c, \
+	$(legacy_c_excludes), \
 	$(all_c_sources))
 
-panel_cpp_sources := $(program_dir)/panel/Panel.cpp
-panel_cpp_sources += $(program_dir)/od/glue/AppInterpreter.cpp
-panel_cpp_sources += $(program_dir)/hal/card.cpp
-panel_cpp_sources += $(program_dir)/hal/concurrency/Mutex.cpp
-panel_cpp_sources += $(program_dir)/hal/usb.cpp
-panel_cpp_sources += $(program_dir)/hal/pump/pump.cpp
-panel_cpp_sources += $(program_dir)/app/Bootstrap.cpp
-panel_cpp_sources += $(program_dir)/app/CardState.cpp
-panel_cpp_sources += $(program_dir)/support/CommandLine.cpp
-panel_cpp_sources += $(program_dir)/support/KeyValueStore.cpp
-panel_c_sources := $(program_dir)/od/config.c
-panel_c_sources += $(program_dir)/hal/simd.c
-panel_c_sources += $(program_dir)/hal/pump/pidcontrol.c
-panel_c_sources += $(program_dir)/hal/pump/rfifo4.c
-panel_c_sources += $(program_dir)/hal/pump/resample4.c
+panel_cpp_common_sources :=
+panel_cpp_common_sources += $(program_dir)/panel/Panel.cpp
+panel_cpp_common_sources += $(program_dir)/od/glue/AppInterpreter.cpp
+panel_cpp_common_sources += $(program_dir)/hal/card.cpp
+panel_cpp_common_sources += $(program_dir)/hal/concurrency/Mutex.cpp
+panel_cpp_common_sources += $(program_dir)/hal/usb.cpp
+panel_cpp_common_sources += $(program_dir)/hal/pump/pump.cpp
+panel_cpp_common_sources += $(program_dir)/app/Bootstrap.cpp
+panel_cpp_common_sources += $(program_dir)/app/CardState.cpp
+panel_cpp_common_sources += $(program_dir)/support/CommandLine.cpp
+panel_cpp_common_sources += $(program_dir)/support/KeyValueStore.cpp
+
+panel_c_common_sources :=
+panel_c_common_sources += $(program_dir)/od/config.c
+panel_c_common_sources += $(program_dir)/hal/simd.c
+panel_c_common_sources += $(program_dir)/hal/pump/pidcontrol.c
+panel_c_common_sources += $(program_dir)/hal/pump/rfifo4.c
+panel_c_common_sources += $(program_dir)/hal/pump/resample4.c
+
+panel_cpp_all_variant_sources :=
+panel_cpp_all_variant_sources += $(program_dir)/panel/ssp/SspController.cpp
+panel_cpp_all_variant_sources += $(program_dir)/panel/ssp/SspPanel.cpp
+panel_cpp_all_variant_sources += $(program_dir)/panel/xmx/XmxController.cpp
+panel_cpp_all_variant_sources += $(program_dir)/panel/xmx/XmxPanel.cpp
+
+panel_cpp_variant_sources :=
 ifeq ($(PERCUSSA_PANEL),ssp)
-panel_cpp_sources += $(program_dir)/panel/ssp/SspController.cpp
-panel_cpp_sources += $(program_dir)/panel/ssp/SspPanel.cpp
+panel_cpp_variant_sources += $(program_dir)/panel/ssp/SspController.cpp
+panel_cpp_variant_sources += $(program_dir)/panel/ssp/SspPanel.cpp
 else ifeq ($(PERCUSSA_PANEL),xmx)
-panel_cpp_sources += $(program_dir)/panel/xmx/XmxController.cpp
-panel_cpp_sources += $(program_dir)/panel/xmx/XmxPanel.cpp
+panel_cpp_variant_sources += $(program_dir)/panel/xmx/XmxController.cpp
+panel_cpp_variant_sources += $(program_dir)/panel/xmx/XmxPanel.cpp
 endif
 
 platform_cpp_sources :=
@@ -130,33 +145,26 @@ else ifeq ($(PERCUSSA_PLATFORM),plugin)
 platform_cpp_sources += $(program_dir)/platform/PluginPlatform.cpp
 endif
 
+platform_cpp_all_sources :=
+platform_cpp_all_sources += $(program_dir)/platform/HostSdlPlatform.cpp
+platform_cpp_all_sources += $(program_dir)/platform/FbdevPlatform.cpp
+platform_cpp_all_sources += $(program_dir)/platform/PluginPlatform.cpp
+
+panel_cpp_sources := $(panel_cpp_common_sources) $(panel_cpp_variant_sources)
+panel_c_sources := $(panel_c_common_sources)
+
+common_cpp_excludes :=
+common_cpp_excludes += $(panel_cpp_common_sources)
+common_cpp_excludes += $(panel_cpp_all_variant_sources)
+common_cpp_excludes += $(platform_cpp_all_sources)
+
 common_cpp_sources := $(filter-out \
-	$(program_dir)/hal/card.cpp \
-	$(program_dir)/od/glue/AppInterpreter.cpp \
-	$(program_dir)/hal/concurrency/Mutex.cpp \
-	$(program_dir)/hal/usb.cpp \
-	$(program_dir)/hal/pump/pump.cpp \
-	$(program_dir)/app/CardState.cpp \
-	$(program_dir)/panel/Panel.cpp \
-	$(program_dir)/panel/ssp/SspController.cpp \
-	$(program_dir)/panel/ssp/SspPanel.cpp \
-	$(program_dir)/app/Bootstrap.cpp \
-	$(program_dir)/support/CommandLine.cpp \
-	$(program_dir)/support/KeyValueStore.cpp \
-	$(program_dir)/panel/xmx/XmxController.cpp \
-	$(program_dir)/panel/xmx/XmxPanel.cpp \
-	$(program_dir)/platform/HostSdlPlatform.cpp \
-	$(program_dir)/platform/FbdevPlatform.cpp \
-	$(program_dir)/platform/PluginPlatform.cpp, \
+	$(common_cpp_excludes), \
 	$(all_cpp_sources))
 
 cpp_sources := $(common_cpp_sources) $(panel_cpp_sources) $(platform_cpp_sources)
 c_sources := $(filter-out \
-	$(program_dir)/od/config.c \
-	$(program_dir)/hal/simd.c \
-	$(program_dir)/hal/pump/pidcontrol.c \
-	$(program_dir)/hal/pump/rfifo4.c \
-	$(program_dir)/hal/pump/resample4.c, \
+	$(panel_c_common_sources), \
 	$(all_c_sources)) $(panel_c_sources)
 
 objects := $(addprefix $(out_dir)/,$(c_sources:%.c=%.o) $(cpp_sources:%.cpp=%.o))

@@ -16,13 +16,14 @@ include scripts/utils.mk
 
 LIBNAME := lib$(MODNAME)
 MODVERSION ?= $(FIRMWARE_VERSION)
-out_dir = $(build_dir)/mods
+package_stem = $(MODNAME)-$(MODVERSION)$(BUILD_OUTPUT_SUFFIX)
+out_dir = $(build_dir)/mods$(BUILD_OUTPUT_SUFFIX)
 asset_dir ?= $(src_dir)/assets
 lib_file = $(out_dir)/$(MODNAME)/$(LIBNAME).so
 all_imports_file = $(out_dir)/$(MODNAME)/imports.txt
 missing_imports_file = $(out_dir)/$(MODNAME)/missing.txt
 app_exports_file = $(build_dir)/app/exports.sym
-package_file = $(out_dir)/$(MODNAME)-$(MODVERSION).pkg
+package_file = $(out_dir)/$(package_stem).pkg
 install_file = $(pkg_install_dir)/$(notdir $(package_file))
 
 # Get the parent of the src dir (without the trailing slash)

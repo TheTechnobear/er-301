@@ -1,5 +1,11 @@
 # Makefile shared by the tutorial examples.
 
+TOOLCHAIN_FILE ?=
+ifneq ($(strip $(TOOLCHAIN_FILE)),)
+resolved_toolchain_file := $(if $(filter /%,$(TOOLCHAIN_FILE)),$(TOOLCHAIN_FILE),$(SDKPATH)/$(TOOLCHAIN_FILE))
+include $(resolved_toolchain_file)
+endif
+
 # Determine ARCH if it's not provided...
 # linux | darwin | am335x
 ifndef ARCH
@@ -18,9 +24,13 @@ ifndef ARCH
 	endif
 endif
 
-out_dir = $(PROFILE)/$(ARCH)
+CROSS_BUILD_ARCH = $(if $(TRIPLE),$(firstword $(subst -, ,$(TRIPLE))))
+BUILD_OUTPUT_SUFFIX_DEFAULT = $(if $(filter 1,$(CROSS_COMPILE)),-$(CROSS_BUILD_ARCH))
+BUILD_OUTPUT_SUFFIX ?= $(BUILD_OUTPUT_SUFFIX_DEFAULT)
+package_stem = $(PKGNAME)-$(PKGVERSION)$(BUILD_OUTPUT_SUFFIX)
+out_dir = $(PROFILE)/$(ARCH)$(BUILD_OUTPUT_SUFFIX)
 lib_file = $(out_dir)/$(LIBNAME).so
-package_file = $(out_dir)/$(PKGNAME)-$(PKGVERSION).pkg
+package_file = $(out_dir)/$(package_stem).pkg
 
 swig_interface = $(filter %.cpp.swig,$(sources))
 swig_wrapper = $(addprefix $(out_dir)/,$(swig_interface:%.cpp.swig=%_swig.cpp))
@@ -60,7 +70,7 @@ endif
 
 ifeq ($(CROSS_COMPILE),1)
 symbols += EMU_CROSS_COMPILE
-CFLAGS.linux = -Wno-deprecated-declarations -Wno-c++11-narrowing -mcpu=cortex-a17 -mfloat-abi=hard -mfpu=neon-vfpv4 -fPIC
+CFLAGS.linux = -Wno-deprecated-declarations -Wno-c++11-narrowing $(LINUX_CROSS_CPUFLAGS) -fPIC
 else
 CFLAGS.linux = -Wno-deprecated-declarations -msse4 -fPIC
 endif

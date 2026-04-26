@@ -1,7 +1,9 @@
 PERCUSSA_TOOLCHAIN_NAME := ssp
 PERCUSSA_TOOLCHAIN_PANEL := ssp
 PERCUSSA_PANEL ?= ssp
-LIBS_BUILD_FLAVOR := ssp
+# Optional: override cross-build output suffix when architecture-derived
+# defaults might collide with another toolchain.
+# BUILD_OUTPUT_SUFFIX := -ssp
 FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3-ssp/usr
 
 ARCH := linux

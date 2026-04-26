@@ -1,10 +1,10 @@
 # top-level makefile
 
 # Define all build targets
-BUILD_TARGETS = firmware app-libs app core teletype emu percussa-ssp percussa-xmx
+BUILD_TARGETS = firmware app-libs app core teletype emu percussa
 
 # Define all clean targets
-CLEAN_TARGETS = firmware-clean app-libs-clean app-clean core-clean teletype-clean emu-clean percussa-ssp-clean percussa-xmx-clean
+CLEAN_TARGETS = firmware-clean app-libs-clean app-clean core-clean teletype-clean emu-clean percussa-clean
 
 # Add new all and clean targets at the top
 .PHONY: all clean $(BUILD_TARGETS) $(CLEAN_TARGETS)
@@ -91,7 +91,7 @@ emu:
 	+$(MAKE) -f scripts/lua.mk
 	+$(MAKE) -f scripts/miniz.mk
 	+$(MAKE) -f scripts/lodepng.mk
-	+$(MAKE) FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/emu.mk
+	+$(MAKE) -f scripts/emu.mk
 
 emu-clean: 
 	+$(MAKE) -f scripts/lua.mk clean
@@ -99,37 +99,20 @@ emu-clean:
 	+$(MAKE) -f scripts/lodepng.mk clean
 	+$(MAKE) -f scripts/emu.mk clean
 
-percussa-ssp:
-	@if [ "$(origin BUILDROOT)" = "command line" ] && [ -n "$(BUILDROOT)" ] && [ -z "$(PERCUSSA_TOOLCHAIN_FILE)" ]; then \
-		echo "Percussa cross-builds require PERCUSSA_TOOLCHAIN_FILE. Use scripts/toolchains/ssp.mk or scripts/toolchains/xmx.mk." >&2; \
-		exit 2; \
-	fi
-	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/lua.mk
-	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/miniz.mk
-	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/lodepng.mk
-	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_PANEL=ssp -f scripts/percussa.mk
+percussa:
+	+$(MAKE) -f scripts/lua.mk
+	+$(MAKE) -f scripts/miniz.mk
+	+$(MAKE) -f scripts/lodepng.mk
+	+$(MAKE) -f scripts/percussa.mk
 
-percussa-ssp-clean:
-	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_PANEL=ssp -f scripts/percussa.mk clean
-
-percussa-xmx:
-	@if [ "$(origin BUILDROOT)" = "command line" ] && [ -n "$(BUILDROOT)" ] && [ -z "$(PERCUSSA_TOOLCHAIN_FILE)" ]; then \
-		echo "Percussa cross-builds require PERCUSSA_TOOLCHAIN_FILE. Use scripts/toolchains/ssp.mk or scripts/toolchains/xmx.mk." >&2; \
-		exit 2; \
-	fi
-	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/lua.mk
-	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/miniz.mk
-	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) -f scripts/lodepng.mk
-	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_PANEL=xmx -f scripts/percussa.mk
-
-percussa-xmx-clean:
-	+$(MAKE) $(if $(PERCUSSA_TOOLCHAIN_FILE),,BUILDROOT= CROSS_COMPILE=0) TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_TOOLCHAIN_FILE=$(PERCUSSA_TOOLCHAIN_FILE) PERCUSSA_PANEL=xmx -f scripts/percussa.mk clean
+percussa-clean:
+	+$(MAKE) -f scripts/percussa.mk clean
 
 ssp: 
 	+$(MAKE) -f scripts/lua.mk
 	+$(MAKE) -f scripts/miniz.mk
 	+$(MAKE) -f scripts/lodepng.mk
-	+$(MAKE) FFTW_STAGE_ROOT=$(FFTW_STAGE_ROOT) -f scripts/ssp.mk
+	+$(MAKE) -f scripts/ssp.mk
 
 ssp-clean: 
 	+$(MAKE) -f scripts/lua.mk clean
@@ -137,12 +120,10 @@ ssp-clean:
 	+$(MAKE) -f scripts/lodepng.mk clean
 	+$(MAKE) -f scripts/ssp.mk clean
 
-FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3/usr
-
 dist-clean:
 	rm -rf testing debug release
 	+$(MAKE) -C tutorial/step1 clean
 	+$(MAKE) -C tutorial/step2 dist-clean
 	+$(MAKE) -C tutorial/step3 dist-clean
 
-.PHONY: app sbl pbl emu ssp ssp-clean percussa-ssp percussa-ssp-clean percussa-xmx percussa-xmx-clean
+.PHONY: app sbl pbl emu ssp ssp-clean percussa percussa-clean

@@ -43,12 +43,15 @@ blueON = "\033[34m"
 blueOFF = "\033[0m"
 describe_input = $(yellowON)$<$(yellowOFF)
 describe_target = $(yellowON)$@$(yellowOFF)
-describe_env = $(blueON)[$(scriptname) $(ARCH) $(PROFILE)]$(blueOFF)
+TARGET_ARCH_LABEL = $(if $(CROSS_BUILD_ARCH),$(CROSS_BUILD_ARCH),native)
+describe_env = $(blueON)[$(scriptname) $(ARCH) $(TARGET_ARCH_LABEL) $(PROFILE)]$(blueOFF)
 
 # Frequently used paths
 build_dir = $(PROFILE)/$(ARCH)
-LIBS_BUILD_FLAVOR ?=
-libs_build_dir = $(build_dir)/libs$(if $(LIBS_BUILD_FLAVOR),-$(LIBS_BUILD_FLAVOR))
+CROSS_BUILD_ARCH = $(if $(TRIPLE),$(firstword $(subst -, ,$(TRIPLE))))
+BUILD_OUTPUT_SUFFIX_DEFAULT = $(if $(filter 1,$(CROSS_COMPILE)),-$(CROSS_BUILD_ARCH))
+BUILD_OUTPUT_SUFFIX ?= $(BUILD_OUTPUT_SUFFIX_DEFAULT)
+libs_build_dir = $(build_dir)/libs$(BUILD_OUTPUT_SUFFIX)
 arch_dir = arch
 mods_dir = mods
 od_dir = od

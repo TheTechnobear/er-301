@@ -1,7 +1,9 @@
 PERCUSSA_TOOLCHAIN_NAME := xmx
 PERCUSSA_TOOLCHAIN_PANEL := xmx
 PERCUSSA_PANEL ?= xmx
-LIBS_BUILD_FLAVOR := xmx
+# Optional: override cross-build output suffix when architecture-derived
+# defaults might collide with another toolchain.
+# BUILD_OUTPUT_SUFFIX := -xmx
 FFTW_STAGE_ROOT ?= $(CURDIR)/testing/linux/fftw3-xmx/usr
 
 ARCH := linux
