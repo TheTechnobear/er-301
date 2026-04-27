@@ -1,229 +1,268 @@
-# Percussa 
+# ER-301 on Percussa SSP / XMX
 
-# Functional Notes
+This is a port of the [ER-301 Sound Computer](https://www.orthogonaldevices.com/er-301) to Percussa SSP and XMX hardware. It runs the full ER-301 application (DSP engine, Lua scripting, patch system) on Linux-based Percussa hardware using the same `xroot` Lua scripts and mod packages as the original firmware.
 
-er301 hardware is not identical to the SSP or XMX,
-these are some notes on the SSP and XMX hardware has been mapped on to the er301 hardware,
+---
 
-## Relevant ER301 specs
+## End-User Guide
 
-4 x audio output OUT1-4, +-10v AC 48/96khz, 24bit, AC coupled
+### Hardware Comparison
 
-4 x audio input IN1-4, +-10v, 60kHz, 16-bit DC
-12x CV input A-Dx1-3, +-10v 60kHz, 16-bit DC
-4 x gate input G1-4, +-10v. 96kHz, 12-bit DC
+Understanding where SSP/XMX maps cleanly onto the ER-301 and where it diverges is essential for getting the most out of this port.
 
-Inputs are resampled to output sample rate.
+#### I/O Specs
 
-1GHz ARM Cortex-A8 processor (single core), likely has another chip to help IO 
-512MB Ram (~480MB for samples)
+| Feature | ER-301 | SSP | XMX |
+|---------|--------|-----|-----|
+| Audio outputs | 4 × OUT1–4, ±10V AC, 24-bit | 4 × OUT1–4, ±10V, 32-bit | 2 × OUT1–2, ±10V, 32-bit |
+| Audio inputs | 4 × IN1–4, ±10V, 60 kHz, 16-bit DC | 4 × IN1–4, ±10V, 32-bit | 4 × IN1–4, ±10V, 32-bit |
+| CV inputs | 12 × A1–D3, ±10V, 60 kHz, 16-bit DC | 12 × A1–D3, ±5V scaled to ±10V, 32-bit | 4 × A1–D1, ±5V scaled to ±10V, 32-bit |
+| Gate inputs | 4 × G1–G4 | **Not available** | **Not available** |
+| Sample rate | 48 or 96 kHz (firmware.cfg) | 48 kHz fixed | 48 kHz fixed |
+| Coupling | Audio: AC; CV/gate: DC | All DC coupled | All DC coupled |
+| Headphone | None | None | Mirror of OUT1–2 (hardware fixed) |
 
-## SSP 
-the 2 displays from the er301 are scaled up x 3.
-all other controls are native renders.
-encoder 1 = data wheel, encoder 2-4, are emulating toggles/other controls
-push encoder 4 to link the next output with current
-some menu items, may not be relevant.
+#### CV Voltage Scaling
 
-USB mass storage is mapped to front sdcard of er301, but performance is not guaranteed.
-when not present it uses the internal sdcard.
+The SSP and XMX use ±5V CV signals. The port scales these to the ER-301's expected ±10V range automatically. V/oct tracking is preserved. The scaling is applied in the HAL before samples reach the ER-301 DSP engine.
 
+#### Missing I/O
 
-inputs:
-IN1,IN2,IN3,IN4
-A1,B1,C1,D1
-A2,B2,C2,D2
-A3,B3,C3,D3
+**SSP:** Gate inputs G1–G4 are not present. Patches that use gate inputs will have those inlets unconnected (equivalent to a constant zero signal).
 
-outputs:
-OUT1, OUT2, OUT3,OUT4
+**XMX:** Gate inputs G1–G4 are not present. CV inputs are limited to A1–D1 (4 channels; A2–D3 are unavailable). Audio outputs are limited to OUT1–2 (OUT3–4 are unavailable).
 
-missing: G1-G1
-unused: OUT5-8
+#### Processing
 
-spec differences:
-IN1-4, OUT1-4, 1:1 mapping
-A1-D3 are mapping 5v to 10v, to allow for v/oct mapping.
-all are 32bit / 48khz and DC coupled.
-core 0 dedicated to OS / UI 
-core 1 dedicated to DSP
-(core 2-3 not used at this time)
+| Feature | ER-301 | SSP / XMX |
+|---------|--------|-----------|
+| CPU | 1 GHz ARM Cortex-A8, single core | Quad-core ARM Cortex-A17 (RK3188) |
+| DSP core | Dedicated core (hardware timer ISR) | Core 1 dedicated to audio callback |
+| UI core | Same core as DSP (time-sliced) | Core 0 dedicated to OS and UI |
+| RAM | 512 MB (~480 MB sample pool) | 1 GB |
 
-unsupported at this time:
-usb audio, this would have all input / output, including "missing"
+Because the SSP/XMX runs the audio callback on a dedicated core isolated from the OS, real-time performance is generally comparable to the ER-301 hardware despite the different architecture.
 
-## XMX 
-all control / display are at native resolutioin.
-all other controls are native renders.
-encoder 1 = data wheel, encoder 2-4, are emulating toggles/other controls
-push encoder 4 to link the next output with current
-some menu items, may not be relevant.
+---
 
-USB mass storage is mapped to front sdcard of er301, but performance is not guaranteed. (*)
-when not present it uses the internal sdcard.
+### Controls
 
-inputs:
-IN1,IN2,IN3,IN4
-A1,B1,C1,D1
+Both SSP and XMX use four encoders. Their mapping to ER-301 controls:
 
-outputs:
-OUT1, OUT 2
+| Encoder | ER-301 function |
+|---------|----------------|
+| Encoder 1 | Data wheel (main navigation and value editing) |
+| Encoders 2–4 | Emulate toggle/mode controls |
+| Push encoder 4 | Links the next output with the current (output chaining) |
 
-missing:  A2-D3,G1-G1, OUT3,OUT4
+**SSP displays:** The ER-301's two displays (main 256×64, sub 128×64) are scaled up 3× to fit the SSP's larger screen. All other UI elements render at native resolution.
 
-headphone jack is mirror of OUT1-2 (in hardware, cannot be changed)
+**XMX displays:** Both displays render at native resolution — no scaling is applied.
 
-spec differences:
-IN1-4, OUT1-4, 1:1 mapping
-A1-D3 are mapping 5v to 10v, to allow for v/oct mapping.
-all are 32bit / 48khz and DC coupled.
-core 0 dedicated to OS / UI 
-core 1 dedicated to DSP
-(core 2-3 not used at this time)
+---
 
-unsupported at this time:
-usb mass storage
-usb audio, this would have all input / output, including "missing".
+### Storage
 
-both these items are OS limitations on xmx at the moment
+| Storage | SSP | XMX |
+|---------|-----|-----|
+| Rear card (patches, mods) | Internal SD card | Internal SD card |
+| Front card (samples) | USB mass storage when connected; falls back to internal SD | Planned (currently unsupported — OS limitation) |
+| USB mass storage | Supported | Not yet supported |
+| USB audio | Not yet supported | Not yet supported |
 
+USB audio, if implemented, would expose all I/O channels including those currently missing (gates, extra CV channels, extra outputs).
 
-## Design
+---
 
-The  design separates the product into four main layers:
+### Menu Items
 
-1. `runtime`
-   Owns shared application coordination, boot policy, and the stable handoff
-   into ER-301-facing processing.
+Some ER-301 menu items relate to hardware that does not exist on SSP/XMX (e.g., firmware update, hardware calibration). These items may appear in menus but have no effect or are hidden depending on the build.
 
-2. `panel`
-   Owns panel-specific UI layout and control inventory.
-   `SSP` and `XMX` are separate panel implementations that reuse shared UI
-   component types.
+---
 
-3. `platform`
-   Owns entrypoints and backend-specific integration such as display delivery,
-   audio callback hookup, and hardware or host input transport.
+## Building
 
-4. `controller`
-  Owns product-specific mapping from hardware actions into presentation state.
+### Prerequisites
 
-## Intent
+All builds:
+- LLVM toolchain (clang, lld)
+- FFTW3 (built from source for cross-targets; see below)
 
-- Keep `ssp` unchanged while the new ownership model is proven.
-- Avoid spreading platform conditionals through shared runtime code.
-- Treat `SSP`, `XMX`, and `plugin` as peer targets.
-- Keep Olive as the shared drawing implementation.
-- Keep the effective ER-301 audio seam centered on frame exchange around
-  `Pump_callback(...)`.
+macOS desktop builds additionally require:
+- SDL2 and SDL2_ttf (install via Homebrew)
 
-## Initial Structure
+Hardware cross-builds additionally require:
+- SSP SDK/buildroot (`arm-rockchip-linux-gnueabihf`)
+- SDL2 and SDL2_ttf present in the sysroot
 
-- `runtime/Runtime.*`
-  Shared coordinator.
-- `panel/Panel.h`
-  Shared panel interface and build-time panel factory.
-- `panel/Controller.h`
-  Shared controller interface.
-- `panel/ssp/SspPanel.*`
-  SSP panel layout and SSP controller factory.
-- `panel/ssp/SspController.*`
-  SSP interaction policy.
-- `panel/xmx/XmxPanel.*`
-  XMX panel layout and XMX controller factory.
-- `panel/xmx/XmxController.*`
-  XMX interaction policy.
-- `platform/*.h|*.cpp`
-  Early platform adapter scaffolding.
-- `ui/*.h`
-  Generic renderable component definitions.
+```bash
+# macOS prerequisites
+brew install llvm lld sdl2 sdl2_ttf
+```
 
-## Brief Plan
+---
 
-1. Land a compileable scaffold with explicit runtime, panel, and platform
-   boundaries.
-2. Move platform selection to build-time so each build compiles only the
-  relevant platform implementation and dependencies.
-3. Model `SSP` and `XMX` as separate panel families using shared UI components.
-4. Add host SDL, fbdev, and plugin-oriented platform adapters behind a common
-  platform interface.
-5. Port behavior from `ssp` gradually, starting with layout ownership,
-   presentation ownership, and input-action boundaries.
-6. Keep build selection in `percussa.mk` rather than pushing more target
-   branches into core classes.
-7. Keep product panel/controller pairing out of `main.cpp` by assembling it in
-  the panel layer.
+### macOS Desktop Build
 
-## Near-Term Migration Targets
+The desktop build runs the SSP or XMX UI in an SDL2 window on your Mac. Useful for development and patch editing without hardware.
 
-- Move layout ownership out of widget classes and into panel classes.
-- Keep platform and panel selection at build-time, not runtime.
-- Shrink the future runtime coordinator so it does not absorb backend policy.
-- Hide SDL inside a host platform adapter.
-- Treat fbdev and plugin frame presentation as alternate display targets for
-  the same shared rendering output.
+```bash
+# Build for SSP (default on macOS)
+make percussa
 
-## Build Selection
+# Build for XMX
+make percussa PERCUSSA_PANEL=xmx
 
-Panel and platform are selected at build time.
+# Clean
+make percussa-clean
+```
 
-- `PERCUSSA_PANEL=ssp|xmx`
-- `PERCUSSA_PLATFORM=host-sdl|fbdev|plugin`
+Output: `testing/macos/percussa/percussa` (or similar profile path)
 
-Panel defaults:
+Config is read from `~/.ssp/ssp.config` on first run; the file is created automatically if absent.
 
-- macOS host: defaults to `PERCUSSA_PANEL=ssp`
-- Linux aarch64 host: defaults to `PERCUSSA_PANEL=xmx`
-- Other Linux hosts: defaults to `PERCUSSA_PANEL=ssp`
+---
 
-You can always override with `PERCUSSA_PANEL=...` on the make command line.
+### SSP Hardware Build
 
-## Build
+```bash
+# 1. Set your buildroot path
+export BUILDROOT=/path/to/arm-rockchip-linux-gnueabihf_sdk-buildroot
 
-Briefly:
+# 2. Build FFTW for SSP (one-time setup)
+TOOLCHAIN_FLAVOR=ssp DESTDIR=$PWD/testing/linux/fftw3 ./scripts/build-fftw-cross.sh
 
-- macOS default (SSP): `make percussa`
-- macOS XMX override: `make percussa PERCUSSA_PANEL=xmx`
-- Linux SSP cross-build: `make percussa TOOLCHAIN_FILE=scripts/toolchains/ssp.mk`
-- Linux XMX cross-build: `make percussa TOOLCHAIN_FILE=scripts/toolchains/xmx.mk`
-- percussa clean: `make percussa-clean`
+# 3. Build
+make percussa TOOLCHAIN_FILE=scripts/toolchains/ssp.mk
 
-If the staged FFTW dependency needs rebuilding:
+# 4. Deploy to SSP (adjust IP as needed)
+scp -O testing/linux/percussa/percussa.elf root@192.168.0.150:/media/BOOT/er301/er301.elf
+scp -O -r xroot root@192.168.0.150:/media/BOOT/er301/
+```
 
-- SSP: `TOOLCHAIN_FLAVOR=ssp ./scripts/build-fftw-cross.sh`
-- XMX: `TOOLCHAIN_FLAVOR=xmx ./scripts/build-fftw-cross.sh`
+Create `/media/BOOT/er301/ssp.config` on the device:
+```
+XROOT /media/BOOT/er301/xroot
+REAR_ROOT /media/BOOT/er301/rear
+FRONT_ROOT /media/BOOT/er301/front
+SESSION /media/BOOT/er301/ssp.session
+```
 
-## SSP Bootstrap Migration
+Run on device:
+```bash
+LD_LIBRARY_PATH=/media/BOOT/er301 /media/BOOT/er301/er301.elf -c /media/BOOT/er301/ssp.config
+```
 
-`PERCUSSA_PANEL=ssp` now includes a first real `SSPCore.cpp` bootstrap/config migration instead of relying only on panel/controller scaffold.
+---
 
-Current migrated pieces:
+### XMX Hardware Build
 
-- SSP command-line parsing and key/value config helpers
-- local HAL support for logging, timing, UART, and fileops
-- migrated EventFlags, Encoder, Events, PWM, and ADC support used by the next `SSPCore::run()` init batch
-- migrated Card, Config, Rng, USB, and Modulation support used by the remaining small pre-audio `SSPCore::run()` init calls
-- existing arch heap support is now wired into SSP builds and `Heap_init()` is restored in the bootstrap order
-- `percussa/hal/audio.c` is now based on `ssp/hal/audio.c`, using RtAudio plus SSP channel mapping at the HAL boundary
-- `percussa/hal/pump/*` now mirrors the HAL pump file layout and provides the current strong `Audio_callback(...)` path
-- SSP config/session restore and save via `percussa/app/Bootstrap.*`
-- a percussa-local `od/glue/AppInterpreter` that seeds `app.*`, opens the app bindings, and boots through `xroot/boot/logging.lua` and `xroot/boot/start.lua`
-- an SSP-only runtime bridge that feeds shared hardware actions into the migrated legacy GPIO/event/encoder surface
+```bash
+# 1. Set your buildroot path
+export BUILDROOT=/path/to/xmx-buildroot
 
-Current behavior:
+# 2. Build FFTW for XMX (one-time setup)
+TOOLCHAIN_FLAVOR=xmx DESTDIR=$PWD/testing/linux/fftw3-xmx ./scripts/build-fftw-cross.sh
 
-- host builds use `~/.ssp`
-- fbdev builds use `/media/BOOT/er301`
-- missing host config files are created automatically as `~/.ssp/ssp.config`
-- host SSP runs now read firmware config from `~/.ssp/rear/firmware.cfg`
-- SSP toggle state is restored from and saved to the session file
-- SSP action input now also drives the migrated legacy encoder and event queue surface
-- SSP bootstrap now initializes the SSP-derived HAL audio path and pump init path; the deeper `Pump_callback(...)` side is still pending
+# 3. Build
+make percussa TOOLCHAIN_FILE=scripts/toolchains/xmx.mk PERCUSSA_PANEL=xmx
+```
 
-The current SSP bootstrap now uses the percussa-local `AppInterpreter` path, so host runs execute the same `app` bootstrap surface as the legacy SSP startup while the deeper audio/runtime migration remains in progress.
+Deployment follows the same pattern as SSP.
 
-## Host SDL Input
+---
 
-The host SDL keyboard path is intended to emulate hardware-facing panel input,
-not UI widgets directly. It should only emit shared hardware actions such as
-`button(id, pressed)`, `encoder(id, delta)`, and encoder-press actions.
+### Core Mod Package
+
+The `core` package provides the built-in unit library. Build and deploy it alongside the binary:
+
+```bash
+make core                          # macOS (native)
+make core TOOLCHAIN_FILE=scripts/toolchains/ssp.mk   # SSP cross-build
+
+# Deploy to rear card for auto-install on next boot
+scp -O testing/linux/mods-arm/core-*.pkg root@192.168.0.150:/media/BOOT/er301/rear/
+```
+
+---
+
+### Advanced Build Options
+
+#### Build without FFTW (disables convolution units)
+```bash
+make percussa WITH_FFTW=0
+```
+
+#### Override FFTW staging path
+```bash
+make percussa FFTW_STAGE_ROOT=/custom/path/usr
+```
+
+#### Panel and platform selection
+```bash
+# Explicit platform selection
+make percussa PERCUSSA_PANEL=ssp PERCUSSA_PLATFORM=host-sdl
+make percussa PERCUSSA_PANEL=xmx PERCUSSA_PLATFORM=fbdev
+
+# Defaults:
+#   macOS          → PERCUSSA_PANEL=ssp,  PERCUSSA_PLATFORM=host-sdl
+#   Linux aarch64  → PERCUSSA_PANEL=xmx,  PERCUSSA_PLATFORM=fbdev
+#   Other Linux    → PERCUSSA_PANEL=ssp,  PERCUSSA_PLATFORM=fbdev
+```
+
+#### Output layout
+Build artifacts land in `testing/<profile>/<arch>/` by default. Override the architecture suffix:
+```bash
+make percussa BUILD_OUTPUT_SUFFIX=my-suffix
+```
+
+---
+
+### Git Tags and Version Strings
+
+Mod package filenames and firmware archive names are derived from Git tags. If tags are missing (common in forks), package names will be empty.
+
+Fetch upstream tags:
+```bash
+git remote add upstream https://github.com/odevices/er-301
+git fetch upstream --tags
+```
+
+Verify:
+```bash
+git describe --match "v*.*.*-*" --tags --abbrev=0
+```
+
+---
+
+### Runtime Libraries (SSP Hardware Reference)
+
+FFTW links statically; these shared libraries must be present on the target device:
+
+| Library | Notes |
+|---------|-------|
+| `libSDL2-2.0.so.0` | Ship alongside binary |
+| `libSDL2_ttf-2.0.so.0` | Ship alongside binary |
+| `libm`, `libdl`, `libstdc++`, `libgcc_s`, `libc`, `libpthread` | Standard SSP rootfs |
+| `libfreetype`, `libpng16`, `libz`, `libbz2` | Standard SSP rootfs |
+
+---
+
+### Font Configuration
+
+The application searches for a TTF font at startup in this order:
+
+1. `/usr/share/fonts/truetype/freefont/FreeSans.ttf`
+2. `libs/SDL_FontCache/test/fonts/FreeSans.ttf`
+3. `/usr/share/fonts/liberation/LiberationSans-Regular.ttf`
+4. `/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf`
+
+`INFO: Unable to open file...` messages in the log for earlier entries are harmless. On SSP hardware, Liberation Sans at path 3 is expected. Install the `liberation-fonts` package if it is absent.
+
+---
+
+## See Also
+
+- `er301-architecture.md` — DSP engine internals, HAL structure, and how the Percussa port connects to the ER-301 firmware layer
+- `er301-architecture.md` in project root — broad codebase overview and build system reference
+- `CLAUDE.md` (project root) — codebase navigation guide for developers

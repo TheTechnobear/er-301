@@ -325,9 +325,11 @@ namespace od
       {
         Thread::yield();
       }
+      mMutex.enter();
       mLeftOutput.mute();
       mRightOutput.mute();
       mMuted = true;
+      mMutex.leave();
       logDebug(1, "Muted.");
     }
   }
@@ -337,10 +339,12 @@ namespace od
     if (mMuted)
     {
       logDebug(1, "Unmuting...");
+      mMutex.enter();
       mLeftOutput.unmute();
       mRightOutput.unmute();
       mMuted = false;
       mFade.reset(1.0f);
+      mMutex.leave();
       logDebug(1, "Unmuted.");
     }
   }
