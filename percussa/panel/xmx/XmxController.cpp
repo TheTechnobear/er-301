@@ -151,8 +151,6 @@ namespace percussa
             return BUTTON_UP;
           case input::HardwareButtonId::Down:
             return BUTTON_SHIFT;
-
-          case input::HardwareButtonId::Right:
           case input::HardwareButtonId::Invalid:
           default:
             return NUM_GPIO_IDS;
@@ -181,9 +179,7 @@ namespace percussa
           case input::HardwareButtonId::Up:
             return BUTTON_DIAL3; // HOME
           case input::HardwareButtonId::Down:
-            return NUM_GPIO_IDS;
-
-          case input::HardwareButtonId::Right:
+            return BUTTON_SHIFT;
           case input::HardwareButtonId::Invalid:
           default:
             return NUM_GPIO_IDS;

@@ -2,6 +2,7 @@
 
 ## Current state
 
+- User testing : FIXED, cannot reproduce with on hardware where before it was easily reproduced.
 - Root cause is now believed to be a real race in `UnitChain::mute()` / `unmute()` that can let `Repeater` write through a muted outlet into the shared `ZeroOutput` buffer.
 - The primary fix has been implemented in code by taking `mMutex` around the mute/unmute state flip so `process()` cannot observe the inconsistent intermediate state.
 - This task stays open for follow-up monitoring and for secondary hardening work, especially around the broader `ZeroOutput` design hazard and any optional recovery/reset path.

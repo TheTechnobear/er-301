@@ -156,7 +156,7 @@ namespace percussa
           kFontSize));
         mBiButtons.push_back(ui::BiButtonWidget(
           "Shft",
-          "",
+          "Shft",
           rightButtonRect(1),
           true,
           kFontSize));
