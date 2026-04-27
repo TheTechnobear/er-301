@@ -21,11 +21,21 @@ namespace percussa
         return;
       }
 
-      uint32_t face = active ? style::kButtonFacePressed : style::kButtonFaceIdle;
+      uint32_t face = style::kButtonFaceIdle;
       olivec_rect(canvas, bounds.x() + 4, bounds.y() + 6, bounds.w(), bounds.h(), style::kButtonShadow);
       olivec_rect(canvas, bounds.x(), bounds.y(), bounds.w(), bounds.h(), style::kButtonShell);
       olivec_rect(canvas, bounds.x() + 4, bounds.y() + 4, bounds.w() - 8, bounds.h() - 8, face);
       olivec_frame(canvas, bounds.x(), bounds.y(), bounds.w(), bounds.h(), 2, style::kButtonEdge);
+      if (active)
+      {
+        olivec_frame(canvas,
+                     bounds.x() + 6,
+                     bounds.y() + 6,
+                     bounds.w() - 12,
+                     bounds.h() - 12,
+                     2,
+                     style::kButtonActiveAccent);
+      }
       olivec_rect(canvas, bounds.x() + 6, bounds.y() + 6, bounds.w() - 12, bounds.h() / 6, style::kButtonHighlight);
       drawing::drawCenteredOdText(canvas, label, bounds, fontSize, style::kAmberText);
     }

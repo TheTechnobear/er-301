@@ -5,12 +5,39 @@
 #include <linux/input.h>
 #include <unistd.h>
 
+#include <bitset>
 #include <cstdio>
+
+// NOTE: The matrix keypad path intentionally forwards at most two simultaneous
+// button presses. Tri-chords and larger are suppressed at this low level.
+// This limitation is known on XMX (ghost-prone matrix combos) and currently
+// untested on SSP.
 
 namespace percussa
 {
   namespace input
   {
+    namespace
+    {
+      constexpr size_t kLogicalButtonCount = (size_t)HardwareButtonId::Invalid;
+
+      struct MatrixButtonLimiter
+      {
+        std::bitset<kLogicalButtonCount> forwardedPressed;
+        int activeCount = 0;
+      };
+
+      bool logicalButtonIndex(HardwareButtonId button, size_t &index)
+      {
+        if (button == HardwareButtonId::Invalid)
+        {
+          return false;
+        }
+        index = (size_t)button;
+        return index < kLogicalButtonCount;
+      }
+    } // namespace
+
     HardwareInput::HardwareInput()
     {
     }
@@ -133,6 +160,55 @@ namespace percussa
             const HardwareButtonId mapped = mapButtonCode(ev.code);
             if (mapped != HardwareButtonId::Invalid)
             {
+              static MatrixButtonLimiter limiter;
+              size_t idx = 0;
+              bool hasIndex = logicalButtonIndex(mapped, idx);
+
+              // Handle key release first so we can swallow releases for dropped presses.
+              if (ev.value == 0)
+              {
+                if (hasIndex && limiter.forwardedPressed.test(idx))
+                {
+                  limiter.forwardedPressed.reset(idx);
+                  if (limiter.activeCount > 0)
+                  {
+                    limiter.activeCount--;
+                  }
+
+                  Action action;
+                  action.type = ActionType::Button;
+                  action.hardwareButton = mapped;
+                  action.pressed = false;
+                  onAction(action);
+                }
+                moreEvents = true;
+                continue;
+              }
+
+              // Ignore key repeats (ev.value == 2) to keep matrix gating simple.
+              if (ev.value != 1)
+              {
+                moreEvents = true;
+                continue;
+              }
+
+              // For key presses, only allow up to two simultaneous keys.
+              if (hasIndex)
+              {
+                bool alreadyPressed = limiter.forwardedPressed.test(idx);
+                if (!alreadyPressed && limiter.activeCount >= 2)
+                {
+                  moreEvents = true;
+                  continue;
+                }
+
+                if (!alreadyPressed)
+                {
+                  limiter.forwardedPressed.set(idx);
+                  limiter.activeCount++;
+                }
+              }
+
               Action action;
               action.type = ActionType::Button;
               action.hardwareButton = mapped;

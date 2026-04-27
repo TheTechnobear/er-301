@@ -146,14 +146,11 @@ namespace percussa
         mBiButtons.push_back(ui::BiButtonWidget(
           "M6", "", gridButtonRect(2, 1), true, kFontSize));
         mBiButtons.push_back(ui::BiButtonWidget(
-          "Fn", "Fn", gridButtonRect(3, 1), true, kFontSize));
+          "Up", "Home", gridButtonRect(3, 1), true, kFontSize));
 
-        mBiButtons.push_back(ui::BiButtonWidget(
-          "Up",
-          "Home",
-          rightButtonRect(0),
-          true,
-          kFontSize));
+        mButtons.push_back(ui::ButtonWidget(
+          "Fn", rightButtonRect(0), true, NUM_GPIO_IDS, kFontSize));
+
         mBiButtons.push_back(ui::BiButtonWidget(
           "Shft",
           "Shft",
@@ -270,6 +267,10 @@ namespace percussa
         for (auto &w : mLeds)
         {
           w.render(canvas);
+        }
+        for (auto &w : mButtons)
+        {
+          w.render(canvas, mFnShift);
         }
         for (auto &w : mBiButtons)
         {

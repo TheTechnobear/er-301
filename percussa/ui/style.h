@@ -14,6 +14,7 @@ namespace percussa
       constexpr uint32_t kButtonFacePressed = PERCUSSA_RGBA(255, 52, 44, 255);
       constexpr uint32_t kButtonEdge = PERCUSSA_RGBA(8, 8, 10, 255);
       constexpr uint32_t kButtonHighlight = PERCUSSA_RGBA(130, 136, 148, 100);
+      constexpr uint32_t kButtonActiveAccent = PERCUSSA_RGBA(225, 191, 0, 180);
 
       constexpr uint32_t kDisplayFace = PERCUSSA_RGBA(9, 10, 12, 255);
       constexpr uint32_t kDisplayShadow = PERCUSSA_RGBA(0, 0, 0, 90);

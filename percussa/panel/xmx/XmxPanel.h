@@ -3,6 +3,7 @@
 #include <percussa/panel/Panel.h>
 
 #include <percussa/ui/BiButtonWidget.h>
+#include <percussa/ui/ButtonWidget.h>
 #include <memory>
 
 namespace percussa
@@ -26,6 +27,7 @@ namespace percussa
         std::vector<std::shared_ptr<ui::DisplayWidget>> mDisplays;
         std::vector<ui::LedWidget> mLeds;
         std::vector<ui::ToggleWidget> mToggles;
+        std::vector<ui::ButtonWidget> mButtons;
         std::vector<ui::BiButtonWidget> mBiButtons;
         bool mFnShift = false;
       };

@@ -54,10 +54,13 @@ namespace percussa
       {
         if (action.type == input::ActionType::Button)
         {
-          if (action.hardwareButton == input::HardwareButtonId::Button8)
+          if (action.hardwareButton == input::HardwareButtonId::Up)
           {
-            fnState = action.pressed;
-            mPanel.setFnShift(fnState);
+            if (action.pressed)
+            {
+              fnState = !fnState;
+              mPanel.setFnShift(fnState);
+            }
           }
           else
           {
@@ -146,9 +149,9 @@ namespace percussa
           case input::HardwareButtonId::Button7:
             return BUTTON_MAIN6;
           case input::HardwareButtonId::Button8:
-            return NUM_GPIO_IDS; // Fn
-          case input::HardwareButtonId::Up:
             return BUTTON_UP;
+          case input::HardwareButtonId::Up:
+            return NUM_GPIO_IDS; // Fn toggle
           case input::HardwareButtonId::Down:
             return BUTTON_SHIFT;
           case input::HardwareButtonId::Invalid:
@@ -175,9 +178,9 @@ namespace percussa
           case input::HardwareButtonId::Button7:
             return NUM_GPIO_IDS;
           case input::HardwareButtonId::Button8:
-            return NUM_GPIO_IDS; // Fn
-          case input::HardwareButtonId::Up:
             return BUTTON_DIAL3; // HOME
+          case input::HardwareButtonId::Up:
+            return NUM_GPIO_IDS; // Fn toggle
           case input::HardwareButtonId::Down:
             return BUTTON_SHIFT;
           case input::HardwareButtonId::Invalid:
