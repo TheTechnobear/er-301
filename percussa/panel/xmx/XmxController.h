@@ -28,6 +28,7 @@ namespace percussa
         void switchToggle(uint32_t idA, uint32_t idB, int delta) const;
 
         bool fnState = false;
+        bool shiftState = false;
       };
     } // namespace xmx
   } // namespace panel

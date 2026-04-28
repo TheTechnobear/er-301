@@ -21,15 +21,18 @@ namespace percussa
         int height() const;
         void render(Olivec_Canvas canvas) const;
         std::unique_ptr<Controller> createController();
-        void setFnShift(bool s);
+        void setFnState(bool s);
+        void setShiftState(bool s);
 
       private:
         std::vector<std::shared_ptr<ui::DisplayWidget>> mDisplays;
         std::vector<ui::LedWidget> mLeds;
         std::vector<ui::ToggleWidget> mToggles;
-        std::vector<ui::ButtonWidget> mButtons;
         std::vector<ui::BiButtonWidget> mBiButtons;
-        bool mFnShift = false;
+        bool mFnState = false;
+        bool mShiftState = false;
+        ui::ButtonWidget mShift;
+        ui::ButtonWidget mFn;
       };
     } // namespace xmx
   } // namespace panel

@@ -123,7 +123,10 @@ namespace percussa
         }
       } // namespace
 
-      XmxPanel::XmxPanel()
+      XmxPanel::XmxPanel() : 
+        mShift( "Shft", rightButtonRect(0), true, NUM_GPIO_IDS, kFontSize),
+        mFn( "Fn", rightButtonRect(1), true, NUM_GPIO_IDS, kFontSize)
+
       {
         mDisplays.push_back(std::shared_ptr<ui::DisplayWidget>(
           new ui::MainDisplayWidget(mainDisplayRect(), kFontSize)));
@@ -137,7 +140,7 @@ namespace percussa
         mBiButtons.push_back(
           ui::BiButtonWidget("M3", "S3", gridButtonRect(2, 0), true, kFontSize));
         mBiButtons.push_back(ui::BiButtonWidget(
-          "Ent", "Can", gridButtonRect(3, 0), true, kFontSize));
+          "Up", "Home", gridButtonRect(3, 0), true, kFontSize));
 
         mBiButtons.push_back(ui::BiButtonWidget(
           "M4", "", gridButtonRect(0, 1), true, kFontSize));
@@ -146,18 +149,7 @@ namespace percussa
         mBiButtons.push_back(ui::BiButtonWidget(
           "M6", "", gridButtonRect(2, 1), true, kFontSize));
         mBiButtons.push_back(ui::BiButtonWidget(
-          "Up", "Home", gridButtonRect(3, 1), true, kFontSize));
-
-        mButtons.push_back(ui::ButtonWidget(
-          "Fn", rightButtonRect(0), true, NUM_GPIO_IDS, kFontSize));
-
-        mBiButtons.push_back(ui::BiButtonWidget(
-          "Shft",
-          "Shft",
-          rightButtonRect(1),
-          true,
-          kFontSize));
-
+          "Ent", "Can", gridButtonRect(3, 1), true, kFontSize));
 
         mLeds.push_back(ui::LedWidget("fine",
                                       fineLedRect(),
@@ -233,10 +225,16 @@ namespace percussa
                                             kFontSize));
       }
 
-      void XmxPanel::setFnShift(bool s)
+      void XmxPanel::setFnState(bool s)
       {
-        mFnShift = s;
+        mFnState = s;
       }
+
+      void XmxPanel::setShiftState(bool s)
+      {
+        mShiftState = s;
+      }
+
 
       int XmxPanel::width() const
       {
@@ -268,13 +266,13 @@ namespace percussa
         {
           w.render(canvas);
         }
-        for (auto &w : mButtons)
-        {
-          w.render(canvas, mFnShift);
-        }
+
+        mShift.render(canvas,mShiftState);
+        mFn.render(canvas,mFnState);
+
         for (auto &w : mBiButtons)
         {
-          w.render(canvas, mFnShift);
+          w.render(canvas, mFnState);
         }
       }
 

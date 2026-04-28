@@ -54,15 +54,52 @@ namespace percussa
       {
         if (action.type == input::ActionType::Button)
         {
-          if (action.hardwareButton == input::HardwareButtonId::Up)
+          switch (action.hardwareButton)
           {
-            if (action.pressed)
-            {
-              fnState = !fnState;
-              mPanel.setFnShift(fnState);
-            }
+          case input::HardwareButtonId::Down:
+          {
+            fnState = action.pressed;
+            mPanel.setFnState(fnState);
+            break;
           }
-          else
+          case input::HardwareButtonId::Up:
+          {
+            if (!fnState)
+            {
+              // fn is not pressed...
+              // are we shift locked?
+              if(!shiftState) {
+                // No, shift acts as 'normal'
+                percussa_state_write(BUTTON_SHIFT, !action.pressed);
+                mPanel.setShiftState(action.pressed);
+              }
+              else {
+                // yes,
+                // implement 'quick release'
+                // so users can unlock with just shift (as well as Fn+shift)
+                if(!action.pressed) {
+                  // we do on shift UP, so cannot form a tri chord
+                  shiftState = !shiftState;
+                  percussa_state_write(BUTTON_SHIFT, !shiftState);
+                  mPanel.setShiftState(shiftState);
+                } 
+              } // shiftState
+            } // fnState
+            else
+            {
+              // fn is pressed, so now shift acts as a shift lock, 
+
+              // so we do NOT pass on shift at this point, we only lock/unlock it.
+              if(!action.pressed) {
+                // we do on shift UP, so cannot form a tri chord
+                shiftState = !shiftState;
+                percussa_state_write(BUTTON_SHIFT, !shiftState);
+                mPanel.setShiftState(shiftState);
+             }
+            } // fnState
+            break;
+          }
+          default:
           {
             uint32_t gpioId = mapButtonToGpio(action.hardwareButton);
             if (gpioId < NUM_GPIO_IDS)
@@ -70,7 +107,8 @@ namespace percussa
               percussa_state_write(gpioId, !action.pressed);
             }
           }
-        }
+          } // switch button id
+        } // button
 
 
         if (action.type == input::ActionType::EncoderTurn)
@@ -141,7 +179,7 @@ namespace percussa
           case input::HardwareButtonId::Button3:
             return BUTTON_MAIN3;
           case input::HardwareButtonId::Button4:
-            return BUTTON_ENTER;
+            return BUTTON_UP;
           case input::HardwareButtonId::Button5:
             return BUTTON_MAIN4;
           case input::HardwareButtonId::Button6:
@@ -149,11 +187,11 @@ namespace percussa
           case input::HardwareButtonId::Button7:
             return BUTTON_MAIN6;
           case input::HardwareButtonId::Button8:
-            return BUTTON_UP;
+            return BUTTON_ENTER;
           case input::HardwareButtonId::Up:
-            return NUM_GPIO_IDS; // Fn toggle
+            return NUM_GPIO_IDS; // Shift
           case input::HardwareButtonId::Down:
-            return BUTTON_SHIFT;
+            return NUM_GPIO_IDS; // Fn
           case input::HardwareButtonId::Invalid:
           default:
             return NUM_GPIO_IDS;
@@ -170,7 +208,7 @@ namespace percussa
           case input::HardwareButtonId::Button3:
             return BUTTON_SUB3;
           case input::HardwareButtonId::Button4:
-            return BUTTON_DIAL2; // CAN
+            return BUTTON_DIAL3; // HOME
           case input::HardwareButtonId::Button5:
             return NUM_GPIO_IDS;
           case input::HardwareButtonId::Button6:
@@ -178,11 +216,11 @@ namespace percussa
           case input::HardwareButtonId::Button7:
             return NUM_GPIO_IDS;
           case input::HardwareButtonId::Button8:
-            return BUTTON_DIAL3; // HOME
+            return BUTTON_DIAL2; // CAN
           case input::HardwareButtonId::Up:
-            return NUM_GPIO_IDS; // Fn toggle
+            return NUM_GPIO_IDS; // Shift Lock
           case input::HardwareButtonId::Down:
-            return BUTTON_SHIFT;
+            return NUM_GPIO_IDS; // Fn
           case input::HardwareButtonId::Invalid:
           default:
             return NUM_GPIO_IDS;
