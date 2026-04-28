@@ -1,5 +1,5 @@
-//#define BUILDOPT_VERBOSE
-//#define BUILDOPT_DEBUG_LEVEL 10
+// #define BUILDOPT_VERBOSE
+// #define BUILDOPT_DEBUG_LEVEL 10
 #include <hal/card.h>
 
 #include <od/config.h>
@@ -50,9 +50,12 @@ extern "C"
           if (!mountFrontUSBCard())
           {
             logWarn("Card_mount: USB front card mount failed");
-            return false;
+            // Do not return; fallback to internal storage
           }
-          sd[drv].mountedBySystem = true;
+          else
+          {
+            sd[drv].mountedBySystem = true;
+          }
         }
 
         if (Card_connect(drv, CARD_MODE_FATFS))
