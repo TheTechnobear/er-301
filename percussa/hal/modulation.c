@@ -42,7 +42,7 @@ static float getInputGain(uint32_t channel)
 
 static float s32ToInputVolts(int sample)
 {
-  return ((float)sample / 2147483648.0f) * FULLSCALE_IN_VOLTS;
+  return ((float)sample / 2147483648.0f);
 }
 
 void Modulation_init()

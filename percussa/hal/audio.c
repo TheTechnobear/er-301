@@ -51,7 +51,7 @@ static unsigned int currentSampleRate(void) { return (unsigned int)globalConfig.
 static unsigned int currentFrameLength(void) { return (unsigned int)globalConfig.frameLength; }
 
 static inline void Audio_applyOutputGainOffset(float *buffer, uint32_t count, float gain, float offset) {
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  #if defined(__ARM_NEON) || defined(__ARM_NEON__)
   uint32_t i = 0;
   float32x4_t vGain = vdupq_n_f32(gain);
   float32x4_t vOffset = vdupq_n_f32(offset);
@@ -71,7 +71,7 @@ static inline void Audio_applyOutputGainOffset(float *buffer, uint32_t count, fl
 }
 
 static inline void Audio_applyInputGainOffset(float *buffer, uint32_t frames, float offset) {
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  #if defined(__ARM_NEON) || defined(__ARM_NEON__)
   float32x4_t vOffset = vdupq_n_f32(offset);
   for (uint32_t i = 0; i < frames; i++) {
     float *frame = buffer + i * NUM_INPUT_CHANNELS;

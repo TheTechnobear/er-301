@@ -14,13 +14,15 @@ Understanding where SSP/XMX maps cleanly onto the ER-301 and where it diverges i
 
 | Feature | ER-301 | SSP | XMX |
 |---------|--------|-----|-----|
-| Audio outputs | 4 × OUT1–4, ±10V AC, 24-bit | 4 × OUT1–4, ±10V, 32-bit | 2 × OUT1–2, ±10V, 32-bit |
-| Audio inputs | 4 × IN1–4, ±10V, 60 kHz, 16-bit DC | 4 × IN1–4, ±10V, 32-bit | 4 × IN1–4, ±10V, 32-bit |
-| CV inputs | 12 × A1–D3, ±10V, 60 kHz, 16-bit DC | 12 × A1–D3, ±5V scaled to ±10V, 32-bit | 4 × A1–D1, ±5V scaled to ±10V, 32-bit |
+| Audio outputs | 4 × OUT1–4, ±10V AC, 24-bit | 4 × OUT1–4, ±5V 24-bit | 2 × OUT1–2, ±5V, 24-bit |
+| Audio inputs | 4 × IN1–4, ±10V, 60 kHz, 16-bit DC | 4 × IN1–4, ±5V scaled to ±10V, 24-bit | 4 × IN1–4, ±5V scaled to ±10V, 24-bit |
+| CV inputs | 12 × A1–D3, ±10V, 60 kHz, 16-bit DC | 12 × A1–D3, ±5V , 24-bit | 4 × A1–D1, ±5V, 24-bit |
 | Gate inputs | 4 × G1–G4 | **Not available** | **Not available** |
 | Sample rate | 48 or 96 kHz (firmware.cfg) | 48 kHz fixed | 48 kHz fixed |
 | Coupling | Audio: AC; CV/gate: DC | All DC coupled | All DC coupled |
 | Headphone | None | None | Mirror of OUT1–2 (hardware fixed) |
+
+Note: XMX output 1 is normalised to output 2, when a jack is not inserted into output2, this can lead to a small offset in the signal.
 
 #### CV Voltage Scaling
 
