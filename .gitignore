@@ -11,6 +11,9 @@ tutorial/*/debug
 
 tmp/
 
+build/*
+build.*/*
+
 ## C/C++ specific
 
 # Prerequisites
