@@ -120,6 +120,30 @@
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		{
+			"label": "CMake: Build mac",
+			"type": "shell",
+			"command": "cmake --preset mac && cmake --build --preset mac",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "CMake: Build SSP",
+			"type": "shell",
+			"command": "cmake --preset ssp && cmake --build --preset ssp",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "CMake: Build XMX",
+			"type": "shell",
+			"command": "cmake --preset xmx && cmake --build --preset xmx",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }

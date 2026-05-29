@@ -2,7 +2,42 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug SSP (build)",
+      "name": "Debug mac (cmake)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/percussa",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "CMake: Build mac"
+    },
+    {
+      "name": "Debug SSP (cmake)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build.ssp/percussa",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "arm-linux-gnueabihf-gdb",
+      "preLaunchTask": "CMake: Build SSP"
+    },
+    {
+      "name": "Debug XMX (cmake)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build.xmx/percussa",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "aarch64-linux-gnu-gdb",
+      "preLaunchTask": "CMake: Build XMX"
+    },
+    {
+      "name": "Debug SSP (Makefile)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/testing/darwin/percussa-ssp/percussa-ssp.elf",
@@ -13,7 +48,7 @@
       "preLaunchTask": "Make percussa ssp"
     },
     {
-      "name": "Debug XMX (build)",
+      "name": "Debug SSP (Makefile)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/testing/darwin/percussa-xmx/percussa-xmx.elf",
@@ -24,7 +59,7 @@
       "preLaunchTask": "Make percussa xmx"
     },
     {
-      "name": "Debug EMU (build)",
+      "name": "Debug EMU (makefile)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/testing/darwin/emu/emu.elf",

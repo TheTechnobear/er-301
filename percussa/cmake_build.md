@@ -39,6 +39,35 @@ cmake --preset xmx
 cmake --build --preset xmx
 ```
 
+### VS Code + CMake Tools Extension
+
+The [CMake Tools extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools) for VS Code provides a graphical interface for CMake with preset support.
+
+**Setup:**
+1. Install the CMake Tools extension
+2. Open the project in VS Code
+3. The extension will detect `CMakePresets.json` automatically
+
+**Usage:**
+- **Configure**: Press `F7` or use the CMake status bar to select a preset (mac/ssp/xmx)
+- **Build**: Press `Ctrl+Shift+B` or click the Build button in the CMake Tools view
+- The status bar shows the current preset and allows switching between presets
+
+**First-time FFTW build for cross-compile targets:**
+```bash
+# For SSP
+DESTDIR=$PWD/.build/fftw-ssp PREFIX=/usr TOOLCHAIN_FLAVOR=ssp \
+  SSP_BUILDROOT=/path/to/arm-rockchip-linux-gnueabihf_sdk-buildroot \
+  TOOLSROOT=/opt/homebrew/opt/llvm/bin \
+  bash scripts/build-fftw-cross.sh
+
+# For XMX
+DESTDIR=$PWD/.build/fftw-xmx PREFIX=/usr TOOLCHAIN_FLAVOR=xmx \
+  XMX_BUILDROOT=/path/to/aarch64-rockchip-linux-gnu_sdk-buildroot \
+  TOOLSROOT=/opt/homebrew/opt/llvm/bin \
+  bash scripts/build-fftw-cross.sh
+```
+
 ### Manual Configuration
 
 ### Darwin (native):
@@ -155,3 +184,30 @@ The generated file is placed in the build directory and compiled as part of the 
 - All library sources compiled with `-fPIC`
 - FFTW must be built separately using `scripts/build-fftw-cross.sh` before cross-compiling
 - FFTW staging directory should be outside the cmake build directory to avoid deletion on `rm -rf build*`
+
+## VS Code Integration
+
+For VS Code users, install the **CMake Tools** extension. It automatically recognizes `CMakePresets.json` and provides:
+- Preset selection in the status bar
+- Configure and Build commands via keyboard shortcuts
+- Inline error highlighting and navigation
+
+### Debugging
+
+The project includes VS Code debug configurations in `.vscode/launch.json`:
+
+| Configuration | Purpose | Notes |
+|---------------|---------|-------|
+| `Debug mac (cmake)` | Debug native macOS build | Uses lldb locally |
+| `Debug SSP (cmake)` | Debug SSP cross-compile | Uses gdb for ARM remote debugging |
+| `Debug XMX (cmake)` | Debug XMX cross-compile | Uses gdb for ARM64 remote debugging |
+| `Debug EMU (makefile)` | Debug SDL2 emulator | Legacy makefile build |
+
+Each debug configuration has a `preLaunchTask` that automatically rebuilds the target using CMake before launching.
+
+**To debug:**
+1. Select the debug configuration in VS Code's Debug panel
+2. Press `F5` to start debugging
+3. The target will be rebuilt automatically if needed
+
+**Note:** Cross-compiled targets (SSP/XMX) require a remote debugger (gdbserver) running on the target hardware. Local debugging is only available for the mac native build.
