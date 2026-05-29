@@ -1,0 +1,56 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "mac",
+      "displayName": "Darwin Native",
+      "description": "Build for Darwin/macOS native",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "ssp",
+      "displayName": "SSP Cross-Compile",
+      "description": "Cross-compile for Percussa SSP (ARM 32-bit)",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build.ssp",
+      "toolchainFile": "${sourceDir}/xcSSP.cmake",
+      "cacheVariables": {
+        "FFTW_STAGE_ROOT": "${sourceDir}/.build/fftw-ssp/usr"
+      }
+    },
+    {
+      "name": "xmx",
+      "displayName": "XMX Cross-Compile",
+      "description": "Cross-compile for Percussa XMX (ARM 64-bit)",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build.xmx",
+      "toolchainFile": "${sourceDir}/xcXMX.cmake",
+      "cacheVariables": {
+        "FFTW_STAGE_ROOT": "${sourceDir}/.build/fftw-xmx/usr"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "mac",
+      "configurePreset": "mac"
+    },
+    {
+      "name": "ssp",
+      "configurePreset": "ssp"
+    },
+    {
+      "name": "xmx",
+      "configurePreset": "xmx"
+    }
+  ]
+}

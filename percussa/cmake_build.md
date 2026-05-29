@@ -6,6 +6,41 @@ The CMake build for the ER-301 Percussa target is **standalone** and does not re
 
 ## Build Commands
 
+### Using CMake Presets (Recommended)
+
+CMake presets are defined in `CMakePresets.json` at the repo root:
+
+```bash
+# List available presets
+cmake --list-presets
+
+# Build mac (native Darwin)
+cmake --preset mac
+cmake --build --preset mac
+
+# Build SSP (cross-compile for ARM 32-bit)
+# First-time: build FFTW
+DESTDIR=$PWD/.build/fftw-ssp PREFIX=/usr TOOLCHAIN_FLAVOR=ssp \
+  SSP_BUILDROOT=/path/to/arm-rockchip-linux-gnueabihf_sdk-buildroot \
+  TOOLSROOT=/opt/homebrew/opt/llvm/bin \
+  bash scripts/build-fftw-cross.sh
+
+cmake --preset ssp
+cmake --build --preset ssp
+
+# Build XMX (cross-compile for ARM 64-bit)
+# First-time: build FFTW
+DESTDIR=$PWD/.build/fftw-xmx PREFIX=/usr TOOLCHAIN_FLAVOR=xmx \
+  XMX_BUILDROOT=/path/to/aarch64-rockchip-linux-gnu_sdk-buildroot \
+  TOOLSROOT=/opt/homebrew/opt/llvm/bin \
+  bash scripts/build-fftw-cross.sh
+
+cmake --preset xmx
+cmake --build --preset xmx
+```
+
+### Manual Configuration
+
 ### Darwin (native):
 ```bash
 cmake -B build
@@ -14,13 +49,27 @@ cmake --build build
 
 ### SSP cross-compile:
 ```bash
-cmake -DCMAKE_TOOLCHAIN_FILE=../xcSSP.cmake -B build.ssp
+DESTDIR=$PWD/.build/fftw-ssp PREFIX=/usr TOOLCHAIN_FLAVOR=ssp \
+  SSP_BUILDROOT=/path/to/arm-rockchip-linux-gnueabihf_sdk-buildroot \
+  TOOLSROOT=/opt/homebrew/opt/llvm/bin \
+  bash scripts/build-fftw-cross.sh
+
+cmake -DCMAKE_TOOLCHAIN_FILE=../xcSSP.cmake \
+  -DFFTW_STAGE_ROOT=$PWD/.build/fftw-ssp/usr \
+  -B build.ssp
 cmake --build build.ssp
 ```
 
 ### XMX cross-compile:
 ```bash
-cmake -DCMAKE_TOOLCHAIN_FILE=../xcXMX.cmake -B build.xmx
+DESTDIR=$PWD/.build/fftw-xmx PREFIX=/usr TOOLCHAIN_FLAVOR=xmx \
+  XMX_BUILDROOT=/path/to/aarch64-rockchip-linux-gnu_sdk-buildroot \
+  TOOLSROOT=/opt/homebrew/opt/llvm/bin \
+  bash scripts/build-fftw-cross.sh
+
+cmake -DCMAKE_TOOLCHAIN_FILE=../xcXMX.cmake \
+  -DFFTW_STAGE_ROOT=$PWD/.build/fftw-xmx/usr \
+  -B build.xmx
 cmake --build build.xmx
 ```
 
@@ -67,25 +116,35 @@ The generated file is placed in the build directory and compiled as part of the 
 ### System (external):
 - **SDL2** - Required on Darwin (via homebrew)
 - **SDL2_ttf** - Required on Darwin (via homebrew)
-- **fftw3f** - Required on Darwin (via homebrew)
+- **fftw3f** - Required for cross-compile (built via `scripts/build-fftw-cross.sh`)
 - **Threads** - Standard pthread library
+
+## CMake Variables
+
+### Configuration Options:
+- `TARGET_SSP` / `TARGET_XMX` - Panel selection (default: SSP)
+- `PERCUSSA_PANEL` - "ssp" or "xmx"
+- `PERCUSSA_PLATFORM` - "host-sdl", "fbdev", or "plugin" (default: host-sdl on Darwin, fbdev on Linux)
+- `FFTW_STAGE_ROOT` - Path to fftw3f staging directory (required for cross-compile)
 
 ## Build Status
 
 | Target | Status |
 |--------|--------|
 | Darwin native | Working |
-| SSP cross-compile | Not tested |
-| XMX cross-compile | Not tested |
+| SSP cross-compile | Working |
+| XMX cross-compile | Working |
 | Linux native | Not tested |
 
-### Verified working on Darwin:
-- `od` static library
-- `lua54` static library
-- `miniz` static library
-- `lodepng` static library
-- `rtaudio` object library
-- `percussa` executable
+### Verified builds:
+- `od` static library ✓
+- `lua54` static library ✓
+- `miniz` static library ✓
+- `lodepng` static library ✓
+- `rtaudio` object library ✓
+- `percussa` executable (Darwin) ✓
+- `percussa` executable (SSP cross-compile, ARM 32-bit) ✓
+- `percussa` executable (XMX cross-compile, ARM 64-bit) ✓
 
 ## Notes
 
@@ -94,3 +153,5 @@ The generated file is placed in the build directory and compiled as part of the 
 - Toolchain files (`xcSSP.cmake`, `xcXMX.cmake`) for cross-compilation
 - SWIG found via `find_package(SWIG)`
 - All library sources compiled with `-fPIC`
+- FFTW must be built separately using `scripts/build-fftw-cross.sh` before cross-compiling
+- FFTW staging directory should be outside the cmake build directory to avoid deletion on `rm -rf build*`

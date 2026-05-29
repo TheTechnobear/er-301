@@ -132,9 +132,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND PERCUSSA_ARCH_SOURCES
         ${PERCUSSA_SOURCE_ROOT}/hal/card_linux.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/arch/linux/hal/fileops.c
         ${CMAKE_CURRENT_SOURCE_DIR}/arch/linux/hal/heap.c
     )
+    if(NOT CMAKE_CROSSCOMPILING)
+        list(APPEND PERCUSSA_ARCH_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/arch/linux/hal/fileops.c
+        )
+    endif()
 endif()
 
 set(PERCUSSA_ALL_SOURCES
@@ -245,6 +249,11 @@ find_package(Threads REQUIRED)
 target_link_libraries(percussa PRIVATE
     Threads::Threads
 )
+
+if(FFTW_STAGE_ROOT)
+    target_include_directories(percussa PRIVATE ${FFTW_STAGE_ROOT}/include)
+    target_link_libraries(percussa PRIVATE ${FFTW_STAGE_ROOT}/lib/libfftw3f.a)
+endif()
 
 if(PERCUSSA_PLATFORM STREQUAL "host-sdl")
     if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
